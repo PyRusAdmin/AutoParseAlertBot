@@ -10,6 +10,10 @@ logger.add("logs/log.log", retention="1 days", enqueue=True)  # Логирова
 
 
 async def main() -> None:
+    """
+    Функция запуска бота
+    :return: None
+    """
     register_greeting_handler()
     await dp.start_polling(bot)
 
