@@ -1,6 +1,6 @@
 from aiogram import F
 from aiogram.filters import CommandStart
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message
 
 from database.database import User
 from keyboards.keyboards import get_lang_keyboard
