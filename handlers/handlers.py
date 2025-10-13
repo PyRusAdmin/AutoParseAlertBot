@@ -1,11 +1,10 @@
-# handlers/handlers.py
 from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from loguru import logger
-from models import User
+
+from database.database import User
 from locales.locales import get_text
-from system.dispatcher import bot, dp
+from system.dispatcher import dp, router
 
 
 # Клавиатура выбора языка
@@ -19,7 +18,7 @@ def get_lang_keyboard():
     )
 
 
-@dp.message(CommandStart())
+@router.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     user_tg = message.from_user
 
@@ -62,7 +61,7 @@ async def command_start_handler(message: Message) -> None:
 
 
 # Хендлер для обработки выбора языка
-@dp.message(F.text.in_({"🇷🇺 Русский", "🇬🇧 English"}))
+@router.message(F.text.in_({"🇷🇺 Русский", "🇬🇧 English"}))
 async def handle_language_selection(message: Message):
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -82,3 +81,8 @@ async def handle_language_selection(message: Message):
     # Опционально: сразу отправить приветствие
     welcome = get_text(user.language, "welcome_message")
     await message.answer(welcome)
+
+
+def register_greeting_handler():
+    router.message.register(command_start_handler)
+    router.message.register(handle_language_selection)
