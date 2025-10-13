@@ -3,18 +3,9 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 
 from database.database import User
+from keyboards.keyboards import get_lang_keyboard
 from locales.locales import get_text
 from system.dispatcher import router
-
-
-def get_lang_keyboard():
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🇷🇺 Русский"), KeyboardButton(text="🇬🇧 English")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
 
 
 @router.message(CommandStart())

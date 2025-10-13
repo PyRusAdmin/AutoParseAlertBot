@@ -1,4 +1,11 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
-start_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-start_keyboard.add(KeyboardButton("👋 Привет!"))
+
+def get_lang_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🇷🇺 Русский"), KeyboardButton(text="🇬🇧 English")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
