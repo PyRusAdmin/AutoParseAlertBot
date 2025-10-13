@@ -3,7 +3,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 
 from database.database import User
-from keyboards.keyboards import get_lang_keyboard
+from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_keyboard
 from locales.locales import get_text
 from system.dispatcher import router
 
@@ -42,28 +42,37 @@ async def command_start_handler(message: Message) -> None:
         await message.answer(text)
 
 
-@router.message(F.text.in_({"🇷🇺 Русский", "🇬🇧 English"}))
+@router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))
 async def handle_language_selection(message: Message):
+    """Выбор языка"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 
-    # Устанавливаем язык в зависимости от выбора
     if message.text == "🇷🇺 Русский":
         user.language = "ru"
         confirm = get_text("ru", "lang_selected")
     elif message.text == "🇬🇧 English":
         user.language = "en"
         confirm = get_text("en", "lang_selected")
-    else:
-        return  # не должно случиться, но на всякий
 
     user.save()
 
-    # Подтверждаем выбор и отправляем приветствие
-    await message.answer(confirm, reply_markup=None)
-    await message.answer(get_text(user.language, "welcome_message"))
+    await message.answer(confirm, reply_markup=main_menu_keyboard())
+
+
+@router.message(F.text == "Настройки")
+async def handle_settings(message: Message):
+    """Открытие меню настроек"""
+    user_tg = message.from_user
+    user = User.get(User.user_id == user_tg.id)
+
+    await message.answer(
+        get_text(user.language, "settings_message"),
+        reply_markup=settings_keyboard()  # клавиатура выбора языка
+    )
 
 
 def register_greeting_handler():
     router.message.register(command_start_handler)
     router.message.register(handle_language_selection)
+    router.message.register(handle_settings)
