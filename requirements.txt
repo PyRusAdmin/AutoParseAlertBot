@@ -1,4 +1,6 @@
-loguru
-aiogram
-python-dotenv
-aiogram-i18n
+loguru~=0.7.3
+aiogram~=3.22.0
+python-dotenv~=1.1.1
+dotenv~=0.9.9
+logging~=0.4.9.6
+peewee~=3.18.2
