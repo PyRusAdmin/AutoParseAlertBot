@@ -184,12 +184,18 @@ async def handle_launching_tracking(message: Message):
     logger.info(
         f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню запуска парсинга.")
 
-    await  filter_messages(user_id=user_tg.id)
-
     await message.answer(
         get_text(user.language, "launching_tracking"),
         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
     )
+
+    await  filter_messages(
+        message=message,
+        user_id=user_tg.id,
+        user=user
+    )
+
+    
 
 
 def register_greeting_handler():

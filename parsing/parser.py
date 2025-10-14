@@ -8,6 +8,8 @@ from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
 from database.database import Groups
+from keyboards.keyboards import menu_launch_tracking_keyboard
+from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
 
 # ⚙️ Конфигурация
@@ -54,10 +56,12 @@ async def join_required_channels(client: TelegramClient):
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
 
-async def filter_messages(user_id):
+async def filter_messages(message, user_id, user):
     """
     Запускает поиск сообщений по ключевым словам.
+    :param message: Объект сообщения AIOgram
     :param user_id: ID пользователя Telegram, используется для поиска папки accounts/<user_id>/
+    :param user: Объект пользователя
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
     logger.info(f"🚀 Запуск бота для user_id={user_id}...")
@@ -101,6 +105,10 @@ async def filter_messages(user_id):
     if not channels:
         logger.warning("⚠️ Список каналов пуст. Добавьте группы в базу данных.")
         await client.disconnect()
+        await message.answer(
+            get_text(user.language, "tracking_launch_error"),
+            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+        )
         return
 
     # === Обработка новых сообщений ===

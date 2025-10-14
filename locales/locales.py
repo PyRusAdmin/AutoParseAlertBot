@@ -17,6 +17,11 @@ LOCALES = {
             "После загрузки бот начнёт использовать этот аккаунт для отслеживания сообщений."
         ),
         "launching_tracking": "🚀 Запуск отслеживания сообщений...",
+        "tracking_launch_error": (
+            "⚠️ Список каналов пуст.\n\n"
+            "Добавьте хотя бы одну группу или канал для отслеживания 🔍\n"
+            "через меню настроек ⚙️"
+        ),
     },
 
     "en": {
@@ -37,6 +42,11 @@ LOCALES = {
             "Once uploaded, the bot will use this account to track messages."
         ),
         "launching_tracking": "🚀 Launching message tracking...",
+        "tracking_launch_error": (
+            "⚠️ The list of channels is empty.\n\n"
+            "Please add at least one group or channel to track 🔍\n"
+            "via the settings menu ⚙️"
+        ),
     }
 }
 
