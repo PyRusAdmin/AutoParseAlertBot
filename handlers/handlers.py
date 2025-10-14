@@ -181,7 +181,10 @@ async def handle_launching_tracking(message: Message):
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 
-    await  filter_messages()
+    logger.info(
+        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню запуска парсинга.")
+
+    await  filter_messages(user_id=user_tg.id)
 
     await message.answer(
         get_text(user.language, "launching_tracking"),
