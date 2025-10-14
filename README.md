@@ -21,3 +21,5 @@ accounts/<id_user>/<account_name>.session
 
 * <id_user> — Telegram ID пользователя, который загрузил аккаунт в бота;
 * <account_name>.session — сессия Telegram-аккаунта, используемого для мониторинга сообщений.
+
+Группы для парсинга вносятся в формате @username
