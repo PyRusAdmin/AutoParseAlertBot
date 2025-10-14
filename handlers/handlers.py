@@ -123,4 +123,4 @@ def register_greeting_handler():
     router.message.register(command_start_handler)
     router.message.register(handle_language_selection)
     router.message.register(handle_settings)
-    router.message.register(handle_main_menu) # обработчик для кнопки "Назад"
+    router.message.register(handle_main_menu)  # обработчик для кнопки "Назад"
