@@ -8,7 +8,7 @@ def get_lang_keyboard():
             [KeyboardButton(text="🇷🇺 Русский"), KeyboardButton(text="🇬🇧 English")]
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=False # Отправлять сообщение только один раз
     )
 
 
@@ -19,7 +19,7 @@ def main_menu_keyboard():
             [KeyboardButton(text="Настройки")]
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=False # Отправлять сообщение только один раз
     )
 
 
@@ -33,5 +33,5 @@ def settings_keyboard():
             [KeyboardButton(text="🔙 Назад")]
         ],
         resize_keyboard=True,
-        one_time_keyboard=True
+        one_time_keyboard=False # Отправлять сообщение только один раз
     )
