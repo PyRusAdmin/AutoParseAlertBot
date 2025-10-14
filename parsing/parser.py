@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import asyncio
+import os
 
 from loguru import logger
 from telethon import TelegramClient, events
@@ -14,7 +14,6 @@ from system.dispatcher import api_id, api_hash
 CONFIG = {
     "target_channel_id": -1001918436153,
     "keywords": ["киевский район", "донецк сити", "шахтерская площадь"],
-    "session_name": "scr/setting/session_name",
 }
 
 # 🧠 Простейший трекер сообщений (в памяти)
@@ -55,17 +54,56 @@ async def join_required_channels(client: TelegramClient):
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
 
-async def filter_messages():
-    logger.info("🚀 Запуск бота...")
+async def filter_messages(user_id):
+    """
+    Запускает поиск сообщений по ключевым словам.
+    :param user_id: ID пользователя Telegram, используется для поиска папки accounts/<user_id>/
+    """
 
-    client = TelegramClient(CONFIG["session_name"], api_id, api_hash)
+    logger.info(f"🚀 Запуск бота для user_id={user_id}...")
+
+    # === Папка, где хранятся сессии ===
+    session_dir = os.path.join("accounts", user_id)
+    os.makedirs(session_dir, exist_ok=True)
+
+    # === Поиск любого .session файла ===
+    session_path = None
+    for file in os.listdir(session_dir):
+        if file.endswith(".session"):
+            session_path = os.path.join(session_dir, file)
+            break
+
+    if not session_path:
+        logger.error(f"❌ Не найден файл .session в {session_dir}")
+        return
+
+    logger.info(f"📂 Найден файл сессии: {session_path}")
+    # Telethon ожидает session_name без расширения
+    session_name = session_path.replace(".session", "")
+
+    # === Подключение клиента Telethon ===
+    client = TelegramClient(session_name, api_id, api_hash)
     await client.connect()
 
+    # === Проверка авторизации ===
+    if not await client.is_user_authorized():
+        logger.error(f"⚠️ Сессия {session_path} недействительна — требуется повторный вход.")
+        return
+
+    logger.info("✅ Сессия активна, подключение успешно!")
+
+    # === Подключаемся к обязательным каналам ===
     await join_required_channels(client)
 
+    # === Загружаем список каналов из базы ===
     # Получаем список username из базы данных
     channels = [group.username_chat_channel for group in Groups.select()]
+    if not channels:
+        logger.warning("⚠️ Список каналов пуст. Добавьте группы в базу данных.")
+        await client.disconnect()
+        return
 
+    # === Обработка новых сообщений ===
     @client.on(events.NewMessage(chats=channels))
     async def handle_new_message(event: events.NewMessage.Event):
         await process_message(client, event.message, event.chat_id)
@@ -76,14 +114,3 @@ async def filter_messages():
     finally:
         await client.disconnect()
         logger.info("🛑 Бот остановлен.")
-
-
-def parser():
-    try:
-        asyncio.run(filter_messages())
-    except KeyboardInterrupt:
-        logger.warning("🧹 Остановка по Ctrl+C")
-
-
-if __name__ == "__main__":
-    parser()

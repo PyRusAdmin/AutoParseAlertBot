@@ -1,13 +1,16 @@
+import os
+
 from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.types import Message
-import os
+from loguru import logger
+
 from database.database import User
 from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, \
     menu_launch_tracking_keyboard
 from locales.locales import get_text
+from parsing.parser import filter_messages
 from system.dispatcher import router
-from loguru import logger
 
 
 @router.message(CommandStart())
@@ -174,6 +177,8 @@ async def handle_launching_tracking(message: Message):
     """Запуск отслеживания"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
+
+    await  filter_messages()
 
     await message.answer(
         get_text(user.language, "launching_tracking"),
