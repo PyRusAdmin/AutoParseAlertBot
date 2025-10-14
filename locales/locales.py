@@ -1,19 +1,42 @@
 LOCALES = {
     "ru": {
-        "welcome_ask_language": "Привет! Пожалуйста, выберите язык:",
-        "welcome_message": "Добро пожаловать! В телеграмм бота для отслеживания ключевых слов в группах / каналах телеграмм.",
-        "lang_selected": "Отлично! Теперь весь интерфейс будет на этом языке.",
-        "settings_message": "В данном меню вы можете подключить аккаунт Telegram, а также изменить язык интерфейса, добавить группы / каналы для отслеживания, изменить ключевые слова и т.д.",
-        "connect_account": "Для подключения аккаунта Telegram пришлите аккаунт в формате session. Например: +79599999999.session.",
-        "launching_tracking": "Запуск отслеживания...",
+        "welcome_ask_language": "🌍 Привет! Пожалуйста, выберите язык интерфейса:",
+        "welcome_message": "🤖 Добро пожаловать в Telegram-бота для отслеживания 🔍 ключевых слов в группах и каналах!",
+        "lang_selected": "✅ Отлично! Интерфейс теперь будет отображаться на выбранном языке.",
+        "settings_message": (
+            "⚙️ В этом меню вы можете:\n"
+            "• 🔗 Подключить аккаунт Telegram\n"
+            "• 🌐 Изменить язык интерфейса\n"
+            "• 📢 Добавить группы и каналы для отслеживания\n"
+            "• 🧩 Настроить ключевые слова и фильтры\n\n"
+            "Выберите нужный пункт ниже 👇"
+        ),
+        "connect_account": (
+            "📱 Для подключения аккаунта Telegram отправьте файл сессии в формате:\n"
+            "`+79599999999.session`\n\n"
+            "После загрузки бот начнёт использовать этот аккаунт для отслеживания сообщений."
+        ),
+        "launching_tracking": "🚀 Запуск отслеживания сообщений...",
     },
+
     "en": {
-        "welcome_ask_language": "Hi! Please choose your language:",
-        "welcome_message": "Welcome! A telegram bot for tracking keywords in telegram groups/channels.",
-        "lang_selected": "Great! The interface will now be in this language.",
-        "settings_message": "In this menu, you can connect a Telegram account, as well as change the interface language, add groups/channels for tracking, change keywords, etc.",
-        "connect_account": "To connect a Telegram account, send an account in session format. For example: +79599999999.session.",
-        "launching_tracking": "Launching tracking...",
+        "welcome_ask_language": "🌍 Hi! Please choose your interface language:",
+        "welcome_message": "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!",
+        "lang_selected": "✅ Great! The interface will now be displayed in your selected language.",
+        "settings_message": (
+            "⚙️ In this menu you can:\n"
+            "• 🔗 Connect a Telegram account\n"
+            "• 🌐 Change the interface language\n"
+            "• 📢 Add groups and channels to track\n"
+            "• 🧩 Configure keywords and filters\n\n"
+            "Choose an option below 👇"
+        ),
+        "connect_account": (
+            "📱 To connect your Telegram account, send a session file in the format:\n"
+            "`+79599999999.session`\n\n"
+            "Once uploaded, the bot will use this account to track messages."
+        ),
+        "launching_tracking": "🚀 Launching message tracking...",
     }
 }
 
