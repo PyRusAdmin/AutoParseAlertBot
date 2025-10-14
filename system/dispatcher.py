@@ -7,8 +7,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("❌ Не найден BOT_TOKEN в .env файле!")
+api_id = os.getenv("ID")
+api_hash = os.getenv("HASH")
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()

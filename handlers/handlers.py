@@ -3,7 +3,8 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 import os
 from database.database import User
-from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard
+from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, \
+    menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import router
 from loguru import logger
@@ -168,13 +169,24 @@ async def handle_account_file(message: Message):
     await message.answer(f"✅ Файл {document.file_name} успешно загружен в папку account.")
 
 
+@router.message(F.text == "Запуск отслеживания")
+async def handle_launching_tracking(message: Message):
+    """Запуск отслеживания"""
+    user_tg = message.from_user
+    user = User.get(User.user_id == user_tg.id)
+
+    await message.answer(
+        get_text(user.language, "launching_tracking"),
+        reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+    )
+
+
 def register_greeting_handler():
     """Регистрация обработчиков"""
     router.message.register(command_start_handler)
     router.message.register(handle_language_selection)
     router.message.register(handle_settings)
     router.message.register(handle_main_menu)  # обработчик для кнопки "Назад"
-
     router.message.register(handle_connect_account)  # обработчик для кнопки "Подключить аккаунт"
-
     router.message.register(handle_account_file)  # обработчик приема аккаунта в формате .session
+    router.message.register(handle_launching_tracking)  # обработчик запуска отслеживания
