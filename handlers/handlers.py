@@ -34,6 +34,9 @@ async def command_start_handler(message: Message) -> None:
         user.last_name = user_tg.last_name
         user.save()
 
+    logger.info(
+        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} начал работу с ботом.")
+
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
         # Можно предложить язык по умолчанию из Telegram, но всё равно дать выбор
