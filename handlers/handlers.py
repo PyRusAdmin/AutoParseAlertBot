@@ -47,7 +47,7 @@ async def command_start_handler(message: Message) -> None:
     else:
         # Язык уже выбран — приветствуем
         text = get_text(user.language, "welcome_message")
-        await message.answer(text)
+        await message.answer(text, reply_markup=main_menu_keyboard())
 
 
 @router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))
@@ -194,8 +194,6 @@ async def handle_launching_tracking(message: Message):
         user_id=user_tg.id,
         user=user
     )
-
-    
 
 
 def register_greeting_handler():
