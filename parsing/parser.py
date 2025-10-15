@@ -7,7 +7,7 @@ from telethon.errors import UserAlreadyParticipantError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
-from database.database import Groups
+from database.database import create_groups_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
@@ -41,8 +41,18 @@ async def process_message(client, message: Message, chat_id: int):
             logger.exception(f"❌ Ошибка при пересылке: {e}")
 
 
-async def join_required_channels(client: TelegramClient):
+async def join_required_channels(client: TelegramClient, user_tg):
+    """
+    Подписываемся на обязательные каналы
+    :param client: Объект TelegramClient
+    :param user_tg: Объект пользователя Telegram
+    :return: None
+    """
+
     # Получаем все username из базы данных
+    Groups = create_groups_model(user_id=user_tg.id)  # Создаём таблицу для групп
+    Groups.create_table()
+
     channels = [group.username_chat_channel for group in Groups.select()]
 
     for channel in channels:
@@ -105,10 +115,14 @@ async def filter_messages(message, user_id, user):
     logger.info("✅ Сессия активна, подключение успешно!")
 
     # === Подключаемся к обязательным каналам ===
-    await join_required_channels(client)
+    await join_required_channels(client=client, user_tg=user_id)
 
     # === Загружаем список каналов из базы ===
     # Получаем список username из базы данных
+
+    Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
+    Groups.create_table()
+
     channels = [group.username_chat_channel for group in Groups.select()]
     if not channels:
         logger.warning("⚠️ Список каналов пуст. Добавьте группы в базу данных.")

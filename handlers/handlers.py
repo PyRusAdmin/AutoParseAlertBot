@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger
 
-from database.database import User
+from database.database import User, create_groups_model
 from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, \
     menu_launch_tracking_keyboard
 from locales.locales import get_text
@@ -218,7 +218,11 @@ async def handle_update_list(message: Message, state: FSMContext):
 def handle_username_group(message: Message, state: FSMContext):
     """Обработка введённого имени группы в формате @username"""
     username_group = message.text
+    user_tg = message.from_user
     logger.info(f"Пользователь ввёл имя группы: {username_group}")
+
+    Groups = create_groups_model(user_id=user_tg.id)  # Создаём таблицу для групп
+    Groups.create_table()
 
 
 def register_greeting_handler():
