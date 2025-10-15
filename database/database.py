@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from peewee import Model, SqliteDatabase, IntegerField, CharField
 
 db = SqliteDatabase('bot.db')
