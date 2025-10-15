@@ -41,16 +41,16 @@ async def process_message(client, message: Message, chat_id: int):
             logger.exception(f"❌ Ошибка при пересылке: {e}")
 
 
-async def join_required_channels(client: TelegramClient, user_tg):
+async def join_required_channels(client: TelegramClient, user_id):
     """
     Подписываемся на обязательные каналы
     :param client: Объект TelegramClient
-    :param user_tg: Объект пользователя Telegram
+    :param user_id: Объект пользователя Telegram
     :return: None
     """
 
     # Получаем все username из базы данных
-    Groups = create_groups_model(user_id=user_tg.id)  # Создаём таблицу для групп
+    Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
     Groups.create_table()
 
     channels = [group.username_chat_channel for group in Groups.select()]
@@ -115,7 +115,7 @@ async def filter_messages(message, user_id, user):
     logger.info("✅ Сессия активна, подключение успешно!")
 
     # === Подключаемся к обязательным каналам ===
-    await join_required_channels(client=client, user_tg=user_id)
+    await join_required_channels(client=client, user_id=user_id)
 
     # === Загружаем список каналов из базы ===
     # Получаем список username из базы данных

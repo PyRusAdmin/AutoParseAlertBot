@@ -54,9 +54,6 @@ def back_keyboard():
     """Клавиатура назад"""
     return ReplyKeyboardMarkup(
         keyboard=[
-            # [KeyboardButton(text="🔁 Обновить список")],
-            # [KeyboardButton(text="Подключить аккаунт")],
-            # [KeyboardButton(text="Сменить язык")],
             [KeyboardButton(text="🔙 Назад")]
         ],
         resize_keyboard=True,
