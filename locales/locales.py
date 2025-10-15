@@ -22,6 +22,15 @@ LOCALES = {
             "Добавьте хотя бы одну группу или канал для отслеживания 🔍\n"
             "через меню настроек ⚙️"
         ),
+        "update_list": (
+            "Пришлите ссылку на группу в формате @username"
+        ),
+        "account_missing": (
+            "⚠️ У вас нет подключенного аккаунта Telegram.\n\n"
+        ),
+        "account_missing_2": (
+            "⚠️ Сессия аккаунта не недействительна (session файл не валидный) — требуется повторный вход. Отправьте валидный файл сессии"
+        ),
     },
 
     "en": {
@@ -46,6 +55,15 @@ LOCALES = {
             "⚠️ The list of channels is empty.\n\n"
             "Please add at least one group or channel to track 🔍\n"
             "via the settings menu ⚙️"
+        ),
+        "update_list": (
+            "Please send a link to the group in the format @username"
+        ),
+        "account_missing": (
+            "⚠️ You do not have a connected Telegram account.\n\n"
+        ),
+        "account_missing_2": (
+            "⚠️ The session file for your Telegram account is invalid (session file is not valid) — you need to log in again. Send a valid session file"
         ),
     }
 }

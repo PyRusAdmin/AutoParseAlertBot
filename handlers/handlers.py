@@ -2,6 +2,7 @@ import os
 
 from aiogram import F
 from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger
 
@@ -10,6 +11,7 @@ from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_
     menu_launch_tracking_keyboard
 from locales.locales import get_text
 from parsing.parser import filter_messages
+from states.states import MyStates
 from system.dispatcher import router
 
 
@@ -80,16 +82,16 @@ async def handle_settings(message: Message):
     )
 
 
-@router.message(F.text == "Настройки")
-async def handle_settings(message: Message):
-    """Открытие меню настроек"""
-    user_tg = message.from_user
-    user = User.get(User.user_id == user_tg.id)
-
-    await message.answer(
-        get_text(user.language, "settings_message"),
-        reply_markup=settings_keyboard()  # клавиатура выбора языка
-    )
+# @router.message(F.text == "Настройки")
+# async def handle_settings(message: Message):
+#     """Открытие меню настроек"""
+#     user_tg = message.from_user
+#     user = User.get(User.user_id == user_tg.id)
+#
+#     await message.answer(
+#         get_text(user.language, "settings_message"),
+#         reply_markup=settings_keyboard()  # клавиатура выбора языка
+#     )
 
 
 @router.message(F.text == "🔙 Назад")
@@ -196,6 +198,29 @@ async def handle_launching_tracking(message: Message):
     )
 
 
+@router.message(F.text == "🔁 Обновить список")
+async def handle_update_list(message: Message, state: FSMContext):
+    """Запуск 🔁 Обновить список"""
+    user_tg = message.from_user
+    user = User.get(User.user_id == user_tg.id)
+
+    logger.info(
+        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню 🔁 Обновить список")
+
+    await message.answer(
+        get_text(user.language, "update_list"),
+        reply_markup=back_keyboard()  # клавиатура назад
+    )
+    await state.set_state(MyStates.waiting_username_group)
+
+
+@router.message(MyStates.waiting_username_group)
+def handle_username_group(message: Message, state: FSMContext):
+    """Обработка введённого имени группы в формате @username"""
+    username_group = message.text
+    logger.info(f"Пользователь ввёл имя группы: {username_group}")
+
+
 def register_greeting_handler():
     """Регистрация обработчиков"""
     router.message.register(command_start_handler)
@@ -205,3 +230,5 @@ def register_greeting_handler():
     router.message.register(handle_connect_account)  # обработчик для кнопки "Подключить аккаунт"
     router.message.register(handle_account_file)  # обработчик приема аккаунта в формате .session
     router.message.register(handle_launching_tracking)  # обработчик запуска отслеживания
+
+    router.message.register(handle_update_list)  # обработчик запуска 🔁 Обновить список

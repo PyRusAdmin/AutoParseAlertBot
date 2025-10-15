@@ -79,6 +79,10 @@ async def filter_messages(message, user_id, user):
 
     if not session_path:
         logger.error(f"❌ Не найден файл .session в {session_dir}")
+        await message.answer(
+            get_text(user.language, "account_missing"),
+            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+        )
         return
 
     logger.info(f"📂 Найден файл сессии: {session_path}")
@@ -92,6 +96,10 @@ async def filter_messages(message, user_id, user):
     # === Проверка авторизации ===
     if not await client.is_user_authorized():
         logger.error(f"⚠️ Сессия {session_path} недействительна — требуется повторный вход.")
+        await message.answer(
+            get_text(user.language, "account_missing_2"),
+            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+        )
         return
 
     logger.info("✅ Сессия активна, подключение успешно!")
