@@ -42,6 +42,9 @@ def settings_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🔁 Обновить список")],
+
+            [KeyboardButton(text="Ввод ключевого слова")],
+
             [KeyboardButton(text="Подключить аккаунт")],
             [KeyboardButton(text="Сменить язык")],
             [KeyboardButton(text="🔙 Назад")]

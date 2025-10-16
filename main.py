@@ -4,6 +4,8 @@ import logging
 import sys
 
 from loguru import logger
+
+from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.handlers import register_greeting_handler
 from system.dispatcher import dp, bot
 
@@ -16,6 +18,9 @@ async def main() -> None:
     :return: None
     """
     register_greeting_handler()
+
+    register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
+
     await dp.start_polling(bot)
 
 

@@ -8,8 +8,8 @@ from aiogram.types import Message
 from loguru import logger
 
 from database.database import User, create_groups_model
-from keyboards.keyboards import get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, \
-    menu_launch_tracking_keyboard
+from keyboards.keyboards import (get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard,
+                                 menu_launch_tracking_keyboard)
 from locales.locales import get_text
 from parsing.parser import filter_messages
 from states.states import MyStates
@@ -81,18 +81,6 @@ async def handle_settings(message: Message):
         get_text(user.language, "settings_message"),
         reply_markup=settings_keyboard()  # клавиатура выбора языка
     )
-
-
-# @router.message(F.text == "Настройки")
-# async def handle_settings(message: Message):
-#     """Открытие меню настроек"""
-#     user_tg = message.from_user
-#     user = User.get(User.user_id == user_tg.id)
-#
-#     await message.answer(
-#         get_text(user.language, "settings_message"),
-#         reply_markup=settings_keyboard()  # клавиатура выбора языка
-#     )
 
 
 @router.message(F.text == "🔙 Назад")
