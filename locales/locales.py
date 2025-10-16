@@ -33,6 +33,9 @@ LOCALES = {
         "account_missing_2": (
             "⚠️ Сессия аккаунта не недействительна (session файл не валидный) — требуется повторный вход. Отправьте валидный файл сессии"
         ),
+        "enter_keyword": (
+            "🔍 Введите ключевое слово / словосочетание для отслеживания"
+        ),
     },
 
     "en": {
@@ -66,6 +69,9 @@ LOCALES = {
         ),
         "account_missing_2": (
             "⚠️ The session file for your Telegram account is invalid (session file is not valid) — you need to log in again. Send a valid session file"
+        ),
+        "enter_keyword": (
+            "🔍 Enter a keyword / phrase to track"
         ),
     }
 }

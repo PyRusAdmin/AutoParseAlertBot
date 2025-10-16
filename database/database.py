@@ -17,17 +17,26 @@ class User(Model):
 
 def create_groups_model(user_id):
     class Groups(Model):
-        """
-        Модель для хранения групп / каналов для отслеживания.
-        """
-
-        username_chat_channel = CharField(unique=True, primary_key=True)  # Получаем username группы
+        """Модель для хранения чатов пользователя"""
+        username_chat_channel = CharField(unique=True)  # Поле для хранения имени канала
 
         class Meta:
-            database = db  # Указываем, что данная модель будет использовать базу данных
-            table_name = f"groups_{user_id}"  # динамическое имя таблицы
+            database = db  # Указываем, что модель использует базу данных
+            table_name = f"groups_{user_id}"  # Имя таблицы
 
-    return Groups
+    return Groups  # Возвращаем класс модели
+
+
+def create_keywords_model(user_id):
+    class Keywords(Model):
+        """Модель для хранения ключевых слов"""
+        user_keyword = CharField(unique=True)  # Поле для хранения ключевого слова
+
+        class Meta:
+            database = db  # Указываем, что модель использует базу данных
+            table_name = f"keywords_{user_id}"  # Имя таблицы
+
+    return Keywords  # Возвращаем класс модели
 
 
 # Создаём таблицы при первом запуске

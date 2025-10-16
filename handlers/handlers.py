@@ -223,7 +223,7 @@ async def handle_username_group(message: Message, state: FSMContext):
 
     # Добавляем запись в таблицу
     try:
-        group = Groups.create(username_chat_channel=username_group)
+        group = Groups.create(username_chat_channel=username_group, user_keyword=None)
         await message.answer(f"✅ Группа {username_group} добавлена в отслеживание.")
         logger.info(f"Группа {username_group} добавлена пользователем {user_tg.id}")
     except Exception as e:
@@ -232,6 +232,7 @@ async def handle_username_group(message: Message, state: FSMContext):
         else:
             await message.answer("⚠️ Ошибка при добавлении группы.")
         logger.error(f"Ошибка при добавлении группы: {e}")
+    await state.clear()
 
 
 def register_greeting_handler():

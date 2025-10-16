@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger
 
-from database.database import User, create_groups_model
+from database.database import User, create_keywords_model
 from keyboards.keyboards import (back_keyboard)
 from locales.locales import get_text
 from states.states import MyStates
@@ -19,44 +19,43 @@ async def entering_keyword(message: Message, state: FSMContext):
     user = User.get(User.user_id == user_tg.id)
 
     logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню 🔁 Обновить список")
+        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню Ввод ключевого слова")
 
     await message.answer(
-        get_text(user.language, "update_list"),
+        get_text(user.language, "enter_keyword"),
         reply_markup=back_keyboard()  # клавиатура назад
     )
-    await state.set_state(MyStates.waiting_username_group)
+    await state.set_state(MyStates.entering_keyword)
 
 
-@router.message(MyStates.waiting_username_group)
-async def handle_username_group(message: Message, state: FSMContext):
-    """Обработка введённого имени группы в формате @username"""
+@router.message(MyStates.entering_keyword)
+async def handle_keyword(message: Message, state: FSMContext):
+    """Обработка введённого ключевого слова, словосочетания"""
 
-    # username_group = message.text
-    # user_tg = message.from_user
-    username_group = message.text.strip()
+    user_keyword = message.text.strip()
     user_tg = message.from_user
-    logger.info(f"Пользователь ввёл имя группы: {username_group}")
+    logger.info(f"Пользователь ввёл ключевое слово: {user_keyword}")
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
-    Groups = create_groups_model(user_id=user_tg.id)  # Создаём таблицу для групп
+    Keywords = create_keywords_model(user_id=user_tg.id)  # Создаём таблицу для групп / ключевых слов
 
     # Проверяем, существует ли таблица (если нет — создаём)
-    if not Groups.table_exists():
-        Groups.create_table()
+    if not Keywords.table_exists():
+        Keywords.create_table()
         logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
 
     # Добавляем запись в таблицу
     try:
-        group = Groups.create(username_chat_channel=username_group)
-        await message.answer(f"✅ Группа {username_group} добавлена в отслеживание.")
-        logger.info(f"Группа {username_group} добавлена пользователем {user_tg.id}")
+        keywords = Keywords.create(user_keyword=user_keyword)
+        await message.answer(f"✅ Слово / словосочетание {user_keyword} добавлено в отслеживание.")
+        logger.info(f"Ключевое слово {user_keyword} добавлено пользователем {user_tg.id}")
     except Exception as e:
         if "UNIQUE constraint failed" in str(e):
-            await message.answer("⚠️ Такая группа уже добавлена.")
+            await message.answer("⚠️ Такое слово / словосочетание уже есть в отслеживаемых.")
         else:
-            await message.answer("⚠️ Ошибка при добавлении группы.")
-        logger.error(f"Ошибка при добавлении группы: {e}")
+            await message.answer("⚠️ Ошибка при добавлении слова / словосочетания.")
+        logger.error(f"Ошибка при добавлении ключевого слова: {e}")
+    await state.clear()  # Очищаем состояние
 
 
 def register_entering_keyword_handler():

@@ -7,7 +7,7 @@ from telethon.errors import UserAlreadyParticipantError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
-from database.database import create_groups_model
+from database.database import create_groups_model, create_keywords_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
@@ -15,14 +15,13 @@ from system.dispatcher import api_id, api_hash
 # ⚙️ Конфигурация
 CONFIG = {
     "target_channel_id": -1001918436153,
-    "keywords": ["тест"],
 }
 
 # 🧠 Простейший трекер сообщений (в памяти)
 forwarded_messages = set()
 
 
-async def process_message(client, message: Message, chat_id: int):
+async def process_message(client, message: Message, chat_id: int, user_id):
     if not message.message:
         return
 
@@ -32,9 +31,29 @@ async def process_message(client, message: Message, chat_id: int):
     if msg_key in forwarded_messages:
         return
 
-    if any(keyword in message_text for keyword in CONFIG["keywords"]):
+    # Получаем ключевые слова из базы данных для данного пользователя
+    Keywords = create_keywords_model(user_id=user_id)
+
+    # Создаем таблицу, если она не существует
+    if not Keywords.table_exists():
+        Keywords.create_table()
+        logger.info(f"Создана таблица ключевых слов для пользователя {user_id}")
+        return  # Таблица только что создана, ключевых слов еще нет
+
+    keywords = [keyword.user_keyword for keyword in Keywords.select() if keyword.user_keyword]
+
+    # Если нет ключевых слов, выходим
+    if not keywords:
+        return
+
+    # Приводим ключевые слова к нижнему регистру для поиска
+    keywords_lower = [keyword.lower() for keyword in keywords]
+
+    # Используем ключевые слова из базы данных
+    if any(keyword in message_text for keyword in keywords_lower):
         logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={message.id}")
         try:
+            # Убедитесь, что CONFIG["target_channel_id"] определен
             await client.forward_messages(CONFIG["target_channel_id"], message)
             forwarded_messages.add(msg_key)
         except Exception as e:
@@ -136,7 +155,7 @@ async def filter_messages(message, user_id, user):
     # === Обработка новых сообщений ===
     @client.on(events.NewMessage(chats=channels))
     async def handle_new_message(event: events.NewMessage.Event):
-        await process_message(client, event.message, event.chat_id)
+        await process_message(client, event.message, event.chat_id, user_id)
 
     logger.info("👂 Бот слушает новые сообщения...")
     try:
