@@ -80,6 +80,8 @@ async def join_required_channels(client: TelegramClient, user_id):
             logger.info(f"🔗 Пробую подписаться на {channel}...")
             await client(JoinChannelRequest(channel))
             logger.success(f"✅ Подписка на {channel} выполнена")
+            logger.warning("⚠️ Ожидание 5 секунд для подписки на следующую группу")
+            await asyncio.sleep(5)
         except UserAlreadyParticipantError:
             logger.info(f"ℹ️ Уже подписан на {channel}")
         except FloodWaitError as e:
@@ -88,6 +90,12 @@ async def join_required_channels(client: TelegramClient, user_id):
                 await asyncio.sleep(e.seconds)
                 await client(JoinChannelRequest(channel))
             logger.success(f"✅ Подписка на {channel} выполнена")
+        except ValueError:
+            logger.error(f"❌ Не удалось подписаться на {channel} (невалидная ссылка)")
+            # Удаляем невалидную запись из базы
+            deleted = Groups.delete().where(Groups.username_chat_channel == channel).execute()
+            if deleted:
+                logger.info(f"🗑️ Канал {channel} удалён из базы данных пользователя {user_id}")
         except Exception as e:
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
