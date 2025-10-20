@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import shutil
+
 from aiogram import F
 from aiogram.types import Message
 from loguru import logger
@@ -35,13 +35,11 @@ async def handle_connect_account(message: Message):
 async def handle_account_file(message: Message):
     """
     Приём файла аккаунта и сохранение его в папку account.
-
-    Если файл уже есть — старый перемещается в общую папку 'accounts/old'.
+    Если есть старые файлы .session или .session-journal — они удаляются.
     """
     user_tg = message.from_user
     document = message.document
-
-    user_id = message.from_user.id
+    user_id = user_tg.id
     logger.info(f"User {user_id} отправил аккаунт {document.file_name}")
 
     # Проверяем расширение файла
@@ -49,31 +47,36 @@ async def handle_account_file(message: Message):
         await message.answer("⚠️ Пожалуйста, отправьте корректный файл сессии (.session).")
         return
 
-    # Основные пути
+    # Папка пользователя
     user_folder = os.path.join(os.getcwd(), f"accounts/{user_id}")
-    old_folder = os.path.join(os.getcwd(), "accounts/old")
-
-    # Создаём папки при необходимости
     os.makedirs(user_folder, exist_ok=True)
-    os.makedirs(old_folder, exist_ok=True)
 
+    # Полный путь к новому файлу
     new_file_path = os.path.join(user_folder, document.file_name)
-    old_file_path = os.path.join(old_folder, f"{user_id}_{document.file_name}")
 
-    # Проверяем, есть ли уже старый аккаунт
-    if os.path.exists(new_file_path):
-        # Перемещаем старый в общую папку с новым именем (с user_id)
-        shutil.move(new_file_path, old_file_path)
-        logger.info(f"Старый аккаунт {document.file_name} перемещён в {old_folder}")
+    # 🧹 Удаляем старые файлы .session и .session-journal
+    deleted_files = []
+    for file_name in os.listdir(user_folder):
+        if file_name.endswith(".session") or file_name.endswith(".session-journal"):
+            full_path = os.path.join(user_folder, file_name)
+            try:
+                os.remove(full_path)
+                deleted_files.append(file_name)
+            except Exception as e:
+                logger.error(f"Ошибка при удалении {file_name}: {e}")
+
+    if deleted_files:
+        logger.info(f"Удалены старые файлы: {', '.join(deleted_files)}")
 
     # Скачиваем новый файл
     file = await message.bot.get_file(document.file_id)
     await message.bot.download_file(file.file_path, new_file_path)
 
-    await message.answer(
-        f"✅ Новый аккаунт {document.file_name} успешно загружен.\n"
-        f"📦 Старый перемещён в общую папку 'accounts/old'."
-    )
+    # Ответ пользователю
+    msg = f"✅ Аккаунт {document.file_name} успешно загружен."
+    if deleted_files:
+        msg += f"\n♻️ Старые файлы ({', '.join(deleted_files)}) были удалены. Аккаунт обновлен"
+    await message.answer(msg)
 
 
 def register_connect_account_handler():

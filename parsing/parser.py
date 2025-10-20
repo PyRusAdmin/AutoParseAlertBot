@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import os
 
 from loguru import logger
 from telethon import TelegramClient, events
-from telethon.errors import UserAlreadyParticipantError
+from telethon.errors import UserAlreadyParticipantError, FloodWaitError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
@@ -81,6 +82,12 @@ async def join_required_channels(client: TelegramClient, user_id):
             logger.success(f"✅ Подписка на {channel} выполнена")
         except UserAlreadyParticipantError:
             logger.info(f"ℹ️ Уже подписан на {channel}")
+        except FloodWaitError as e:
+            if e.seconds:
+                logger.warning(f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
+                await asyncio.sleep(e.seconds)
+                await client(JoinChannelRequest(channel))
+            logger.success(f"✅ Подписка на {channel} выполнена")
         except Exception as e:
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 
 from aiogram import F
 from aiogram.filters import CommandStart
@@ -161,9 +160,17 @@ async def handle_username_group(message: Message, state: FSMContext):
 
     # username_group = message.text
     # user_tg = message.from_user
-    username_group = message.text.strip()
+    raw_text = message.text.strip()
     user_tg = message.from_user
-    logger.info(f"Пользователь ввёл имя группы: {username_group}")
+    logger.info(f"Пользователь ввёл имя группы: {raw_text}")
+
+    # Разбиваем сообщение по пробелам и переносам строк
+    usernames = [u.strip() for u in raw_text.replace("\n", " ").split() if u.strip()]
+
+    if not usernames:
+        await message.answer("⚠️ Вы не указали ни одной группы.")
+        await state.clear()
+        return
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
     Groups = create_groups_model(user_id=user_tg.id)  # Создаём таблицу для групп
@@ -173,17 +180,32 @@ async def handle_username_group(message: Message, state: FSMContext):
         Groups.create_table()
         logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
 
-    # Добавляем запись в таблицу
-    try:
-        group = Groups.create(username_chat_channel=username_group, user_keyword=None)
-        await message.answer(f"✅ Группа {username_group} добавлена в отслеживание.")
-        logger.info(f"Группа {username_group} добавлена пользователем {user_tg.id}")
-    except Exception as e:
-        if "UNIQUE constraint failed" in str(e):
-            await message.answer("⚠️ Такая группа уже добавлена.")
-        else:
-            await message.answer("⚠️ Ошибка при добавлении группы.")
-        logger.error(f"Ошибка при добавлении группы: {e}")
+    added = []
+    skipped = []
+    errors = []
+
+    # Добавляем каждую группу по очереди
+    for username in usernames:
+        try:
+            Groups.create(username_chat_channel=username, user_keyword=None)
+            added.append(username)
+        except Exception as e:
+            if "UNIQUE constraint failed" in str(e):
+                skipped.append(username)
+            else:
+                errors.append((username, str(e)))
+                logger.error(f"Ошибка при добавлении {username}: {e}")
+
+    # Формируем итоговое сообщение
+    response = []
+    if added:
+        response.append("✅ Добавлены группы:\n" + "\n".join(added))
+    if skipped:
+        response.append("⚠️ Уже были добавлены:\n" + "\n".join(skipped))
+    if errors:
+        response.append("❌ Ошибки при добавлении:\n" + "\n".join(f"{u}: {e}" for u, e in errors))
+
+    await message.answer("\n\n".join(response))
     await state.clear()
 
 
