@@ -193,8 +193,6 @@ def register_greeting_handler():
     router.message.register(handle_language_selection)
     router.message.register(handle_settings)
     router.message.register(handle_main_menu)  # обработчик для кнопки "Назад"
-    router.message.register(handle_connect_account)  # обработчик для кнопки "Подключить аккаунт"
-    router.message.register(handle_account_file)  # обработчик приема аккаунта в формате .session
     router.message.register(handle_launching_tracking)  # обработчик запуска отслеживания
 
     router.message.register(handle_update_list)  # обработчик запуска 🔁 Обновить список

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-
+import shutil
 from aiogram import F
 from aiogram.types import Message
 from loguru import logger
@@ -33,7 +33,11 @@ async def handle_connect_account(message: Message):
 
 @router.message(F.document)
 async def handle_account_file(message: Message):
-    """Приём файла аккаунта и сохранение его в папку account"""
+    """
+    Приём файла аккаунта и сохранение его в папку account.
+
+    Если файл уже есть — старый перемещается в общую папку 'accounts/old'.
+    """
     user_tg = message.from_user
     document = message.document
 
@@ -45,18 +49,31 @@ async def handle_account_file(message: Message):
         await message.answer("⚠️ Пожалуйста, отправьте корректный файл сессии (.session).")
         return
 
-    # Создаём папку, если её нет
-    folder_path = os.path.join(os.getcwd(), f"accounts/{user_id}")
-    os.makedirs(folder_path, exist_ok=True)
+    # Основные пути
+    user_folder = os.path.join(os.getcwd(), f"accounts/{user_id}")
+    old_folder = os.path.join(os.getcwd(), "accounts/old")
 
-    # Путь сохранения
-    file_path = os.path.join(folder_path, document.file_name)
+    # Создаём папки при необходимости
+    os.makedirs(user_folder, exist_ok=True)
+    os.makedirs(old_folder, exist_ok=True)
 
-    # Скачиваем файл
+    new_file_path = os.path.join(user_folder, document.file_name)
+    old_file_path = os.path.join(old_folder, f"{user_id}_{document.file_name}")
+
+    # Проверяем, есть ли уже старый аккаунт
+    if os.path.exists(new_file_path):
+        # Перемещаем старый в общую папку с новым именем (с user_id)
+        shutil.move(new_file_path, old_file_path)
+        logger.info(f"Старый аккаунт {document.file_name} перемещён в {old_folder}")
+
+    # Скачиваем новый файл
     file = await message.bot.get_file(document.file_id)
-    await message.bot.download_file(file.file_path, file_path)
+    await message.bot.download_file(file.file_path, new_file_path)
 
-    await message.answer(f"✅ Файл {document.file_name} успешно загружен в папку account.")
+    await message.answer(
+        f"✅ Новый аккаунт {document.file_name} успешно загружен.\n"
+        f"📦 Старый перемещён в общую папку 'accounts/old'."
+    )
 
 
 def register_connect_account_handler():
