@@ -4,7 +4,7 @@ import os
 
 from loguru import logger
 from telethon import TelegramClient, events
-from telethon.errors import UserAlreadyParticipantError, FloodWaitError
+from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
@@ -96,6 +96,8 @@ async def join_required_channels(client: TelegramClient, user_id):
             deleted = Groups.delete().where(Groups.username_chat_channel == channel).execute()
             if deleted:
                 logger.info(f"🗑️ Канал {channel} удалён из базы данных пользователя {user_id}")
+        except InviteRequestSentError:
+            logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
         except Exception as e:
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
