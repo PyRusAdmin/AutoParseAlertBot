@@ -66,7 +66,7 @@ async def handle_language_selection(message: Message):
 
     user.save()
 
-    await message.answer(confirmation_text , reply_markup=main_menu_keyboard())
+    await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
 
 
 @router.message(F.text == "Настройки")

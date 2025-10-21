@@ -86,7 +86,8 @@ async def join_required_channels(client: TelegramClient, user_id):
             logger.info(f"ℹ️ Уже подписан на {channel}")
         except FloodWaitError as e:
             if e.seconds:
-                logger.warning(f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
+                logger.warning(
+                    f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
                 await asyncio.sleep(e.seconds)
                 try:
                     await client(JoinChannelRequest(channel))
