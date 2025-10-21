@@ -15,7 +15,7 @@ from system.dispatcher import router
 
 
 @router.message(CommandStart())
-async def command_start_handler(message: Message) -> None:
+async def handle_start_command(message: Message) -> None:
     user_tg = message.from_user
 
     # Создаём пользователя с language = "unset", если его нет
@@ -59,18 +59,18 @@ async def handle_language_selection(message: Message):
 
     if message.text == "🇷🇺 Русский":
         user.language = "ru"
-        confirm = get_text("ru", "lang_selected")
+        confirmation_text = get_text("ru", "lang_selected")
     elif message.text == "🇬🇧 English":
         user.language = "en"
-        confirm = get_text("en", "lang_selected")
+        confirmation_text = get_text("en", "lang_selected")
 
     user.save()
 
-    await message.answer(confirm, reply_markup=main_menu_keyboard())
+    await message.answer(confirmation_text , reply_markup=main_menu_keyboard())
 
 
 @router.message(F.text == "Настройки")
-async def handle_settings(message: Message):
+async def handle_settings_menu(message: Message):
     """Открытие меню настроек"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -82,7 +82,7 @@ async def handle_settings(message: Message):
 
 
 @router.message(F.text == "🔙 Назад")
-async def handle_main_menu(message: Message):
+async def handle_back_to_main_menu(message: Message):
     """Возврат в главное меню"""
     user_tg = message.from_user
 
@@ -117,7 +117,7 @@ async def handle_main_menu(message: Message):
 
 
 @router.message(F.text == "Запуск отслеживания")
-async def handle_launching_tracking(message: Message):
+async def handle_start_tracking(message: Message):
     """Запуск отслеживания"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -138,7 +138,7 @@ async def handle_launching_tracking(message: Message):
 
 
 @router.message(F.text == "🔁 Обновить список")
-async def handle_update_list(message: Message, state: FSMContext):
+async def handle_refresh_groups_list(message: Message, state: FSMContext):
     """Запуск 🔁 Обновить список"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -154,7 +154,7 @@ async def handle_update_list(message: Message, state: FSMContext):
 
 
 @router.message(MyStates.waiting_username_group)
-async def handle_username_group(message: Message, state: FSMContext):
+async def handle_group_usernames_input(message: Message, state: FSMContext):
     """Обработка введённого имени группы в формате @username"""
 
     # username_group = message.text
@@ -208,12 +208,11 @@ async def handle_username_group(message: Message, state: FSMContext):
     await state.clear()
 
 
-def register_greeting_handler():
+def register_greeting_handlers():
     """Регистрация обработчиков"""
-    router.message.register(command_start_handler)
+    router.message.register(handle_start_command)
     router.message.register(handle_language_selection)
-    router.message.register(handle_settings)
-    router.message.register(handle_main_menu)  # обработчик для кнопки "Назад"
-    router.message.register(handle_launching_tracking)  # обработчик запуска отслеживания
-
-    router.message.register(handle_update_list)  # обработчик запуска 🔁 Обновить список
+    router.message.register(handle_settings_menu)
+    router.message.register(handle_back_to_main_menu)  # обработчик для кнопки "Назад"
+    router.message.register(handle_start_tracking)  # обработчик запуска отслеживания
+    router.message.register(handle_refresh_groups_list)  # обработчик запуска 🔁 Обновить список
