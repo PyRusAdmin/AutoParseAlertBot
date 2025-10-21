@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from peewee import Model, SqliteDatabase, IntegerField, CharField
+from peewee import Model, CharField, AutoField
+from peewee import SqliteDatabase, IntegerField
 
 db = SqliteDatabase('bot.db')
 
@@ -30,6 +31,7 @@ def create_groups_model(user_id):
 def create_keywords_model(user_id):
     class Keywords(Model):
         """Модель для хранения ключевых слов"""
+        id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
         user_keyword = CharField(unique=True)  # Поле для хранения ключевого слова
 
         class Meta:

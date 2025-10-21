@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext

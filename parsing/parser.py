@@ -88,8 +88,11 @@ async def join_required_channels(client: TelegramClient, user_id):
             if e.seconds:
                 logger.warning(f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
                 await asyncio.sleep(e.seconds)
-                await client(JoinChannelRequest(channel))
-            logger.success(f"✅ Подписка на {channel} выполнена")
+                try:
+                    await client(JoinChannelRequest(channel))
+                    logger.success(f"✅ Подписка на {channel} выполнена")
+                except InviteRequestSentError:
+                    logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
         except ValueError:
             logger.error(f"❌ Не удалось подписаться на {channel} (невалидная ссылка)")
             # Удаляем невалидную запись из базы
