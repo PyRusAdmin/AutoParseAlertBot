@@ -41,6 +41,19 @@ def create_keywords_model(user_id):
     return Keywords  # Возвращаем класс модели
 
 
+def create_group_model(user_id):
+    class Group(Model):
+        """Модель для хранения технической группы"""
+        id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
+        user_group = CharField(unique=True)  # Поле для хранения технической группы
+
+        class Meta:
+            database = db  # Указываем, что модель использует базу данных
+            table_name = f"group_{user_id}"  # Имя таблицы
+
+    return Group  # Возвращаем класс модели
+
+
 # Создаём таблицы при первом запуске
 db.connect()
 db.create_tables([User], safe=True)

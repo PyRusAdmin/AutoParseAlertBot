@@ -36,6 +36,9 @@ LOCALES = {
         "enter_keyword": (
             "🔍 Введите ключевое слово / словосочетание для отслеживания"
         ),
+        "enter_group": (
+            "🔍 Введите ссылку на группу в формате @username в которую будет пересылаться сообщение обнаруженное по ключевому слову"
+        ),
     },
 
     "en": {
@@ -72,6 +75,9 @@ LOCALES = {
         ),
         "enter_keyword": (
             "🔍 Enter a keyword / phrase to track"
+        ),
+        "enter_group": (
+            "🔍 Enter a link to the group in the format @username to which the message will be forwarded when a keyword is detected"
         ),
     }
 }

@@ -5,6 +5,7 @@ import sys
 
 from loguru import logger
 
+from handlers.connect_group import register_entering_group_handler
 from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.handlers import register_greeting_handlers
 from system.dispatcher import dp, bot
@@ -20,6 +21,8 @@ async def main() -> None:
     register_greeting_handlers()
 
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
+
+    register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
 
     await dp.start_polling(bot)
 
