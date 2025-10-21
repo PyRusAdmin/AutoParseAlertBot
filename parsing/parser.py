@@ -8,7 +8,7 @@ from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteR
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
-from database.database import create_groups_model, create_keywords_model
+from database.database import create_groups_model, create_keywords_model, create_group_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
@@ -22,7 +22,102 @@ CONFIG = {
 forwarded_messages = set()
 
 
-async def process_message(client, message: Message, chat_id: int, user_id):
+async def get_target_group_id(client: TelegramClient, user_id: int):
+    """
+    Получает ID целевой группы для пересылки сообщений из базы данных
+    :param client: Объект TelegramClient
+    :param user_id: ID пользователя
+    :return: ID группы или None
+    """
+    GroupModel = create_group_model(user_id=user_id)
+
+    # Создаем таблицу, если не существует
+    if not GroupModel.table_exists():
+        GroupModel.create_table()
+        logger.info(f"Created target group table for user {user_id}")
+        return None
+
+    # Получаем первую группу из базы (можно модифицировать для нескольких групп)
+    groups = list(GroupModel.select())
+    if not groups:
+        logger.warning(f"No target group found for user {user_id}")
+        return None
+
+    target_username = groups[0].user_group
+    logger.info(f"Target group username: {target_username}")
+
+    try:
+        # Получаем сущность группы/канала
+        entity = await client.get_entity(target_username)
+        target_group_id = entity.id
+        logger.success(f"✅ Target group ID resolved: {target_group_id}")
+        return target_group_id
+    except Exception as e:
+        logger.error(f"❌ Failed to resolve target group {target_username}: {e}")
+        return None
+
+
+async def join_target_group(client: TelegramClient, user_id):
+    """
+    Подписывается на целевую группу для пересылки сообщений
+    :param client: Объект TelegramClient
+    :param user_id: ID пользователя
+    :return: ID группы или None
+    """
+    GroupModel = create_group_model(user_id=user_id)
+
+    if not GroupModel.table_exists():
+        GroupModel.create_table()
+        return None
+
+    groups = list(GroupModel.select())
+    if not groups:
+        return None
+
+    target_username = groups[0].user_group
+
+    try:
+        logger.info(f"🔗 Attempting to join target group {target_username}...")
+        await client(JoinChannelRequest(target_username))
+        logger.success(f"✅ Successfully joined target group {target_username}")
+
+        # Получаем ID группы
+        entity = await client.get_entity(target_username)
+        return entity.id
+
+    except UserAlreadyParticipantError:
+        logger.info(f"ℹ️ Already member of target group {target_username}")
+        entity = await client.get_entity(target_username)
+        return entity.id
+
+    except FloodWaitError as e:
+        logger.warning(f"⚠️ FloodWait error. Waiting {e.seconds} seconds...")
+        await asyncio.sleep(e.seconds)
+        try:
+            await client(JoinChannelRequest(target_username))
+            entity = await client.get_entity(target_username)
+            return entity.id
+        except Exception as retry_error:
+            logger.error(f"❌ Failed to join target group after retry: {retry_error}")
+            return None
+
+    except ValueError:
+        logger.error(f"❌ Invalid target group username: {target_username}")
+        return None
+
+    except InviteRequestSentError:
+        logger.error(f"❌ Invite request sent for {target_username}, waiting for approval")
+        return None
+
+    except Exception as e:
+        logger.exception(f"❌ Failed to join target group {target_username}: {e}")
+        return None
+
+
+async def process_message(client, message: Message, chat_id: int, user_id, target_group_id):
+    """
+    Обрабатывает сообщение и пересылает его в целевую группу при наличии ключевых слов
+    """
     if not message.message:
         return
 
@@ -55,7 +150,8 @@ async def process_message(client, message: Message, chat_id: int, user_id):
         logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={message.id}")
         try:
             # Убедитесь, что CONFIG["target_channel_id"] определен
-            await client.forward_messages(CONFIG["target_channel_id"], message)
+            # await client.forward_messages(CONFIG["target_channel_id"], message)
+            await client.forward_messages(target_group_id, message)
             forwarded_messages.add(msg_key)
         except Exception as e:
             logger.exception(f"❌ Ошибка при пересылке: {e}")
@@ -63,7 +159,7 @@ async def process_message(client, message: Message, chat_id: int, user_id):
 
 async def join_required_channels(client: TelegramClient, user_id):
     """
-    Подписываемся на обязательные каналы
+    Подписывается на обязательные каналы (источники сообщений)
     :param client: Объект TelegramClient
     :param user_id: Объект пользователя Telegram
     :return: None
@@ -154,6 +250,18 @@ async def filter_messages(message, user_id, user):
 
     logger.info("✅ Сессия активна, подключение успешно!")
 
+    # === Подключаемся к целевой группе для пересылки ===
+    target_group_id = await join_target_group(client=client, user_id=user_id)
+
+    if not target_group_id:
+        logger.error("❌ Failed to join target group or group not configured")
+        await message.answer(
+            get_text(user.language, "target_group_missing"),
+            reply_markup=menu_launch_tracking_keyboard()
+        )
+        await client.disconnect()
+        return
+
     # === Подключаемся к обязательным каналам ===
     await join_required_channels(client=client, user_id=user_id)
 
@@ -176,7 +284,7 @@ async def filter_messages(message, user_id, user):
     # === Обработка новых сообщений ===
     @client.on(events.NewMessage(chats=channels))
     async def handle_new_message(event: events.NewMessage.Event):
-        await process_message(client, event.message, event.chat_id, user_id)
+        await process_message(client, event.message, event.chat_id, user_id, target_group_id)
 
     logger.info("👂 Бот слушает новые сообщения...")
     try:
