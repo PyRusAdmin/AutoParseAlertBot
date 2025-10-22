@@ -18,6 +18,8 @@ def main_menu_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Запуск отслеживания")],
+            [KeyboardButton(text="Список ключевых слов")],
+            [KeyboardButton(text="Ссылки для отслеживания")],
             [KeyboardButton(text="Настройки")]
         ],
         resize_keyboard=True,
