@@ -4,7 +4,11 @@ LOCALES = {
     "ru": {
         "welcome_ask_language": "🌍 Привет! Пожалуйста, выберите язык интерфейса:",
 
-        "welcome_message": "🤖 Добро пожаловать в Telegram-бота для отслеживания 🔍 ключевых слов в группах и каналах!\n\nВерсия: 0.0.1\nДата выхода: 30 октября 2025 года",
+        "welcome_message": (
+            "🤖 Добро пожаловать в Telegram-бота для отслеживания 🔍 ключевых слов в группах и каналах!\n\n"
+            "Версия: 0.0.1\n"
+            "Дата выхода: 30 октября 2025 года"
+        ),
 
         "lang_selected": "✅ Отлично! Интерфейс теперь будет отображаться на выбранном языке.",
         "settings_message": (
@@ -45,7 +49,13 @@ LOCALES = {
 
     "en": {
         "welcome_ask_language": "🌍 Hi! Please choose your interface language:",
-        "welcome_message": "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!\n\nVersion: 0.0.1\nRelease date: October 30, 2025",
+
+        "welcome_message": (
+            "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!\n\n"
+            "Version: 0.0.1\n"
+            "Release date: October 30, 2025"
+        ),
+
         "lang_selected": "✅ Great! The interface will now be displayed in your selected language.",
         "settings_message": (
             "⚙️ In this menu you can:\n"
