@@ -13,48 +13,43 @@ from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
 
-# ⚙️ Конфигурация
-CONFIG = {
-    "target_channel_id": -1001918436153,
-}
-
 # 🧠 Простейший трекер сообщений (в памяти)
 forwarded_messages = set()
 
 
-async def get_target_group_id(client: TelegramClient, user_id: int):
-    """
-    Получает ID целевой группы для пересылки сообщений из базы данных
-    :param client: Объект TelegramClient
-    :param user_id: ID пользователя
-    :return: ID группы или None
-    """
-    GroupModel = create_group_model(user_id=user_id)
-
-    # Создаем таблицу, если не существует
-    if not GroupModel.table_exists():
-        GroupModel.create_table()
-        logger.info(f"Created target group table for user {user_id}")
-        return None
-
-    # Получаем первую группу из базы (можно модифицировать для нескольких групп)
-    groups = list(GroupModel.select())
-    if not groups:
-        logger.warning(f"No target group found for user {user_id}")
-        return None
-
-    target_username = groups[0].user_group
-    logger.info(f"Target group username: {target_username}")
-
-    try:
-        # Получаем сущность группы/канала
-        entity = await client.get_entity(target_username)
-        target_group_id = entity.id
-        logger.success(f"✅ Target group ID resolved: {target_group_id}")
-        return target_group_id
-    except Exception as e:
-        logger.error(f"❌ Failed to resolve target group {target_username}: {e}")
-        return None
+# async def get_target_group_id(client: TelegramClient, user_id: int):
+#     """
+#     Получает ID целевой группы для пересылки сообщений из базы данных
+#     :param client: Объект TelegramClient
+#     :param user_id: ID пользователя
+#     :return: ID группы или None
+#     """
+#     GroupModel = create_group_model(user_id=user_id)
+#
+#     # Создаем таблицу, если не существует
+#     if not GroupModel.table_exists():
+#         GroupModel.create_table()
+#         logger.info(f"Created target group table for user {user_id}")
+#         return None
+#
+#     # Получаем первую группу из базы (можно модифицировать для нескольких групп)
+#     groups = list(GroupModel.select())
+#     if not groups:
+#         logger.warning(f"No target group found for user {user_id}")
+#         return None
+#
+#     target_username = groups[0].user_group
+#     logger.info(f"Target group username: {target_username}")
+#
+#     try:
+#         # Получаем сущность группы/канала
+#         entity = await client.get_entity(target_username)
+#         target_group_id = entity.id
+#         logger.success(f"✅ Target group ID resolved: {target_group_id}")
+#         return target_group_id
+#     except Exception as e:
+#         logger.error(f"❌ Failed to resolve target group {target_username}: {e}")
+#         return None
 
 
 async def join_target_group(client: TelegramClient, user_id):
@@ -149,17 +144,16 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
     if any(keyword in message_text for keyword in keywords_lower):
         logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={message.id}")
         try:
-            # Убедитесь, что CONFIG["target_channel_id"] определен
-            # await client.forward_messages(CONFIG["target_channel_id"], message)
             await client.forward_messages(target_group_id, message)
             forwarded_messages.add(msg_key)
         except Exception as e:
             logger.exception(f"❌ Ошибка при пересылке: {e}")
 
 
-async def join_required_channels(client: TelegramClient, user_id):
+async def join_required_channels(client: TelegramClient, user_id, message):
     """
     Подписывается на обязательные каналы (источники сообщений)
+    :param message:  Объект сообщения AIOgram
     :param client: Объект TelegramClient
     :param user_id: Объект пользователя Telegram
     :return: None
@@ -176,6 +170,12 @@ async def join_required_channels(client: TelegramClient, user_id):
             logger.info(f"🔗 Пробую подписаться на {channel}...")
             await client(JoinChannelRequest(channel))
             logger.success(f"✅ Подписка на {channel} выполнена")
+
+            await message.answer(
+                f"✅ Подписка на {channel} выполнена",
+                reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+            )
+
             logger.warning("⚠️ Ожидание 5 секунд для подписки на следующую группу")
             await asyncio.sleep(5)
         except UserAlreadyParticipantError:
@@ -263,7 +263,7 @@ async def filter_messages(message, user_id, user):
         return
 
     # === Подключаемся к обязательным каналам ===
-    await join_required_channels(client=client, user_id=user_id)
+    await join_required_channels(client=client, user_id=user_id, message=message)
 
     # === Загружаем список каналов из базы ===
     # Получаем список username из базы данных
@@ -292,3 +292,43 @@ async def filter_messages(message, user_id, user):
     finally:
         await client.disconnect()
         logger.info("🛑 Бот остановлен.")
+
+
+async def stop_tracking(user_id, message, user):
+    """
+    Остановка отслеживания сообщений
+
+    :param user: Объект пользователя
+    :param message: Объект сообщения AIOgram
+    :param user_id: ID пользователя Telegram
+    """
+    user_id = str(user_id)  # <-- ✅ преобразуем в строку
+
+    # === Папка, где хранятся сессии ===
+    session_dir = os.path.join("accounts", user_id)
+    os.makedirs(session_dir, exist_ok=True)
+
+    # === Поиск любого .session файла ===
+    session_path = None
+    for file in os.listdir(session_dir):
+        if file.endswith(".session"):
+            session_path = os.path.join(session_dir, file)
+            break
+
+    if not session_path:
+        logger.error(f"❌ Не найден файл .session в {session_dir}")
+        await message.answer(
+            get_text(user.language, "account_missing"),
+            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+        )
+        return
+
+    logger.info(f"📂 Найден файл сессии: {session_path}")
+    # Telethon ожидает session_name без расширения
+    session_name = session_path.replace(".session", "")
+
+    # === Подключение клиента Telethon ===
+    client = TelegramClient(session_name, api_id, api_hash)
+
+    logger.info("🛑 Остановка отслеживания сообщений...")
+    await client.disconnect()

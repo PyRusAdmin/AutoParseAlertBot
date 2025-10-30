@@ -9,6 +9,7 @@ from handlers.connect_group import register_entering_group_handler
 from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.get_dada import register_data_export_handlers
 from handlers.handlers import register_greeting_handlers
+from handlers.stop_tracking import register_stop_tracking_handler
 from system.dispatcher import dp, bot
 
 logger.add("logs/log.log", retention="1 days", enqueue=True)  # Логирование бота
@@ -22,7 +23,9 @@ async def main() -> None:
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
     register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
-    register_data_export_handlers() # Выдача пользователю введенных им данных
+    register_data_export_handlers()  # Выдача пользователю введенных им данных
+
+    register_stop_tracking_handler()  # Остановка отслеживания ключевых слов
 
     await dp.start_polling(bot)
 
