@@ -72,7 +72,7 @@ def create_excel_file(data: list, headers: list, filename: str, sheet_name: str)
     return filepath
 
 
-@router.message(F.text == "Список ключевых слов")
+@router.message(F.text == "🔍 Список ключевых слов")
 async def get_keywords_list(message: Message):
     """
     Экспорт списка ключевых слов пользователя в Excel-файл.
@@ -135,7 +135,7 @@ async def get_keywords_list(message: Message):
         await message.answer(get_text(user.language, "export_error"))
 
 
-@router.message(F.text == "Ссылки для отслеживания")
+@router.message(F.text == "🌐 Ссылки для отслеживания")
 async def get_tracking_links_list(message: Message):
     """
     Экспорт списка ссылок (каналов/групп) для отслеживания в Excel-файл.

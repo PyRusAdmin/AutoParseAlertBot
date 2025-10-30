@@ -69,7 +69,7 @@ async def handle_language_selection(message: Message):
     await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
 
 
-@router.message(F.text == "Настройки")
+@router.message(F.text == "⚙ Настройки")
 async def handle_settings_menu(message: Message):
     """Открытие меню настроек"""
     user_tg = message.from_user
@@ -116,7 +116,7 @@ async def handle_back_to_main_menu(message: Message):
         await message.answer(text, reply_markup=main_menu_keyboard())
 
 
-@router.message(F.text == "Запуск отслеживания")
+@router.message(F.text == "⏯ Запуск отслеживания")
 async def handle_start_tracking(message: Message):
     """Запуск отслеживания"""
     user_tg = message.from_user

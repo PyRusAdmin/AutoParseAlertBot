@@ -17,10 +17,9 @@ def main_menu_keyboard():
     """Клавиатура главного меню"""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Запуск отслеживания")],
-            [KeyboardButton(text="Список ключевых слов")],
-            [KeyboardButton(text="Ссылки для отслеживания")],
-            [KeyboardButton(text="Настройки")]
+            [KeyboardButton(text="⏯ Запуск отслеживания")],
+            [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
+            [KeyboardButton(text="⚙ Настройки")]
         ],
         resize_keyboard=True,
         one_time_keyboard=False  # Отправлять сообщение только один раз
