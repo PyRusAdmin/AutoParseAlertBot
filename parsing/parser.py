@@ -111,7 +111,10 @@ async def join_target_group(client: TelegramClient, user_id):
 
 async def process_message(client, message: Message, chat_id: int, user_id, target_group_id):
     """
-    Обрабатывает сообщение и пересылает его в целевую группу при наличии ключевых слов
+    Обрабатывает сообщение и пересылает его в целевую группу с контекстом:
+    - текст сообщения
+    - название чата‑источника
+    - ссылка на исходное сообщение
     """
     if not message.message:
         return
@@ -144,10 +147,48 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
     if any(keyword in message_text for keyword in keywords_lower):
         logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={message.id}")
         try:
+            # Получаем информацию о чате-источнике
+            try:
+                chat_entity = await client.get_entity(chat_id)
+                chat_title = getattr(chat_entity, "title", None) or getattr(chat_entity, "username",
+                                                                            None) or "Неизвестно"
+            except Exception as e:
+                logger.warning(f"Не удалось получить название чата: {e}")
+                chat_title = "Неизвестно"
+
+            # Формируем ссылку на сообщение
+            # Для супергрупп/каналов (chat_id начинается с -100)
+            if str(chat_id).startswith("-100"):
+                # Удаляем префикс -100 и получаем чистый ID
+                clean_chat_id = str(chat_id)[4:]
+                message_link = f"https://t.me/c/{clean_chat_id}/{message.id}"
+            else:
+                # Для чатов с юзернеймом (если есть)
+                try:
+                    chat_entity = await client.get_entity(chat_id)
+                    if chat_entity.username:
+                        message_link = f"https://t.me/{chat_entity.username}/{message.id}"
+                    else:
+                        message_link = "Ссылка недоступна (нет юзернейма)"
+                except Exception:
+                    message_link = "Ссылка недоступна"
+
+            # Формируем итоговое сообщение с контекстом
+            context_text = (
+                f"📥 **Новое сообщение**\n\n"
+                f"**Источник:** {chat_title}\n"
+                f"**Ссылка:** {message_link}\n\n"
+                f"**Текст сообщения:**\n{message.message}"
+            )
+
+            # Отправляем в целевую группу
+            await client.send_message(target_group_id, context_text)
             await client.forward_messages(target_group_id, message)
+            logger.info(f"✅ Сообщение переслано в целевую группу (ID={target_group_id})")
+
             forwarded_messages.add(msg_key)
         except Exception as e:
-            logger.exception(f"❌ Ошибка при пересылке: {e}")
+            logger.exception(f"❌ Ошибка при отправке сообщения с контекстом: {e}")
 
 
 async def join_required_channels(client: TelegramClient, user_id, message):
