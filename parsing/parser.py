@@ -287,6 +287,10 @@ async def filter_messages(message, user_id, user):
         await process_message(client, event.message, event.chat_id, user_id, target_group_id)
 
     logger.info("👂 Бот слушает новые сообщения...")
+    await message.answer(
+        "👂 Бот слушает новые сообщения...",
+        reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+    )
     try:
         await client.run_until_disconnected()
     finally:
