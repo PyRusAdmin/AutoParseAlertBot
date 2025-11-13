@@ -21,7 +21,7 @@ async def main() -> None:
     Функция запуска бота
     :return: None
     """
-    user_input = "Привет"
+    user_input = "Лидген"
     answer = await get_groq_response(user_input)
     logger.info(f"Ответ от Groq: {answer}")
 

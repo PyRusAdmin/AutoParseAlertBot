@@ -2,14 +2,8 @@
 from groq import AsyncGroq
 from loguru import logger
 
-from core.config import selectedmodel, number_of_groups, GROQ_API_KEY
+from core.config import selectedmodel, GROQ_API_KEY
 from core.proxy_config import setup_proxy
-
-
-def promt_ai(number_of_groups, user_input) -> str:
-    """Промт для AI. Используем get_text для получения переведённого текста промта"""
-    return (f"{get_text('ai_prompt')} {number_of_groups} {get_text('ai_prompt_unique_keywords')} "
-            f"{get_text('ai_prompt_based_on')} {user_input}. {get_text('ai_prompt_return_format')}")
 
 
 async def get_groq_response(user_input):
@@ -20,15 +14,19 @@ async def get_groq_response(user_input):
     try:
         # Формируем запрос к Groq API
         chat_completion = await client_groq.chat.completions.create(
+
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+
             messages=[
                 {
                     "role": "user",
-                    "content": promt_ai(number_of_groups, user_input)
+                    "content": f"Придумай 10 вариаций названий для групп {user_input}. Ответ дать строго наименования в столбик, без перечисления и без пояснения. 1. 2. 3. не применяй"
                 }
             ],
-            model=f"{selectedmodel}",
+
         )
         # Возвращаем ответ от ИИ
+        logger.debug(f"Полный ответ от Groq: {chat_completion}")
         return chat_completion.choices[0].message.content
     except Exception as e:
         logger.exception(e)
