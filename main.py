@@ -22,7 +22,8 @@ async def main() -> None:
     :return: None
     """
     user_input = "Привет"
-    await get_groq_response(user_input)
+    answer = await get_groq_response(user_input)
+    logger.info(f"Ответ от Groq: {answer}")
 
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
