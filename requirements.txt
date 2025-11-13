@@ -6,3 +6,5 @@ logging~=0.4.9.6
 peewee~=3.18.2
 Telethon~=1.40.0
 openpyxl~=3.1.5
+groq~=0.31.0
+configparser~=7.2.0
