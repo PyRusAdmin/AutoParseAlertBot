@@ -3,7 +3,6 @@ from groq import AsyncGroq
 from loguru import logger
 
 from core.config import selectedmodel, number_of_groups, GROQ_API_KEY
-from core.localization import get_text
 from core.proxy_config import setup_proxy
 
 
