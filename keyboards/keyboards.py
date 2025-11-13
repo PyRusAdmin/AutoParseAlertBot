@@ -44,10 +44,8 @@ def settings_keyboard():
     """Клавиатура настроек"""
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="🔁 Обновить список")],
-            [KeyboardButton(text="Ввод ключевого слова")],
-            [KeyboardButton(text="Подключить аккаунт")],
-            [KeyboardButton(text="Подключить группу для сообщений")],
+            [KeyboardButton(text="🔁 Обновить список"), KeyboardButton(text="Ввод ключевого слова")],
+            [KeyboardButton(text="Подключить аккаунт"), KeyboardButton(text="Подключить группу для сообщений")],
             [KeyboardButton(text="Сменить язык")],
             [KeyboardButton(text="🔙 Назад")]
         ],
