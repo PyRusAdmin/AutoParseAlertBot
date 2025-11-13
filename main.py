@@ -5,6 +5,7 @@ import sys
 
 from loguru import logger
 
+from ai.ai import get_groq_response
 from handlers.connect_group import register_entering_group_handler
 from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.get_dada import register_data_export_handlers
@@ -20,6 +21,9 @@ async def main() -> None:
     Функция запуска бота
     :return: None
     """
+    user_input = "Привет"
+    await get_groq_response(user_input)
+
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
     register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
