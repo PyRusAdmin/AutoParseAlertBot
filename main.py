@@ -15,31 +15,43 @@ from system.dispatcher import dp, bot
 
 logger.add("logs/log.log", retention="1 days", enqueue=True)  # Логирование бота
 
+# Разбиваем ответ на строки и очищаем от номеров, точек, тире, звёздочек и прочего
+def clean_group_name(name):
+    # Удаляем начало строки: цифры, точки, тире, звёздочки, скобки, пробелы
+    import re
+    # Убираем всё, что до первого буквенного/кириллического символа
+    cleaned = re.sub(r'^[\d\.\-\*\s\)\(\[\]]+', '', name).strip()
+    return cleaned
 
 async def main() -> None:
     """
     Функция запуска бота
     :return: None
     """
-    user_input = "Лидген"
+    user_input = "Парсинг бот"
     answer = await get_groq_response(user_input)
     logger.info(f"Ответ от Groq: {answer}")
 
     # Разбиваем ответ на строки
-    group_names = [line.strip() for line in answer.splitlines() if line.strip()]  # ✅ Заменено на 'answer'
-
+    group_names = [clean_group_name(line) for line in answer.splitlines() if line.strip()]
+    # Убираем пустые и слишком короткие
+    group_names = [name for name in group_names if len(name) > 2]
     logger.info(f"Получено {len(group_names)} названий: {group_names}")
 
-    # Ищем в Telegram
-    results = await search_groups_in_telegram(group_names)
+    all_results = []
+    for group_name in group_names:
+        # Ищем в Telegram
+        results = await search_groups_in_telegram([group_name])  # ✅ Передаём список
+        logger.info(f"Найдено {len(results)} групп для '{group_name}':")
+        all_results.extend(results)
 
-    # Выводим результаты
-    if results:
-        logger.info("\n🔍 Найденные группы:")
-        for group in results:
-            logger.info(f"✅ {group['name']} | {group['username']} | {group['link']} | Участников: {group['participants']}")
-    else:
-        logger.info("❌ Ничего не найдено.")
+        # Выводим результаты
+        if results:
+            logger.info("\n🔍 Найденные группы:")
+            for group in results:
+                logger.info(f"✅ {group['name']} | {group['username']} | {group['link']} | Участников: {group['participants']}")
+        else:
+            logger.info("❌ Ничего не найдено.")
 
 
     register_greeting_handlers()

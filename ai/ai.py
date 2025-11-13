@@ -3,8 +3,8 @@ import asyncio
 
 from groq import AsyncGroq
 from loguru import logger
-from telethon import TelegramClient
-from telethon.errors import UsernameNotOccupiedError, FloodWaitError
+from telethon.errors import FloodWaitError, UsernameNotOccupiedError
+from telethon.sync import TelegramClient, functions
 from telethon.tl.types import Channel
 
 from core.config import GROQ_API_KEY
@@ -15,12 +15,10 @@ from system.dispatcher import api_id, api_hash
 async def get_groq_response(user_input):
     """Получение ответа от Groq API."""
     setup_proxy()  # Установка прокси
-    # Инициализация Groq клиента
     client_groq = AsyncGroq(api_key=GROQ_API_KEY)
     try:
-        # Формируем запрос к Groq API
         chat_completion = await client_groq.chat.completions.create(
-            model="llama-3.1-70b-versatile",  # ✅ Заменено на подходящую модель
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[
                 {
                     "role": "user",
@@ -28,12 +26,11 @@ async def get_groq_response(user_input):
                 }
             ],
         )
-        # Возвращаем ответ от ИИ
         logger.debug(f"Полный ответ от Groq: {chat_completion}")
         return chat_completion.choices[0].message.content
     except Exception as e:
         logger.exception(e)
-        return ""  # ✅ Добавлен возврат пустой строки в случае ошибки
+        return ""
 
 
 async def search_groups_in_telegram(group_names):
@@ -44,7 +41,6 @@ async def search_groups_in_telegram(group_names):
     client = TelegramClient('accounts/535185511/998339414118', api_id, api_hash)
     await client.connect()
 
-    # ✅ Проверяем, нужно ли логиниться (если сессия не валидна)
     if not await client.is_user_authorized():
         logger.error("Клиент не авторизован. Запустите сначала авторизацию.")
         await client.disconnect()
@@ -61,30 +57,19 @@ async def search_groups_in_telegram(group_names):
         logger.info(f"Ищу группу: '{name}'")
 
         try:
-            # ✅ Поиск по названию
-            result = await client.search_messages(
-                None,  # Все чаты
-                limit=5,
-                filter='channels',
-                search=name.strip()
-            )
+            # ✅ Используем SearchRequest для поиска по названию
+            search_results = await client(functions.contacts.SearchRequest(q=name, limit=10))
 
-            # Извлекаем уникальные каналы
-            channels = set()
-            for msg in result:
-                if hasattr(msg.peer_id, 'channel_id'):
-                    entity = await client.get_entity(msg.peer_id)
-                    if isinstance(entity, Channel) and entity.title:
-                        channels.add(entity)
-
-            # Добавляем найденные каналы
-            for channel in channels:
-                found_groups.append({
-                    'name': channel.title,
-                    'username': f"@{channel.username}" if channel.username else "нет юзернейма",
-                    'link': f"https://t.me/{channel.username}" if channel.username else "недоступна",
-                    'participants': channel.participants_count if hasattr(channel, 'participants_count') else 'неизвестно'
-                })
+            # Обрабатываем результаты
+            for chat in search_results.chats:
+                if isinstance(chat, Channel) and chat.title:
+                    found_groups.append({
+                        'name': chat.title,
+                        'username': f"@{chat.username}" if chat.username else "нет юзернейма",
+                        'link': f"https://t.me/{chat.username}" if chat.username else "недоступна",
+                        'participants': chat.participants_count if hasattr(chat, 'participants_count') else 'неизвестно',
+                        'id': chat.id
+                    })
 
         except UsernameNotOccupiedError:
             logger.warning(f"Группа '{name}' не найдена.")
