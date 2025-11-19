@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
+version = "0.0.2"
+
 LOCALES = {
     "ru": {
         "welcome_ask_language": "🌍 Привет! Пожалуйста, выберите язык интерфейса:",
 
         "welcome_message": (
             "🤖 Добро пожаловать в Telegram-бота для отслеживания 🔍 ключевых слов в группах и каналах!\n\n"
-            "Версия: 0.0.1\n"
+            f"Версия: {version}\n"
             "Дата выхода: 30 октября 2025 года"
         ),
 
@@ -54,7 +56,7 @@ LOCALES = {
 
         "welcome_message": (
             "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!\n\n"
-            "Version: 0.0.1\n"
+            f"Version: {version}\n"
             "Release date: October 30, 2025"
         ),
 
