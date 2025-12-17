@@ -6,7 +6,7 @@ from loguru import logger
 from telethon.errors import FloodWaitError, UsernameNotOccupiedError
 from telethon.sync import TelegramClient, functions
 from telethon.tl.types import Channel
-
+import groq
 from core.config import GROQ_API_KEY
 from core.proxy_config import setup_proxy
 from system.dispatcher import api_id, api_hash
@@ -28,6 +28,12 @@ async def get_groq_response(user_input):
         )
         logger.debug(f"Полный ответ от Groq: {chat_completion}")
         return chat_completion.choices[0].message.content
+    except groq.AuthenticationError:
+        if GROQ_API_KEY:
+            logger.error("Ошибка аутентификации с ключом Groq API.")
+        else:
+            logger.error("API ключ Groq API не установлен.")
+
     except Exception as e:
         logger.exception(e)
         return ""
