@@ -10,6 +10,7 @@ from handlers.connect_group import register_entering_group_handler
 from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.get_dada import register_data_export_handlers
 from handlers.handlers import register_greeting_handlers
+from handlers.pars_ai import register_handlers_pars_ai
 from handlers.stop_tracking import register_stop_tracking_handler
 from system.dispatcher import dp, bot
 
@@ -60,6 +61,8 @@ async def main() -> None:
     register_data_export_handlers()  # Выдача пользователю введенных им данных
 
     register_stop_tracking_handler()  # Остановка отслеживания ключевых слов
+
+    register_handlers_pars_ai()
 
     await dp.start_polling(bot)
 
