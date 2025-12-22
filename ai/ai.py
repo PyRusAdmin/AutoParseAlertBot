@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import asyncio
 
+import groq
 from groq import AsyncGroq
 from loguru import logger
 from telethon.errors import FloodWaitError, UsernameNotOccupiedError
 from telethon.sync import TelegramClient, functions
 from telethon.tl.types import Channel
-import groq
+
 from core.config import GROQ_API_KEY
 from core.proxy_config import setup_proxy
 from system.dispatcher import api_id, api_hash
@@ -73,7 +74,8 @@ async def search_groups_in_telegram(group_names):
                         'name': chat.title,
                         'username': f"@{chat.username}" if chat.username else "нет юзернейма",
                         'link': f"https://t.me/{chat.username}" if chat.username else "недоступна",
-                        'participants': chat.participants_count if hasattr(chat, 'participants_count') else 'неизвестно',
+                        'participants': chat.participants_count if hasattr(chat,
+                                                                           'participants_count') else 'неизвестно',
                         'id': chat.id
                     })
 
