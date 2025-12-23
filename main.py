@@ -5,6 +5,7 @@ import sys
 
 from loguru import logger
 
+from database.database import init_db
 from handlers.connect_group import register_entering_group_handler
 from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.get_dada import register_data_export_handlers
@@ -21,6 +22,7 @@ async def main() -> None:
     Функция запуска бота
     :return: None
     """
+    init_db()
 
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов

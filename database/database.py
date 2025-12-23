@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from peewee import Model, CharField, AutoField
-from peewee import SqliteDatabase, IntegerField
+from datetime import datetime
+
+from peewee import *
 
 db = SqliteDatabase('bot.db')
 
@@ -54,6 +55,29 @@ def create_group_model(user_id):
     return Group  # Возвращаем класс модели
 
 
+class BaseModel(Model):
+    class Meta:
+        database = db
+
+
+class TelegramGroup(BaseModel):
+    """Модель для хранения найденных групп/каналов"""
+    group_hash = CharField(unique=True, index=True)  # ID группы или хеш username
+    name = CharField()  # Название группы
+    username = CharField(null=True)  # @username если есть
+    description = TextField(null=True)  # Описание
+    participants = IntegerField(default=0)  # Количество участников
+    category = CharField(null=True)  # Категория (определяется AI)
+    group_type = CharField()  # 'group', 'channel', 'link'
+    link = CharField()  # Ссылка на группу
+    date_added = DateTimeField(default=datetime.now)  # Дата добавления
+
+    class Meta:
+        table_name = 'telegram_groups'
+
+
 # Создаём таблицы при первом запуске
-db.connect()
-db.create_tables([User], safe=True)
+def init_db():
+    db.connect()
+    db.create_tables([TelegramGroup], safe=True)
+    db.close()
