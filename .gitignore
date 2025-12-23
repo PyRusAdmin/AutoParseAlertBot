@@ -1,4 +1,5 @@
-!/.env
-!/.idea/
-!/accounts/
-!/user_data/config.ini
+/.env
+/.idea/
+/accounts/
+/user_data/config.ini
+/.gigaide/

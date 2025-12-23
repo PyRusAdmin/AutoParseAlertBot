@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
-from dotenv import load_dotenv
+
 from aiogram import Bot, Dispatcher, Router
 from aiogram.fsm.storage.memory import MemoryStorage
+from dotenv import load_dotenv
 
 # Загружаем переменные окружения
 load_dotenv()
