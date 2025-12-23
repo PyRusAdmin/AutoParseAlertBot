@@ -46,6 +46,6 @@ HASH=_____
 Заполните данные в файле .env
 
 где:
-BOT_TOKEN - токен бота
-ID - id приложения Telegram
-HASH - hash приложения Telegram
+- BOT_TOKEN - токен бота
+- ID - id приложения Telegram
+- HASH - hash приложения Telegram
