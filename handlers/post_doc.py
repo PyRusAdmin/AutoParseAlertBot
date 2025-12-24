@@ -1,46 +1,33 @@
 # -*- coding: utf-8 -*-
 
 from aiogram import F
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, BufferedInputFile
-from loguru import logger
+from aiogram.types import Message, FSInputFile
 
 from system.dispatcher import router
 
 
 @router.message(F.text == "Инструкция по использованию")
-async def handle_post_doc_user(message: Message, state: FSMContext):
-    """Отправка пользователю документации по использованию проекта"""
-    await state.clear()
-
-    id_user = message.from_user.id
-    logger.info(f"Пользователь с id {id_user} запросил документацию")
+async def send_instruction(message: Message):
+    """Отправляет пользователю файл с инструкцией"""
 
     file_path = "doc/doc.md"
-    filename = "doc.md"
 
     try:
-        # Читаем содержимое файла
-        with open(file_path, "r", encoding="utf-8") as file:
-            md_content = file.read()
+        # Отправляем файл напрямую из файловой системы
+        document = FSInputFile(file_path)
 
-        # Создаём BufferedInputFile из текста
-        md_file = BufferedInputFile(
-            md_content.encode("utf-8"),
-            filename=filename
-        )
-
-        # Отправляем файл
         await message.answer_document(
-            document=md_file,
-            caption="Инструкция по использованию бота",
-            parse_mode="HTML"
+            document=document,
+            caption="Вот инструкция по использованию бота"
         )
 
     except FileNotFoundError:
-        logger.error(f"Файл {file_path} не найден")
-        await message.answer("К сожалению, инструкция сейчас недоступна. Попробуйте позже.")
+        await message.answer("Файл инструкции не найден на сервере.")
 
     except Exception as e:
-        logger.error(f"Ошибка при отправке файла: {e}")
-        await message.answer("Произошла ошибка при отправке инструкции.")
+        await message.answer(f"Произошла ошибка при отправке файла: {e}")
+
+
+def register_handlers_post_doc():
+    """Регистрирует обработчики"""
+    router.message.register(send_instruction)
