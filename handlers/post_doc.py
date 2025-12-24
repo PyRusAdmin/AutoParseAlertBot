@@ -18,7 +18,7 @@ async def send_instruction(message: Message):
 
         await message.answer_document(
             document=document,
-            caption="Вот инструкция по использованию бота"
+            caption="Вот инструкция по использованию бота, так же можно прочитать https://gitverse.ru/pyadminru/AutoParseAlertBot/content/master/doc/doc.md"
         )
 
     except FileNotFoundError:
