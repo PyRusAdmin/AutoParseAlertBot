@@ -23,6 +23,7 @@ def main_menu_keyboard():
             [KeyboardButton(text="⏯ Запуск отслеживания")],
             [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
             [KeyboardButton(text="Поиск групп / каналов")],
+            [KeyboardButton(text="Инструкция по использованию")],
             [KeyboardButton(text="⚙ Настройки")]
         ],
         resize_keyboard=True,
