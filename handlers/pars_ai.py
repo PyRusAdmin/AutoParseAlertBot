@@ -168,7 +168,7 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
     """Обработка введенного ключевого слова для поиска групп и каналов"""
 
     telegram_user = message.from_user
-    user = User.get(User.user_id == telegram_user.id)
+    # user = User.get(User.user_id == telegram_user.id)
 
     user_input = message.text.strip()
 
