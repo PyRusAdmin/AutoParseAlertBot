@@ -17,41 +17,6 @@ from system.dispatcher import api_id, api_hash
 forwarded_messages = set()
 
 
-# async def get_target_group_id(client: TelegramClient, user_id: int):
-#     """
-#     Получает ID целевой группы для пересылки сообщений из базы данных
-#     :param client: Объект TelegramClient
-#     :param user_id: ID пользователя
-#     :return: ID группы или None
-#     """
-#     GroupModel = create_group_model(user_id=user_id)
-#
-#     # Создаем таблицу, если не существует
-#     if not GroupModel.table_exists():
-#         GroupModel.create_table()
-#         logger.info(f"Created target group table for user {user_id}")
-#         return None
-#
-#     # Получаем первую группу из базы (можно модифицировать для нескольких групп)
-#     groups = list(GroupModel.select())
-#     if not groups:
-#         logger.warning(f"No target group found for user {user_id}")
-#         return None
-#
-#     target_username = groups[0].user_group
-#     logger.info(f"Target group username: {target_username}")
-#
-#     try:
-#         # Получаем сущность группы/канала
-#         entity = await client.get_entity(target_username)
-#         target_group_id = entity.id
-#         logger.success(f"✅ Target group ID resolved: {target_group_id}")
-#         return target_group_id
-#     except Exception as e:
-#         logger.error(f"❌ Failed to resolve target group {target_username}: {e}")
-#         return None
-
-
 async def join_target_group(client: TelegramClient, user_id):
     """
     Подписывается на целевую группу для пересылки сообщений

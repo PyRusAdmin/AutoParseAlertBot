@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from aiogram import F
 from aiogram.types import Message, FSInputFile
 
