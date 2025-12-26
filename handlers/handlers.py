@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import os
+
 from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
 from loguru import logger
+from telethon.tl.types import Message
 
 from database.database import User, create_groups_model
 from keyboards.keyboards import (get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard,
@@ -118,22 +120,48 @@ async def handle_back_to_main_menu(message: Message):
 
 @router.message(F.text == "⏯ Запуск отслеживания")
 async def handle_start_tracking(message: Message):
-    """Запуск отслеживания"""
-    user_tg = message.from_user
+    """
+    Запуск отслеживания ключевых слов в группах Telegram
+
+    Функция проверяет папку с аккаунтами на наличие подключенных аккаунтов
+    """
+    user_tg = message.from_user  # Получаем данные пользователя из Telegram
+    user_id = user_tg.id  # Получаем ID пользователя
     user = User.get(User.user_id == user_tg.id)
 
     logger.info(
         f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню запуска парсинга.")
 
+    # === Папка, где хранятся сессии ===
+    session_dir = os.path.join("accounts", str(user_id))
+    os.makedirs(session_dir, exist_ok=True)
+
+    # === Поиск любого .session файла ===
+    session_path = None
+    for file in os.listdir(session_dir):
+        if file.endswith(".session"):
+            session_path = os.path.join(session_dir, file)
+            break
+
+    if not session_path:
+        logger.error(f"❌ Не найден файл .session в {session_dir}")
+        await message.answer(
+            get_text(user.language, "account_missing"),
+            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+        )
+        return
+
+    # Если у пользователя подключенный аккаунт
     await message.answer(
         get_text(user.language, "launching_tracking"),
         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
     )
 
     await  filter_messages(
-        message=message,
-        user_id=user_tg.id,
-        user=user
+        message=message,  # сообщение
+        user_id=user_id,  # ID пользователя
+        user=user,  # модель пользователя
+        session_path=session_path  # путь к сессии
     )
 
 

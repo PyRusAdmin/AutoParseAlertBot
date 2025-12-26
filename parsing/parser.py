@@ -208,34 +208,16 @@ async def join_required_channels(client: TelegramClient, user_id, message):
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
 
-async def filter_messages(message, user_id, user):
+async def filter_messages(message, user_id, user, session_path):
     """
     Запускает поиск сообщений по ключевым словам.
     :param message: Объект сообщения AIOgram
     :param user_id: ID пользователя Telegram, используется для поиска папки accounts/<user_id>/
     :param user: Объект пользователя
+    :param session_path: Путь к файлу сессии
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
     logger.info(f"🚀 Запуск бота для user_id={user_id}...")
-
-    # === Папка, где хранятся сессии ===
-    session_dir = os.path.join("accounts", user_id)
-    os.makedirs(session_dir, exist_ok=True)
-
-    # === Поиск любого .session файла ===
-    session_path = None
-    for file in os.listdir(session_dir):
-        if file.endswith(".session"):
-            session_path = os.path.join(session_dir, file)
-            break
-
-    if not session_path:
-        logger.error(f"❌ Не найден файл .session в {session_dir}")
-        await message.answer(
-            get_text(user.language, "account_missing"),
-            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-        )
-        return
 
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
