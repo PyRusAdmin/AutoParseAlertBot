@@ -45,7 +45,7 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
 
     # Добавляем запись в таблицу
     try:
-        group_record = GroupModel.create(user_group=group_username)
+        # group_record = GroupModel.create(user_group=group_username)
         await message.answer(f"✅ Группа {group_username} добавлена для отправки сообщений.")
         logger.info(f"username {group_username} добавлено пользователем {user_tg.id}")
     except Exception as e:
