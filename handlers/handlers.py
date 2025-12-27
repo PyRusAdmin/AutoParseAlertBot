@@ -8,8 +8,9 @@ from loguru import logger
 from telethon.tl.types import Message
 
 from database.database import User, create_groups_model
-from keyboards.keyboards import (get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard,
-                                 menu_launch_tracking_keyboard)
+from keyboards.keyboards import (
+    get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
+)
 from locales.locales import get_text
 from parsing.parser import filter_messages
 from states.states import MyStates
