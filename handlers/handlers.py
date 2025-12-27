@@ -117,7 +117,23 @@ async def handle_language_selection(message: Message, state: FSMContext):
 
 @router.message(F.text == "⚙ Настройки")
 async def handle_settings_menu(message: Message, state: FSMContext):
-    """Открытие меню настроек"""
+    """
+    Обработчик команды "⚙ Настройки".
+
+    Отображает меню настроек с возможностью смены языка интерфейса.
+    Не требует предварительной настройки аккаунта.
+
+    Args:
+        message (Message): Входящее сообщение от пользователя.
+        state (FSMContext): Контекст машины состояний, не используется напрямую.
+
+    Returns:
+        None
+
+    Notes:
+        - Текст меню локализован в зависимости от языка пользователя.
+        - Клавиатура включает кнопку для смены языка.
+    """
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 
