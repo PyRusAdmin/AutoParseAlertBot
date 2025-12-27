@@ -39,7 +39,7 @@ async def main() -> None:
     Returns:
         None
     """
-    init_db() 
+    init_db()  # Инициализация базы данных (создание таблиц при необходимости)
 
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов

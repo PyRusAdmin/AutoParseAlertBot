@@ -300,6 +300,8 @@ async def filter_messages(message, user_id, user, session_path):
 
     # === Подключение клиента Telethon ===
     client = TelegramClient(session_name, api_id, api_hash)
+    if client.is_connected():
+        await client.disconnect()
     await client.connect()
 
     # === Проверка авторизации ===

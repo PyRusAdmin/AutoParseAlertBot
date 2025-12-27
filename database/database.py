@@ -173,7 +173,16 @@ def init_db():
     Note:
         Используется параметр `safe=True` для безопасного создания таблиц
         (не вызывает ошибку, если таблица уже существует).
+        Перед подключением проверяет, не открыто ли уже соединение.
     """
+    if not db.is_closed():
+        db.close()  # Закрываем соединение, если оно уже открыто
+
     db.connect()
     db.create_tables([TelegramGroup, User], safe=True)
     db.close()
+
+
+def getting_number_records_database():
+    """Получает количество записей в базе данных"""
+    return TelegramGroup.select().count()
