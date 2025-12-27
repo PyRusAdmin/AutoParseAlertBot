@@ -12,14 +12,14 @@ class BaseModel(Model):
 
 
 class User(BaseModel):
+    """
+    Таблица с именем user
+    """
     user_id = IntegerField(unique=True)
     username = CharField(null=True)
     first_name = CharField(null=True)
     last_name = CharField(null=True)
     language = CharField(default="ru")  # "ru" или "en"
-
-    class Meta:
-        database = db
 
 
 def create_groups_model(user_id):
@@ -41,11 +41,10 @@ def create_groups_model(user_id):
             Уникальное имя чата (канала) в формате @username или название.
     """
 
-    class Groups(Model):
+    class Groups(BaseModel):
         username_chat_channel = CharField(unique=True)  # Поле для хранения имени канала
 
         class Meta:
-            database = db  # Указываем, что модель использует базу данных
             table_name = f"groups_{user_id}"  # Имя таблицы
 
     return Groups  # Возвращаем класс модели
