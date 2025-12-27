@@ -12,7 +12,27 @@ from system.dispatcher import router
 
 @router.message(F.text == "Остановить отслеживание")
 async def handle_stop_tracking(message: Message, state: FSMContext):
-    """Останавливает отслеживание групп на наличие ключевых слов"""
+    """
+    Обработчик команды "Остановить отслеживание".
+
+    Очищает состояние FSM, получает данные пользователя и вызывает функцию `stop_tracking`
+    для прекращения фонового парсинга сообщений в отслеживаемых группах.
+    После остановки отправляет подтверждение пользователю.
+
+    Args:
+        message (Message): Входящее сообщение от пользователя.
+        state (FSMContext): Контекст машины состояний, сбрасывается перед остановкой.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: Передаётся в `stop_tracking`, где обрабатывается.
+
+    Notes:
+        - Команда доступна только во время активного отслеживания.
+        - Использует глобальный механизм управления задачами в `parsing/parser.py`.
+    """
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -29,5 +49,15 @@ async def handle_stop_tracking(message: Message, state: FSMContext):
 
 
 def register_stop_tracking_handler():
-    """Регистрация обработчиков"""
+    """
+    Регистрирует обработчик для остановки отслеживания.
+
+    Добавляет в маршрутизатор (router) обработчик команды "Остановить отслеживание".
+    Позволяет пользователю вручную завершить процесс парсинга сообщений.
+
+    Вызывается при инициализации бота в `main.py`.
+
+    Returns:
+        None
+    """
     router.message.register(handle_stop_tracking)  # Регистрация обработчика
