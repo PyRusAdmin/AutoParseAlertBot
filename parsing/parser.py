@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
-
+from aiogram.types import Message
 from loguru import logger
 from telethon import TelegramClient, events
 from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
@@ -316,12 +316,14 @@ async def filter_messages(message, user_id, user, session_path):
     logger.info("✅ Сессия активна, подключение успешно!")
 
     # === Подключаемся к целевой группе для пересылки ===
+    logger.info("Подключаемся к целевой группе для пересылки")
     target_group_id = await join_target_group(client=client, user_id=user_id)
 
     if not target_group_id:
-        logger.error("❌ Failed to join target group or group not configured")
+        text_error = "❌ Аккаунту не удалось присоединиться к целевой группе (группам), проверьте список сформированных групп"
+        logger.error(text_error)
         await message.answer(
-            get_text(user.language, "target_group_missing"),
+            text=text_error,
             reply_markup=menu_launch_tracking_keyboard()
         )
         await client.disconnect()

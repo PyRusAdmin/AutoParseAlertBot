@@ -12,6 +12,11 @@ class BaseModel(Model):
         database = db
 
 
+class Group(BaseModel):
+    id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
+    user_group = CharField(unique=True)  # Поле для хранения технической группы
+
+
 class User(BaseModel):
     """
     Модель для хранения основных данных пользователя Telegram.
@@ -187,6 +192,28 @@ def init_db():
 def getting_number_records_database():
     """Получает количество записей в базе данных о найденных группах пользователями"""
     return TelegramGroup.select().count()
+
+
+def getting_group(user_id: int) -> int:
+    """
+    Получает количество технических групп (куда пересылаются уведомления),
+    подключённых конкретным пользователем.
+
+    Ищет записи в таблице `group_{user_id}`.
+
+    Args:
+        user_id (int): ID пользователя Telegram.
+
+    Returns:
+        int: Количество записей (обычно 0 или 1, так как группа одна).
+    """
+    GroupModel = create_group_model(user_id)
+
+    # Убедимся, что таблица существует, иначе count() вызовет ошибку
+    if not GroupModel.table_exists():
+        return 0
+
+    return GroupModel.select().count()
 
 
 def count_session_files(user_id: int) -> int:

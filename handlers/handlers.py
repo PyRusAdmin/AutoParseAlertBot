@@ -7,7 +7,8 @@ from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.tl.types import Message
 
-from database.database import User, create_groups_model, getting_number_records_database, count_session_files
+from database.database import User, create_groups_model, getting_number_records_database, count_session_files, \
+    getting_group
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
 )
@@ -76,7 +77,8 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
         version = "0.0.4"
         groups_count = getting_number_records_database()
         count = count_session_files(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
-        text = template.format(version=version, groups_count=groups_count, count=count)
+        group_count = getting_group(user_id=user_tg.id)  # Получает количество подключенных технических групп.
+        text = template.format(version=version, groups_count=groups_count, count=count, group_count=group_count)
 
         await message.answer(text, reply_markup=main_menu_keyboard())
 
@@ -140,6 +142,7 @@ async def handle_settings_menu(message: Message, state: FSMContext):
         - Текст меню локализован в зависимости от языка пользователя.
         - Клавиатура включает кнопку для смены языка.
     """
+
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 
