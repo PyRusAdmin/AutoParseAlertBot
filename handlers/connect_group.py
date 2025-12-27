@@ -13,7 +13,22 @@ from system.dispatcher import router
 
 @router.message(F.text == "Подключить группу для сообщений")
 async def handle_connect_message_group(message: Message, state: FSMContext):
-    """Ввод username группы для сообщений"""
+    """
+    Обработчик команды "Подключить группу для сообщений".
+
+    Очищает текущее состояние FSM, получает данные пользователя из базы,
+    логирует переход в меню и отправляет приглашение ввести username
+    группы или канала, куда бот будет пересылать сообщения с ключевыми словами.
+
+    Переводит пользователя в состояние ожидания ввода (MyStates.entering_group).
+
+    Args:
+        message (Message): Объект входящего сообщения от пользователя.
+        state (FSMContext): Контекст машины состояний, используется для сброса и установки состояния.
+
+    Returns:
+        None
+    """
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -30,7 +45,29 @@ async def handle_connect_message_group(message: Message, state: FSMContext):
 
 @router.message(MyStates.entering_group)
 async def handle_group_username_submission(message: Message, state: FSMContext):
-    """Обработка введённого ключевого слова, словосочетания"""
+    """
+    Обработчик ввода username технической группы пользователем.
+
+    Получает username из текста сообщения, создаёт или получает модель базы данных
+    для хранения технической группы пользователя, создаёт таблицу при необходимости,
+    и сохраняет введённый username. Уведомляет пользователя об успешном добавлении
+    или ошибке (например, дубликат).
+
+    Args:
+        message (Message): Объект входящего сообщения с username группы.
+        state (FSMContext): Контекст машины состояний, используется для сброса состояния после обработки.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: При ошибке добавления в БД (например, нарушение уникальности).
+            Обрабатывается локально с отправкой пользователю соответствующего сообщения.
+
+    Notes:
+        - Используется динамическая модель `create_group_model` для изоляции данных пользователей.
+        - После успешной или неуспешной обработки состояние FSM очищается.
+    """
 
     group_username = message.text.strip()
     user_tg = message.from_user
@@ -59,5 +96,18 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
 
 
 def register_entering_group_handler():
-    """Регистрация обработчиков"""
+    """
+    Регистрирует обработчики для подключения технической группы.
+
+    Добавляет в маршрутизатор (router) два обработчика:
+        1. handle_connect_message_group — реагирует на нажатие кнопки "Подключить группу для сообщений".
+        2. handle_group_username_submission — обрабатывает ввод username группы в состоянии MyStates.entering_group.
+
+    Эти обработчики позволяют пользователю указать чат, куда бот будет пересылать
+    найденные сообщения, содержащие ключевые слова.
+
+    Returns:
+        None
+    """
     router.message.register(handle_connect_message_group)  # Регистрация обработчика
+    router.message.register(handle_group_username_submission)  # Регистрация обработчика ввода username
