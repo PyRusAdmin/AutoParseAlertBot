@@ -113,7 +113,27 @@ class BaseModel(Model):
 
 
 class TelegramGroup(BaseModel):
-    """Модель для хранения найденных групп/каналов"""
+    """
+    Модель для хранения данных о найденных Telegram-группах и каналах.
+
+    Используется для централизованного хранения информации о группах,
+    обнаруженных с помощью AI-поиска (через Groq). Позволяет избежать
+    повторного поиска и дублирования. Таблица общая для всех пользователей.
+
+    Attributes:
+        group_hash (CharField): Уникальный хеш или ID группы, используется как ключ.
+        name (CharField): Отображаемое название группы или канала.
+        username (CharField, optional): Юзернейм (@username), может отсутствовать.
+        description (TextField, optional): Описание группы из Telegram.
+        participants (IntegerField): Количество участников, по умолчанию 0.
+        category (CharField, optional): Категория, определённая ИИ (например, 'технологии').
+        group_type (CharField): Тип чата — 'group', 'channel' или 'link'.
+        link (CharField): Прямая ссылка на чат (https://t.me/...).
+        date_added (DateTimeField): Дата и время добавления записи, по умолчанию — текущее время.
+
+    Meta:
+        table_name (str): Имя таблицы в базе данных — 'telegram_groups'.
+    """
     group_hash = CharField(unique=True, index=True)  # ID группы или хеш username
     name = CharField()  # Название группы
     username = CharField(null=True)  # @username если есть
@@ -130,6 +150,18 @@ class TelegramGroup(BaseModel):
 
 # Создаём таблицы при первом запуске
 def init_db():
+    """
+    Инициализирует базу данных приложения.
+
+    Подключается к SQLite-базе данных ('bot.db'), создаёт таблицу `telegram_groups`,
+    если она ещё не существует, и закрывает соединение.
+
+    Вызывается один раз при запуске бота в функции `main()`.
+
+    Note:
+        Используется параметр `safe=True` для безопасного создания таблиц
+        (не вызывает ошибку, если таблица уже существует).
+    """
     db.connect()
     db.create_tables([TelegramGroup], safe=True)
     db.close()
