@@ -13,7 +13,22 @@ from system.dispatcher import router
 
 @router.message(F.text == "Ввод ключевого слова")
 async def handle_enter_keyword_menu(message: Message, state: FSMContext):
-    """Ввод ключевого слова"""
+    """
+    Обработчик команды "Ввод ключевого слова".
+
+    Очищает текущее состояние FSM, получает данные пользователя из базы,
+    логирует переход в меню и отправляет приглашение ввести ключевые слова.
+    Поддерживает ввод нескольких слов, разделённых переносами строк.
+
+    Переводит пользователя в состояние ожидания ввода (MyStates.entering_keyword).
+
+    Args:
+        message (Message): Объект входящего сообщения от пользователя.
+        state (FSMContext): Контекст машины состояний, используется для сброса и установки состояния.
+
+    Returns:
+        None
+    """
     await state.clear()  # Завершаем текущее состояние машины состояния
     telegram_user = message.from_user
     user = User.get(User.user_id == telegram_user.id)
@@ -30,7 +45,32 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
 
 @router.message(MyStates.entering_keyword)
 async def handle_keywords_submission(message: Message, state: FSMContext):
-    """Обработка введённого ключевого слова, словосочетания"""
+    """
+    Обработчик ввода ключевых слов пользователем.
+
+    Принимает одно или несколько ключевых слов/фраз, разделённых переносами строк,
+    и добавляет их в пользовательскую таблицу базы данных. Поддерживает массовую загрузку.
+
+    Обрабатывает дубликаты и ошибки, формирует детализированный отчёт о результате операции.
+
+    После обработки сбрасывает состояние FSM.
+
+    Args:
+        message (Message): Объект входящего сообщения с ключевыми словами.
+        state (FSMContext): Контекст машины состояний, используется для сброса состояния после обработки.
+
+    Returns:
+        None
+
+    Raises:
+        Exception: При ошибке добавления в БД (например, нарушение уникальности или другие DB-ошибки).
+            Обрабатывается локально с учётом типа ошибки и отправкой детализированного отчёта пользователю.
+
+    Notes:
+        - Используется динамическая модель `create_keywords_model` для изоляции данных пользователей.
+        - В ответе показываются превью списков (первые N элементов), чтобы избежать спама.
+        - Все действия логируются для аудита и отладки.
+    """
 
     raw_input = message.text.strip()
     telegram_user = message.from_user
@@ -119,5 +159,18 @@ async def handle_keywords_submission(message: Message, state: FSMContext):
 
 
 def register_entering_keyword_handler():
-    """Регистрация обработчиков"""
+    """
+    Регистрирует обработчики для ввода ключевых слов.
+
+    Добавляет в маршрутизатор (router) два обработчика:
+        1. handle_enter_keyword_menu — реагирует на нажатие кнопки "Ввод ключевого слова".
+        2. handle_keywords_submission — обрабатывает ввод ключевых слов в состоянии MyStates.entering_keyword.
+
+    Эти обработчики позволяют пользователю добавлять слова или фразы для отслеживания
+    в Telegram-группах и каналах. Поддерживается массовый ввод через переносы строк.
+
+    Returns:
+        None
+    """
     router.message.register(handle_enter_keyword_menu)  # Регистрация обработчика
+    router.message.register(handle_keywords_submission)  # Регистрация обработчика ввода ключевых слов
