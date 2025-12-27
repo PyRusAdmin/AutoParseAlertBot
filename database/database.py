@@ -12,11 +12,6 @@ class BaseModel(Model):
         database = db
 
 
-class Group(BaseModel):
-    id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
-    user_group = CharField(unique=True)  # Поле для хранения технической группы
-
-
 class User(BaseModel):
     """
     Модель для хранения основных данных пользователя Telegram.
