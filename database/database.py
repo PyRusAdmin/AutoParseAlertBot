@@ -35,6 +35,7 @@ def create_groups_model(user_id):
         username_chat_channel (CharField):
             Уникальное имя чата (канала) в формате @username или название.
     """
+
     class Groups(Model):
         username_chat_channel = CharField(unique=True)  # Поле для хранения имени канала
 
@@ -65,6 +66,7 @@ def create_keywords_model(user_id):
         user_keyword (CharField):
             Уникальное ключевое слово для поиска в сообщениях.
     """
+
     class Keywords(Model):
         id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
         user_keyword = CharField(unique=True)  # Поле для хранения ключевого слова
@@ -96,6 +98,7 @@ def create_group_model(user_id):
         user_group (CharField):
             Уникальное имя технической группы (например, @my_alerts_channel).
     """
+
     class Group(Model):
         id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
         user_group = CharField(unique=True)  # Поле для хранения технической группы
