@@ -10,8 +10,8 @@ from system.dispatcher import router
 
 
 @router.message(F.text == "Остановить отслеживание")
-async def handle_stop_tracking(message: Message):
-    """Остановить отслеживание"""
+async def handle_stop_tracking(message: Message, state: FSMContext):
+    """Останавливает отслеживание групп на наличие ключевых слов"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 

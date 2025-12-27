@@ -17,7 +17,7 @@ from system.dispatcher import router
 
 
 @router.message(CommandStart())
-async def handle_start_command(message: Message) -> None:
+async def handle_start_command(message: Message, state: FSMContext) -> None:
     user_tg = message.from_user
 
     # Создаём пользователя с language = "unset", если его нет
@@ -54,7 +54,7 @@ async def handle_start_command(message: Message) -> None:
 
 
 @router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))
-async def handle_language_selection(message: Message):
+async def handle_language_selection(message: Message, state: FSMContext):
     """Выбор языка"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -72,7 +72,7 @@ async def handle_language_selection(message: Message):
 
 
 @router.message(F.text == "⚙ Настройки")
-async def handle_settings_menu(message: Message):
+async def handle_settings_menu(message: Message, state: FSMContext):
     """Открытие меню настроек"""
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -84,7 +84,7 @@ async def handle_settings_menu(message: Message):
 
 
 @router.message(F.text == "🔙 Назад")
-async def handle_back_to_main_menu(message: Message):
+async def handle_back_to_main_menu(message: Message, state: FSMContext):
     """Возврат в главное меню"""
     user_tg = message.from_user
 
@@ -119,7 +119,7 @@ async def handle_back_to_main_menu(message: Message):
 
 
 @router.message(F.text == "⏯ Запуск отслеживания")
-async def handle_start_tracking(message: Message):
+async def handle_start_tracking(message: Message, state: FSMContext):
     """
     Запуск отслеживания ключевых слов в группах Telegram
 

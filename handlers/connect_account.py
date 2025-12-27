@@ -2,17 +2,18 @@
 import os
 
 from aiogram import F
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger
 
 from database.database import User
-from keyboards.keyboards import (back_keyboard)
+from keyboards.keyboards import back_keyboard
 from locales.locales import get_text
 from system.dispatcher import router
 
 
 @router.message(F.text == "Подключить аккаунт")
-async def handle_connect_account(message: Message):
+async def handle_connect_account(message: Message, state: FSMContext):
     """Меню подключения аккаунта"""
     user_tg = message.from_user
 
@@ -32,7 +33,7 @@ async def handle_connect_account(message: Message):
 
 
 @router.message(F.document)
-async def handle_account_file(message: Message):
+async def handle_account_file(message: Message, state: FSMContext):
     """
     Приём файла аккаунта и сохранение его в папку account.
     Если есть старые файлы .session или .session-journal — они удаляются.

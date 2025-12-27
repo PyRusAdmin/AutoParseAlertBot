@@ -73,7 +73,7 @@ def create_excel_file(data: list, headers: list, filename: str, sheet_name: str)
 
 
 @router.message(F.text == "🔍 Список ключевых слов")
-async def get_keywords_list(message: Message):
+async def get_keywords_list(message: Message, state: FSMContext):
     """
     Экспорт списка ключевых слов пользователя в Excel-файл.
     Отправляет пользователю документ через Telegram.
@@ -136,7 +136,7 @@ async def get_keywords_list(message: Message):
 
 
 @router.message(F.text == "🌐 Ссылки для отслеживания")
-async def get_tracking_links_list(message: Message):
+async def get_tracking_links_list(message: Message, state: FSMContext):
     """
     Экспорт списка ссылок (каналов/групп) для отслеживания в Excel-файл.
     Отправляет файл пользователю через Telegram.

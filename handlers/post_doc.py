@@ -6,7 +6,7 @@ from system.dispatcher import router
 
 
 @router.message(F.text == "Инструкция по использованию")
-async def send_instruction(message: Message):
+async def send_instruction(message: Message, state: FSMContext):
     """Отправляет пользователю файл с инструкцией"""
 
     file_path = "doc/doc.md"
