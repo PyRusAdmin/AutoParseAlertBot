@@ -13,7 +13,20 @@ class BaseModel(Model):
 
 class User(BaseModel):
     """
-    Таблица с именем user
+    Модель для хранения основных данных пользователя Telegram.
+
+    Используется для регистрации пользователей при первом запуске бота (/start)
+    и хранения их профиля и языка интерфейса. Таблица общая для всех пользователей.
+
+    Attributes:
+        user_id (IntegerField): Уникальный идентификатор пользователя Telegram (первичный ключ).
+        username (CharField, optional): Telegram-ник пользователя (может быть None).
+        first_name (CharField, optional): Имя пользователя.
+        last_name (CharField, optional): Фамилия пользователя.
+        language (CharField): Язык интерфейса бота ('ru', 'en' или 'unset' при первом запуске).
+
+    Meta:
+        table_name (str): Имя таблицы в базе данных — 'user' (по умолчанию от имени класса).
     """
     user_id = IntegerField(unique=True)
     username = CharField(null=True)
@@ -71,12 +84,11 @@ def create_keywords_model(user_id):
             Уникальное ключевое слово для поиска в сообщениях.
     """
 
-    class Keywords(Model):
+    class Keywords(BaseModel):
         id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
         user_keyword = CharField(unique=True)  # Поле для хранения ключевого слова
 
         class Meta:
-            database = db  # Указываем, что модель использует базу данных
             table_name = f"keywords_{user_id}"  # Имя таблицы
 
     return Keywords  # Возвращаем класс модели
@@ -103,12 +115,11 @@ def create_group_model(user_id):
             Уникальное имя технической группы (например, @my_alerts_channel).
     """
 
-    class Group(Model):
+    class Group(BaseModel):
         id = AutoField()  # <-- добавляем первичный ключ (иначе всё пишется в одну строку)
         user_group = CharField(unique=True)  # Поле для хранения технической группы
 
         class Meta:
-            database = db  # Указываем, что модель использует базу данных
             table_name = f"group_{user_id}"  # Имя таблицы
 
     return Group  # Возвращаем класс модели
@@ -164,5 +175,5 @@ def init_db():
         (не вызывает ошибку, если таблица уже существует).
     """
     db.connect()
-    db.create_tables([TelegramGroup], safe=True)
+    db.create_tables([TelegramGroup, User], safe=True)
     db.close()
