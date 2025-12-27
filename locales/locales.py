@@ -1,21 +1,14 @@
 # -*- coding: utf-8 -*-
-from database.database import getting_number_records_database
-
-version = "0.0.4"
-
-# number_records_database = getting_number_records_database()  # Получает количество записей в базе данных
 
 LOCALES = {
     "ru": {
         "welcome_ask_language": "🌍 Привет! Пожалуйста, выберите язык интерфейса:",
 
-        "welcome_message": (
+        "welcome_message_template": (
             "🤖 Добро пожаловать в Telegram-бота для отслеживания 🔍 ключевых слов в группах и каналах!\n\n"
-            f"📋 Версия: {version}\n"
+            "📋 Версия: {version}\n"
             "📅 Дата выхода: 28 декабря 2025 года\n\n"
-
-            f"📊 Найдено групп / каналов пользователями: {getting_number_records_database()}\n\n"
-
+            "📊 Найдено групп / каналов пользователями: {groups_count}\n\n"
             "💡 Для получения обновленного функционала, рекомендуется перезапускать бота, через /start"
         ),
 
@@ -33,38 +26,32 @@ LOCALES = {
             "`+79599999999.session`\n\n"
             "После загрузки бот начнёт использовать этот аккаунт для отслеживания сообщений."
         ),
-
-        "launching_tracking": "🚀 Запуск отслеживания сообщений...\n\nОстановка отслеживания, возможна только подписки на группы / каналы",
-
+        "launching_tracking": "🚀 Запуск отслеживания сообщений...\n\nОстановка отслеживания возможна только после подписки на группы / каналы",
         "tracking_launch_error": (
             "⚠️ Список каналов пуст.\n\n"
             "Добавьте хотя бы одну группу или канал для отслеживания 🔍\n"
             "через меню настроек ⚙️"
         ),
-        "update_list": (
-            "Пришлите ссылку на группу в формате @username"
-        ),
-        "account_missing": (
-            "⚠️ У вас нет подключенного аккаунта Telegram.\n\n"
-        ),
+        "update_list": "Пришлите ссылку на группу в формате @username",
+        "account_missing": "⚠️ У вас нет подключенного аккаунта Telegram.\n\n",
         "account_missing_2": (
-            "⚠️ Сессия аккаунта не недействительна (session файл не валидный) — требуется повторный вход. Отправьте валидный файл сессии"
+            "⚠️ Сессия аккаунта недействительна (session файл не валидный) — требуется повторный вход. Отправьте валидный файл сессии"
         ),
-        "enter_keyword": (
-            "🔍 Введите ключевое слово / словосочетание для отслеживания"
-        ),
+        "enter_keyword": "🔍 Введите ключевое слово / словосочетание для отслеживания",
         "enter_group": (
-            "🔍 Введите ссылку на группу в формате @username в которую будет пересылаться сообщение обнаруженное по ключевому слову"
+            "🔍 Введите ссылку на группу в формате @username, в которую будет пересылаться сообщение, обнаруженное по ключевому слову"
         ),
     },
 
     "en": {
         "welcome_ask_language": "🌍 Hi! Please choose your interface language:",
 
-        "welcome_message": (
+        "welcome_message_template": (
             "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!\n\n"
-            f"Version: {version}\n"
-            "Release date: October 30, 2025"
+            "Version: {version}\n"
+            "Release date: October 30, 2025\n\n"
+            "📊 Groups/channels found by users: {groups_count}\n\n"
+            "💡 To get the latest features, please restart the bot using /start"
         ),
 
         "lang_selected": "✅ Great! The interface will now be displayed in your selected language.",
@@ -87,18 +74,12 @@ LOCALES = {
             "Please add at least one group or channel to track 🔍\n"
             "via the settings menu ⚙️"
         ),
-        "update_list": (
-            "Please send a link to the group in the format @username"
-        ),
-        "account_missing": (
-            "⚠️ You do not have a connected Telegram account.\n\n"
-        ),
+        "update_list": "Please send a link to the group in the format @username",
+        "account_missing": "⚠️ You do not have a connected Telegram account.\n\n",
         "account_missing_2": (
-            "⚠️ The session file for your Telegram account is invalid (session file is not valid) — you need to log in again. Send a valid session file"
+            "⚠️ The session file for your Telegram account is invalid — you need to log in again. Send a valid session file."
         ),
-        "enter_keyword": (
-            "🔍 Enter a keyword / phrase to track"
-        ),
+        "enter_keyword": "🔍 Enter a keyword / phrase to track",
         "enter_group": (
             "🔍 Enter a link to the group in the format @username to which the message will be forwarded when a keyword is detected"
         ),

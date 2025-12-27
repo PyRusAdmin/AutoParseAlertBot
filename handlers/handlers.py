@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from loguru import logger
 from telethon.tl.types import Message
 
-from database.database import User, create_groups_model
+from database.database import User, create_groups_model, getting_number_records_database
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
 )
@@ -72,7 +72,11 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
         )
     else:
         # Язык уже выбран — приветствуем
-        text = get_text(user.language, "welcome_message")
+        template = get_text(user.language, "welcome_message_template")
+        version = "0.0.4"
+        groups_count = getting_number_records_database()
+        text = template.format(version=version, groups_count=groups_count)
+
         await message.answer(text, reply_markup=main_menu_keyboard())
 
 
