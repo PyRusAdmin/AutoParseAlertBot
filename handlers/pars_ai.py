@@ -38,7 +38,23 @@ def clean_group_name(name):
 
 
 def generate_group_hash(username=None, name=None, link=None):
-    """Генерируем уникальный хеш для группы"""
+    """
+    Генерирует MD5-хеш для уникальной идентификации группы в базе данных.
+
+    Использует один из трёх параметров: username, link или name (в порядке приоритета)
+    для создания хеша, который служит первичным ключом в таблице `TelegramGroup`.
+
+    Args:
+        username (str, optional): Юзернейм группы (например, "@python_chat").
+        name (str, optional): Название группы.
+        link (str, optional): Прямая ссылка на группу (например, "https://t.me/python_chat").
+
+    Returns:
+        str: 32-символьная hex-строка MD5-хеша.
+
+    Note:
+        Приоритет: username > link > name. Используется первый непустой параметр.
+    """
     if username:
         return hashlib.md5(username.encode()).hexdigest()
     elif link:
