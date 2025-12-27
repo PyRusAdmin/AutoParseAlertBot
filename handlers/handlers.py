@@ -18,6 +18,8 @@ from system.dispatcher import router
 
 @router.message(CommandStart())
 async def handle_start_command(message: Message, state: FSMContext) -> None:
+    """Отвечает на команду /start"""
+    await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
     # Создаём пользователя с language = "unset", если его нет
@@ -55,7 +57,8 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))
 async def handle_language_selection(message: Message, state: FSMContext):
-    """Выбор языка"""
+    """Выбор языка пользователем, для дальнейшего взаимодействия с ботом, на его родном языке"""
+    await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 

@@ -15,6 +15,7 @@ from system.dispatcher import router
 @router.message(F.text == "Подключить аккаунт")
 async def handle_connect_account(message: Message, state: FSMContext):
     """Меню подключения аккаунта"""
+    await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
     # Создаём пользователя с language = "unset", если его нет
@@ -38,6 +39,7 @@ async def handle_account_file(message: Message, state: FSMContext):
     Приём файла аккаунта и сохранение его в папку account.
     Если есть старые файлы .session или .session-journal — они удаляются.
     """
+    await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
     document = message.document
     user_id = user_tg.id

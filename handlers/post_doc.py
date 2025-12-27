@@ -9,12 +9,13 @@ from system.dispatcher import router
 @router.message(F.text == "Инструкция по использованию")
 async def send_instruction(message: Message, state: FSMContext):
     """Отправляет пользователю файл с инструкцией"""
+    await state.clear()  # Завершаем текущее состояние машины состояния
 
-    file_path = "doc/doc.md"
+    # file_path = "doc/doc.md"
 
     try:
         # Отправляем файл напрямую из файловой системы
-        document = FSInputFile(file_path)
+        document = FSInputFile("doc/doc.md")
 
         await message.answer_document(
             document=document,

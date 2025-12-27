@@ -14,6 +14,7 @@ from system.dispatcher import router
 @router.message(F.text == "Ввод ключевого слова")
 async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     """Ввод ключевого слова"""
+    await state.clear()  # Завершаем текущее состояние машины состояния
     telegram_user = message.from_user
     user = User.get(User.user_id == telegram_user.id)
 

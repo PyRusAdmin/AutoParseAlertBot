@@ -14,6 +14,7 @@ from system.dispatcher import router
 @router.message(F.text == "Подключить группу для сообщений")
 async def handle_connect_message_group(message: Message, state: FSMContext):
     """Ввод username группы для сообщений"""
+    await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
 

@@ -79,6 +79,7 @@ async def get_keywords_list(message: Message, state: FSMContext):
     Экспорт списка ключевых слов пользователя в Excel-файл.
     Отправляет пользователю документ через Telegram.
     """
+    await state.clear()  # Завершаем текущее состояние машины состояния
     telegram_user = message.from_user
     user = User.get(User.user_id == telegram_user.id)
 
@@ -142,6 +143,7 @@ async def get_tracking_links_list(message: Message, state: FSMContext):
     Экспорт списка ссылок (каналов/групп) для отслеживания в Excel-файл.
     Отправляет файл пользователю через Telegram.
     """
+    await state.clear()  # Завершаем текущее состояние машины состояния
     telegram_user = message.from_user
     user = User.get(User.user_id == telegram_user.id)
 
