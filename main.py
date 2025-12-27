@@ -6,6 +6,7 @@ import sys
 from loguru import logger
 
 from database.database import init_db
+from handlers.connect_account import register_connect_account_handler
 from handlers.connect_group import register_entering_group_handler
 from handlers.entering_keyword import register_entering_keyword_handler
 from handlers.get_dada import register_data_export_handlers
@@ -21,10 +22,24 @@ logger.add("logs/log.log", retention="1 days", enqueue=True)  # Логирова
 
 async def main() -> None:
     """
-    Функция запуска бота
-    :return: None
+    Основная асинхронная функция для запуска Telegram-бота.
+
+    Выполняет следующие действия:
+    1. Инициализирует базу данных с помощью `init_db()`.
+    2. Регистрирует все обработчики команд и сообщений через соответствующие функции регистрации.
+    3. Запускает поллинг обновлений от Telegram через `dp.start_polling(bot)`.
+
+    Обработчики включают:
+    - Приветственное меню и основные команды.
+    - Ввод и хранение ключевых слов для отслеживания.
+    - Подключение пользовательских аккаунтов Telegram (.session файлы).
+    - Управление отслеживанием и остановкой парсинга.
+    - Экспорт данных, логирование, поиск групп через ИИ, выдачу документации и т.д.
+
+    Returns:
+        None
     """
-    init_db()
+    init_db() 
 
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
@@ -35,6 +50,8 @@ async def main() -> None:
     register_handlers_post_doc()  # Выдает пользователю документацию к проекту
 
     register_handlers_log()  # Логирование
+
+    register_connect_account_handler()  # Подключение аккаунта
 
     await dp.start_polling(bot)
 
