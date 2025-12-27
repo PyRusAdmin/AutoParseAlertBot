@@ -320,7 +320,7 @@ async def filter_messages(message, user_id, user, session_path):
     target_group_id = await join_target_group(client=client, user_id=user_id)
 
     if not target_group_id:
-        text_error = "❌ Аккаунту не удалось присоединиться к целевой группе (группам), проверьте список сформированных групп"
+        text_error = "❌ Аккаунту не удалось присоединиться к целевой группе, проверьте подключенную группу"
         logger.error(text_error)
         await message.answer(
             text=text_error,
