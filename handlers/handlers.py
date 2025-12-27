@@ -75,9 +75,7 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
         template = get_text(user.language, "welcome_message_template")
         version = "0.0.4"
         groups_count = getting_number_records_database()
-
         count = count_session_files(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
-
         text = template.format(version=version, groups_count=groups_count, count=count)
 
         await message.answer(text, reply_markup=main_menu_keyboard())
