@@ -3,7 +3,7 @@ import asyncio
 import logging
 import sys
 
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 
 from database.database import init_db
 from handlers.connect_account import register_connect_account_handler
@@ -17,7 +17,7 @@ from handlers.post_log import register_handlers_log
 from handlers.stop_tracking import register_stop_tracking_handler
 from system.dispatcher import dp, bot
 
-logger.add("logs/log.log", retention="1 days", enqueue=True)  # Логирование бота
+logger.add("logs/log.log", rotation="1 MB", enqueue=True)  # Логирование бота
 
 
 async def main() -> None:

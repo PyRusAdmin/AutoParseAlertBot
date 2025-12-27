@@ -3,7 +3,7 @@ import asyncio
 
 import groq
 from groq import AsyncGroq
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.errors import FloodWaitError, UsernameNotOccupiedError
 from telethon.sync import TelegramClient, functions
 from telethon.tl.types import Channel

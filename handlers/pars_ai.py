@@ -8,7 +8,7 @@ from datetime import datetime
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, BufferedInputFile
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 
 from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
@@ -234,7 +234,7 @@ def format_summary_message(groups_count):
     Returns:
         str: Сообщение с HTML-разметкой (теги <b>).</n
     """
-    
+
     message = f"✅ <b>Поиск завершён!</b>\n\n"
     message += f"📊 Найдено и сохранено: <b>{groups_count}</b> групп/каналов\n"
     message += f"📁 Результаты отправлены в CSV файле"

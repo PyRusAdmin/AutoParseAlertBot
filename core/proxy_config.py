@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 
 from core.config import proxy_user, proxy_password, proxy_ip, proxy_port
 

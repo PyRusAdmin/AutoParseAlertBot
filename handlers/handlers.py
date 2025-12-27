@@ -4,7 +4,7 @@ import os
 from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.tl.types import Message
 
 from database.database import User, create_groups_model, getting_number_records_database

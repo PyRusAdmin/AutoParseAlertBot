@@ -2,7 +2,7 @@
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 
 from database.database import User, create_group_model
 from keyboards.keyboards import (back_keyboard)
