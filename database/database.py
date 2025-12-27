@@ -6,7 +6,12 @@ from peewee import *
 db = SqliteDatabase('bot.db')
 
 
-class User(Model):
+class BaseModel(Model):
+    class Meta:
+        database = db
+
+
+class User(BaseModel):
     user_id = IntegerField(unique=True)
     username = CharField(null=True)
     first_name = CharField(null=True)
@@ -110,11 +115,6 @@ def create_group_model(user_id):
     return Group  # Возвращаем класс модели
 
 
-class BaseModel(Model):
-    class Meta:
-        database = db
-
-
 class TelegramGroup(BaseModel):
     """
     Модель для хранения данных о найденных Telegram-группах и каналах.
@@ -151,10 +151,9 @@ class TelegramGroup(BaseModel):
         table_name = 'telegram_groups'
 
 
-# Создаём таблицы при первом запуске
 def init_db():
     """
-    Инициализирует базу данных приложения.
+    Инициализирует базу данных приложения при первом запуске бота.
 
     Подключается к SQLite-базе данных ('bot.db'), создаёт таблицу `telegram_groups`,
     если она ещё не существует, и закрывает соединение.
