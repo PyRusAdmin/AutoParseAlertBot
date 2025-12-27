@@ -16,14 +16,20 @@ def read_config_file():
     return config
 
 
-config = read_config_file()  # Чтение конфигурации из config.ini
+# Загружаем конфигурацию из файла
+config = read_config_file()
+
+# Параметры Telegram аккаунта
 username = config['telegram_settings']['username']
 
+# Ключ API для сервиса Groq (используется в AI-модели)
 GROQ_API_KEY = config['API_Groq']['GROQ_API_KEY']
 
+# Данные прокси-сервера для обхода блокировок
 proxy_user = config['proxy_data']['user']
 proxy_password = config['proxy_data']['password']
 proxy_port = config['proxy_data']['port']
 proxy_ip = config['proxy_data']['ip']
 
+# Язык локализации интерфейса бота
 language = config['localization']['language']
