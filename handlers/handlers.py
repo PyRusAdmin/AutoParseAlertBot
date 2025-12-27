@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.tl.types import Message
 
-from database.database import User, create_groups_model, getting_number_records_database
+from database.database import User, create_groups_model, getting_number_records_database, count_session_files
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
 )
@@ -75,7 +75,10 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
         template = get_text(user.language, "welcome_message_template")
         version = "0.0.4"
         groups_count = getting_number_records_database()
-        text = template.format(version=version, groups_count=groups_count)
+
+        count = count_session_files(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
+
+        text = template.format(version=version, groups_count=groups_count, count=count)
 
         await message.answer(text, reply_markup=main_menu_keyboard())
 

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+import os
 from datetime import datetime
 
-from peewee import *
+from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
 db = SqliteDatabase('bot.db')
 
@@ -184,5 +185,26 @@ def init_db():
 
 
 def getting_number_records_database():
-    """Получает количество записей в базе данных"""
+    """Получает количество записей в базе данных о найденных группах пользователями"""
     return TelegramGroup.select().count()
+
+
+def count_session_files(user_id: int) -> int:
+    """
+    Подсчитывает количество .session файлов в папке accounts/{user_id}/.
+
+    Args:
+        user_id (int): ID пользователя Telegram.
+
+    Returns:
+        int: Количество .session файлов (0, если папка не существует или файлов нет).
+    """
+    session_dir = os.path.join("accounts", str(user_id))
+    if not os.path.exists(session_dir):
+        return 0
+
+    session_files = [
+        f for f in os.listdir(session_dir)
+        if f.endswith(".session")
+    ]
+    return len(session_files)
