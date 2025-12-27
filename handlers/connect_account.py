@@ -14,7 +14,7 @@ from system.dispatcher import router
 
 @router.message(F.text == "Подключить аккаунт")
 async def handle_connect_account(message: Message, state: FSMContext):
-    """Меню подключения аккаунта"""
+    """Меню подключения аккаунта, для дальнейшего парсинга (отслеживания сообщений на наличие ключевых слов)"""
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
@@ -83,6 +83,14 @@ async def handle_account_file(message: Message, state: FSMContext):
 
 
 def register_connect_account_handler():
-    """Регистрация обработчиков"""
+    """
+    Регистрирует обработчики для подключения аккаунта.
+
+    Добавляет в маршрутизатор (router) два обработчика:
+        1. handle_connect_account — для обработки нажатия кнопки "Подключить аккаунт".
+        2. handle_account_file — для приёма файла сессии (.session) от пользователя.
+
+    Обработчики реагируют на текстовые сообщения и документы соответственно.
+    """
     router.message.register(handle_connect_account)  # обработчик для кнопки "Подключить аккаунт"
     router.message.register(handle_account_file)  # обработчик приема аккаунта в формате .session
