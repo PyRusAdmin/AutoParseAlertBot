@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import os
-from aiogram.types import Message
+
 from loguru import logger
 from telethon import TelegramClient, events
 from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
@@ -263,6 +263,34 @@ async def join_required_channels(client: TelegramClient, user_id, message):
             logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
 
+async def ensure_joined_target_group(client, message, user_id: int):
+    """
+    Подключается к целевой группе для пересылки уведомлений.
+
+    Args:
+        client: Telethon клиент.
+        message: Aiogram Message для отправки ошибки.
+        user_id (int): ID пользователя Telegram.
+
+    Returns:
+        int | None: ID целевой группы, если подключение успешно, иначе None.
+    """
+    logger.info("Подключаемся к целевой группе для пересылки")
+    target_group_id = await join_target_group(client=client, user_id=user_id)
+
+    if not target_group_id:
+        text_error = "❌ Аккаунту не удалось присоединиться к целевой группе, проверьте подключенную группу"
+        logger.error(text_error)
+        await message.answer(
+            text=text_error,
+            reply_markup=menu_launch_tracking_keyboard()
+        )
+        await client.disconnect()
+        return None
+
+    return target_group_id
+
+
 async def filter_messages(message, user_id, user, session_path):
     """
     Основная функция запуска процесса отслеживания сообщений в Telegram.
@@ -316,18 +344,7 @@ async def filter_messages(message, user_id, user, session_path):
     logger.info("✅ Сессия активна, подключение успешно!")
 
     # === Подключаемся к целевой группе для пересылки ===
-    logger.info("Подключаемся к целевой группе для пересылки")
-    target_group_id = await join_target_group(client=client, user_id=user_id)
-
-    if not target_group_id:
-        text_error = "❌ Аккаунту не удалось присоединиться к целевой группе, проверьте подключенную группу"
-        logger.error(text_error)
-        await message.answer(
-            text=text_error,
-            reply_markup=menu_launch_tracking_keyboard()
-        )
-        await client.disconnect()
-        return
+    target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id)
 
     # === Подключаемся к обязательным каналам ===
     await join_required_channels(client=client, user_id=user_id, message=message)
