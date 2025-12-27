@@ -18,8 +18,24 @@ class User(Model):
 
 
 def create_groups_model(user_id):
+    """
+    Динамически создаёт модель Peewee для хранения чатов конкретного пользователя.
+
+    Модель используется для отслеживания списка Telegram-групп и каналов,
+    добавленных пользователем для мониторинга. Создаётся отдельная таблица
+    для каждого пользователя по шаблону 'groups_<user_id>'.
+
+    Args:
+        user_id (int): Уникальный идентификатор пользователя Telegram.
+
+    Returns:
+        peewee.Model: Класс модели Peewee с полем `username_chat_channel`.
+
+    Model Fields:
+        username_chat_channel (CharField):
+            Уникальное имя чата (канала) в формате @username или название.
+    """
     class Groups(Model):
-        """Модель для хранения чатов пользователя"""
         username_chat_channel = CharField(unique=True)  # Поле для хранения имени канала
 
         class Meta:
