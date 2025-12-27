@@ -8,17 +8,34 @@ from system.dispatcher import router
 
 @router.message(F.text == "Инструкция по использованию")
 async def send_instruction(message: Message, state: FSMContext):
-    """Отправляет пользователю файл с инструкцией"""
-    await state.clear()  # Завершаем текущее состояние машины состояния
+    """
+    Обработчик команды "Инструкция по использованию".
 
-    # file_path = "doc/doc.md"
+    Отправляет пользователю Markdown-файл с подробной инструкцией по использованию бота.
+    Файл берётся из локальной директории 'doc/'. В случае успеха добавляет ссылку на онлайн-документацию.
+    Обрабатывает ошибки, если файл отсутствует или произошла ошибка отправки.
+
+    Args:
+        message (Message): Входящее сообщение от пользователя.
+        state (FSMContext): Контекст машины состояний, сбрасывается перед отправкой.
+
+    Returns:
+        None
+
+    Raises:
+        FileNotFoundError: Если файл 'doc/doc.md' не существует.
+        Exception: При других ошибках отправки (например, проблемы с сетью).
+
+    Notes:
+        - Файл отправляется как документ Telegram.
+        - Капшн содержит прямую ссылку на документ в репозитории (gitverse.ru).
+    """
+    await state.clear()  # Завершаем текущее состояние машины состояния
 
     try:
         # Отправляем файл напрямую из файловой системы
-        document = FSInputFile("doc/doc.md")
-
         await message.answer_document(
-            document=document,
+            document=FSInputFile("doc/doc.md"),
             caption="Вот инструкция по использованию бота, так же можно прочитать https://gitverse.ru/pyadminru/AutoParseAlertBot/content/master/doc/doc.md"
         )
 
@@ -30,5 +47,16 @@ async def send_instruction(message: Message, state: FSMContext):
 
 
 def register_handlers_post_doc():
-    """Регистрирует обработчики"""
+    """
+    Регистрирует обработчик для отправки инструкции по использованию бота.
+
+    Добавляет в маршрутизатор (router) один обработчик:
+        - send_instruction — реагирует на нажатие кнопки "Инструкция по использованию".
+
+    Позволяет пользователю получить актуальную документацию в формате .md-файла
+    с описанием всех функций и настроек бота.
+
+    Returns:
+        None
+    """
     router.message.register(send_instruction)
