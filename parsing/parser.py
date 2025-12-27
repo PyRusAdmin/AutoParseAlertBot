@@ -265,15 +265,24 @@ async def join_required_channels(client: TelegramClient, user_id, message):
 
 async def ensure_joined_target_group(client, message, user_id: int):
     """
-    Подключается к целевой группе для пересылки уведомлений.
+    Обеспечивает подключение клиента Telethon к целевой группе пользователя.
+
+    Обёртка вокруг `join_target_group`, которая проверяет успешность подключения
+    и при необходимости отправляет пользователю сообщение об ошибке и останавливает процесс.
+
+    Используется в `filter_messages` для централизованной обработки ошибок подключения.
 
     Args:
-        client: Telethon клиент.
-        message: Aiogram Message для отправки ошибки.
-        user_id (int): ID пользователя Telegram.
+        client (TelegramClient): Активный клиент для выполнения запросов.
+        message (Message): Объект сообщения AIOgram для отправки уведомления об ошибке.
+        user_id (int): Уникальный идентификатор пользователя Telegram.
 
     Returns:
-        int | None: ID целевой группы, если подключение успешно, иначе None.
+        int or None: Идентификатор целевой группы (entity.id) при успехе, иначе None.
+
+    Notes:
+        - Если подключение не удалось, клиент отключается и функция возвращает None.
+        - Используется для упрощения логики в функции `filter_messages`.
     """
     logger.info("Подключаемся к целевой группе для пересылки")
     target_group_id = await join_target_group(client=client, user_id=user_id)
@@ -289,6 +298,40 @@ async def ensure_joined_target_group(client, message, user_id: int):
         return None
 
     return target_group_id
+
+
+async def get_user_channels_or_notify(user_id: int, user, message, client):
+    """
+    Получает список каналов/групп пользователя из его персональной таблицы.
+    Если список пуст — отправляет уведомление пользователю, отключает клиент и возвращает None.
+
+    Args:
+        user_id (int): ID пользователя Telegram.
+        user: Объект пользователя (с полем `language`).
+        message: Aiogram Message для отправки ответа.
+        client: Telethon клиент (будет отключён в случае ошибки).
+
+    Returns:
+        list[str] | None: Список username каналов или None, если список пуст.
+    """
+    Groups = create_groups_model(user_id=user_id)
+
+    # Создаём таблицу, если её ещё нет (безопасно благодаря Peewee)
+    if not Groups.table_exists():
+        Groups.create_table()
+
+    channels = [group.username_chat_channel for group in Groups.select()]
+
+    if not channels:
+        logger.warning("⚠️ Список каналов пуст. Добавьте группы в базу данных.")
+        await client.disconnect()
+        await message.answer(
+            get_text(user.language, "tracking_launch_error"),
+            reply_markup=menu_launch_tracking_keyboard()
+        )
+        return None
+
+    return channels
 
 
 async def filter_messages(message, user_id, user, session_path):
@@ -350,20 +393,7 @@ async def filter_messages(message, user_id, user, session_path):
     await join_required_channels(client=client, user_id=user_id, message=message)
 
     # === Загружаем список каналов из базы ===
-    # Получаем список username из базы данных
-
-    Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
-    Groups.create_table()
-
-    channels = [group.username_chat_channel for group in Groups.select()]
-    if not channels:
-        logger.warning("⚠️ Список каналов пуст. Добавьте группы в базу данных.")
-        await client.disconnect()
-        await message.answer(
-            get_text(user.language, "tracking_launch_error"),
-            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-        )
-        return
+    channels = await get_user_channels_or_notify(user_id=user_id, user=user, message=message, client=client)
 
     # === Обработка новых сообщений ===
     @client.on(events.NewMessage(chats=channels))
