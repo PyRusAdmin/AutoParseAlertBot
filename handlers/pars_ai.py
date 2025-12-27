@@ -257,7 +257,7 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     Returns:
         None
     """
-    await state.clear()
+    await state.clear()  # Сбрасывает состояние
 
     telegram_user = message.from_user
     user = User.get(User.user_id == telegram_user.id)
