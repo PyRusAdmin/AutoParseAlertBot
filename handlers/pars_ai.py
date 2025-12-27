@@ -64,7 +64,24 @@ def generate_group_hash(username=None, name=None, link=None):
 
 
 def determine_group_type(group_data):
-    """Определяем тип: group, channel или link"""
+    """
+    Определяет тип Telegram-чата на основе его данных.
+
+    Анализирует словарь с информацией о группе и возвращает строку с типом.
+
+    Используется при сохранении группы в базу данных.
+
+    Args:
+        group_data (dict): Словарь с данными о группе, полученный из поиска.
+
+    Returns:
+        str: Тип чата — 'channel', 'group' или 'link'.
+
+    Logic:
+        - 'channel': если есть флаг is_channel.
+        - 'group': если есть username (предполагает, что это группа).
+        - 'link': во всех остальных случаях.
+    """
     if 'is_channel' in group_data and group_data['is_channel']:
         return 'channel'
     elif 'username' in group_data and group_data['username']:
