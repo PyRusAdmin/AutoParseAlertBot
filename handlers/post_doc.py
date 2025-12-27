@@ -36,8 +36,12 @@ async def send_instruction(message: Message, state: FSMContext):
         # Отправляем файл напрямую из файловой системы
         await message.answer_document(
             document=FSInputFile("doc/doc.md"),
-            caption="Вот инструкция по использованию бота, так же можно прочитать https://gitverse.ru/pyadminru/AutoParseAlertBot/content/master/doc/doc.md"
-        )
+            caption="📘 <b>Инструкция по использованию</b>\n\n"
+                    "Прикреплён подробный руководство по функционалу бота.\n\n"
+                    "🔗 <b>Онлайн-документация:</b>\n"
+                    "• <a href=\"https://gitverse.ru/pyadminru/AutoParseAlertBot/content/master/doc/doc.md\">GitVerse</a>\n"
+                    "• <a href=\"https://github.com/PyRusAdmin/AutoParseAlertBot/blob/master/doc/doc.md\">GitHub</a>\n\n"
+                    "Рекомендуем ознакомиться для эффективного использования всех возможностей бота."
 
     except FileNotFoundError:
         await message.answer("Файл инструкции не найден на сервере.")
