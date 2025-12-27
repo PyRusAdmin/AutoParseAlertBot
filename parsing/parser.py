@@ -363,11 +363,24 @@ async def filter_messages(message, user_id, user, session_path):
 
 async def stop_tracking(user_id, message, user):
     """
-    Остановка отслеживания сообщений
+    Останавливает процесс отслеживания сообщений для пользователя.
 
-    :param user: Объект пользователя
-    :param message: Объект сообщения AIOgram
-    :param user_id: ID пользователя Telegram
+    Находит сессию пользователя в папке 'accounts/', инициализирует клиент Telethon
+    и отключает его, что приводит к остановке `client.run_until_disconnected()`
+    в функции `filter_messages`.
+
+    Args:
+        user_id (int): Идентификатор пользователя Telegram.
+        message (Message): Объект сообщения AIOgram для отправки подтверждения.
+        user (User): Модель пользователя (не используется напрямую, но может быть нужно для будущих уведомлений).
+
+    Returns:
+        None
+
+    Notes:
+        - Функция не проверяет, активно ли отслеживание — всегда пытается отключить сессию.
+        - Использует тот же механизм подключения, что и `filter_messages`, для доступа к сессии.
+        - После вызова `client.disconnect()` управление возвращается в `filter_messages`.
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
 
