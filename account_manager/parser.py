@@ -437,7 +437,7 @@ async def stop_tracking(user_id, message, user):
     session_dir = os.path.join("accounts", user_id)
     os.makedirs(session_dir, exist_ok=True)
 
-    session_path = await find_session_file(session_dir, user, message)
+    session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
 
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения

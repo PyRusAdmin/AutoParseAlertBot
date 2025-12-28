@@ -242,21 +242,7 @@ async def handle_start_tracking(message: Message, state: FSMContext):
     session_dir = os.path.join("accounts", str(user_id))
     os.makedirs(session_dir, exist_ok=True)
 
-    # # === Поиск любого .session файла ===
-    # session_path = None
-    # for file in os.listdir(session_dir):
-    #     if file.endswith(".session"):
-    #         session_path = os.path.join(session_dir, file)
-    #         break
-    #
-    # if not session_path:
-    #     logger.error(f"❌ Не найден файл .session в {session_dir}")
-    #     await message.answer(
-    #         get_text(user.language, "account_missing"),
-    #         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-    #     )
-    #     return
-    session_path = await find_session_file(session_dir, user, message)
+    session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
 
     # Если у пользователя подключенный аккаунт
     await message.answer(
@@ -400,9 +386,9 @@ def register_greeting_handlers():
     Returns:
         None
     """
-    router.message.register(handle_start_command)
-    router.message.register(handle_language_selection)
-    router.message.register(handle_settings_menu)
+    router.message.register(handle_start_command)  # обработчик команды /start
+    router.message.register(handle_language_selection)  # обработчик выбора языка
+    router.message.register(handle_settings_menu)  # обработчик меню настроек
     router.message.register(handle_back_to_main_menu)  # обработчик для кнопки "Назад"
     router.message.register(handle_start_tracking)  # обработчик запуска отслеживания
     router.message.register(handle_refresh_groups_list)  # обработчик запуска 🔁 Обновить список
