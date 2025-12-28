@@ -75,15 +75,23 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
     GroupModel = create_group_model(user_id=user_tg.id)  # Создаём таблицу для групп / ключевых слов
+    GroupModel.create_table(safe=True)
+    logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
 
     # Проверяем, существует ли таблица (если нет — создаём)
-    if not GroupModel.table_exists():
-        GroupModel.create_table()
-        logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
+    # if not GroupModel.table_exists():
+    #     GroupModel.create_table()
+    #     logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
 
     # Добавляем запись в таблицу
     try:
         # group_record = GroupModel.create(user_group=group_username)
+
+        # Удаляем старую запись, если есть
+        GroupModel.delete().execute()
+        # Вставляем новую
+        GroupModel.create(user_group=group_username)
+
         await message.answer(f"✅ Группа {group_username} добавлена для отправки сообщений.")
         logger.info(f"username {group_username} добавлено пользователем {user_tg.id}")
     except Exception as e:
