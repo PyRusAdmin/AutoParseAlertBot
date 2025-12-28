@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import asyncio
 
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import UserAlreadyParticipantError
-
+from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
 from telethon.tl.functions.channels import JoinChannelRequest
 
 
@@ -19,6 +19,21 @@ async def subscription_telegram(client, target_username):
         logger.success(f"✅ Успешно присоединился к целевой группе {target_username}")
     except UserAlreadyParticipantError:
         logger.info(f"ℹ️ Вы уже являетесь членом целевой группы {target_username}")
-
         entity = await client.get_entity(target_username)
         return entity.id
+    except FloodWaitError as e:
+        logger.warning(f"⚠️ Ошибка FloodWait. Ожидание {e.seconds} секунд...")
+        await asyncio.sleep(e.seconds)
+        try:
+            await client(JoinChannelRequest(target_username))
+            entity = await client.get_entity(target_username)
+            return entity.id
+        except Exception as retry_error:
+            logger.error(f"❌ Не удалось присоединиться к целевой группе после повторной попытки: {retry_error}")
+            return None
+    except ValueError:
+        logger.error(f"❌ Неверное имя пользователя целевой группы: {target_username}")
+        return None
+    except InviteRequestSentError:
+        logger.error(f"❌ Запрос на приглашение отправлен для {target_username}, ожидание одобрения")
+        return None
