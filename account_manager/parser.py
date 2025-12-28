@@ -2,6 +2,7 @@
 import asyncio
 import os
 
+from aiogram.types import message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
 from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
@@ -437,6 +438,39 @@ async def stop_tracking(user_id, message, user):
     os.makedirs(session_dir, exist_ok=True)
 
     # === Поиск любого .session файла ===
+    # session_path = None
+    # for file in os.listdir(session_dir):
+    #     if file.endswith(".session"):
+    #         session_path = os.path.join(session_dir, file)
+    #         break
+    #
+    # if not session_path:
+    #     logger.error(f"❌ Не найден файл .session в {session_dir}")
+    #     await message.answer(
+    #         get_text(user.language, "account_missing"),
+    #         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+    #     )
+    #     return
+    session_path = await session_file_search(session_dir, user)
+
+    logger.info(f"📂 Найден файл сессии: {session_path}")
+    # Telethon ожидает session_name без расширения
+    session_name = session_path.replace(".session", "")
+
+    client = await connect_client(session_name, user)  # <-- ✅ подключаемся к клиенту Telethon
+
+    logger.info("🛑 Остановка отслеживания сообщений...")
+    await client.disconnect()
+
+
+async def session_file_search(session_dir, user):
+    """
+    Поиск файла сессии в папке accounts/. Поиск любого .session файла
+    :param session_dir: (str) Путь к папке с сессиями
+    :param user: (User) Модель пользователя (для языка и данных).
+    :return: session_path или None
+    """
+
     session_path = None
     for file in os.listdir(session_dir):
         if file.endswith(".session"):
@@ -451,12 +485,4 @@ async def stop_tracking(user_id, message, user):
         )
         return
 
-    logger.info(f"📂 Найден файл сессии: {session_path}")
-    # Telethon ожидает session_name без расширения
-    session_name = session_path.replace(".session", "")
-
-    # === Подключение клиента Telethon ===
-    client = await connect_client(session_name, user)  # <-- ✅ подключаемся к клиенту Telethon
-
-    logger.info("🛑 Остановка отслеживания сообщений...")
-    await client.disconnect()
+    return session_path
