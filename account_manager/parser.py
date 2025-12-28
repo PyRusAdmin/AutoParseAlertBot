@@ -28,12 +28,10 @@ async def join_target_group(client, user_id):
     :param client: (TelegramClient) Активный клиент Telethon для выполнения запросов.
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
     :return: int or None: Идентификатор целевой группы (entity.id) или None при ошибке.
-
-    Raises:
-        UserAlreadyParticipantError: Если клиент уже участник группы (обрабатывается).
-        FloodWaitError: Если достигнут лимит запросов (обрабатывается с задержкой).
-        InviteRequestSentError: Если требуется подтверждение приглашения.
-        Exception: Логируется при любых других ошибках.
+    :raises UserAlreadyParticipantError: Если клиент уже участник группы (обрабатывается).
+    :raises FloodWaitError: Если достигнут лимит запросов (обрабатывается с задержкой).
+    :raises InviteRequestSentError: Если требуется подтверждение приглашения.
+    :raises Exception: Логируется при любых других ошибках.
 
     Notes:
         - Использует модель `create_group_model` для доступа к данным пользователя.
@@ -198,13 +196,11 @@ async def join_required_channels(client, user_id, message):
     :param user_id: (int) Идентификатор пользователя, чьи каналы нужно подключить.
     :param message: (Message) Объект сообщения AIOgram для отправки уведомлений.
     :return: None
-
-    Raises:
-        UserAlreadyParticipantError: Если клиент уже участник (обрабатывается).
-        FloodWaitError: Если достигнут лимит запросов (обрабатывается с задержкой).
-        InviteRequestSentError: Если требуется подтверждение приглашения.
-        ValueError: Если username невалиден (обрабатывается с удалением из БД).
-        Exception: Логируется при любых других ошибках.
+    :raises UserAlreadyParticipantError: Если клиент уже участник (обрабатывается).
+    :raises FloodWaitError: Если достигнут лимит запросов (обрабатывается с задержкой).
+    :raises InviteRequestSentError: Если требуется подтверждение приглашения.
+    :raises ValueError: Если username невалиден (обрабатывается с удалением из БД).
+    :raises Exception: Логируется при любых других ошибках.
 
     Notes:
         - Между подписками добавляется задержка в 5 секунд для избежания Flood.
@@ -266,7 +262,6 @@ async def ensure_joined_target_group(client, message, user_id: int):
     :param message: (Message) Объект сообщения AIOgram для отправки уведомления об ошибке.
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
     :return: int or None: Идентификатор целевой группы (entity.id) при успехе, иначе None.
-
     Notes:
         - Если подключение не удалось, функция возвращает None (клиент НЕ отключается).
         - Используется для упрощения логики в функции `filter_messages`.
@@ -334,9 +329,7 @@ async def filter_messages(message, user_id, user, session_path):
     :param user: (User) Модель пользователя из базы данных (для языка и данных).
     :param session_path: (str) Полный путь к файлу сессии (.session) для авторизации.
     :return: None
-
-    Raises:
-        Exception: Логируется при ошибках инициализации или подключения.
+    :raises Exception: Логируется при ошибках инициализации или подключения.
 
     Notes:
         - Использует event-based обработку через `client.on(events.NewMessage)`.
