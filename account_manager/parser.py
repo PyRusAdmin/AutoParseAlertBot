@@ -2,7 +2,6 @@
 import asyncio
 import os
 
-from aiogram.types import message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
 from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
@@ -10,6 +9,7 @@ from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
 from account_manager.auth import connect_client
+from account_manager.session import find_session_file
 from database.database import create_groups_model, create_keywords_model, create_group_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
@@ -437,21 +437,7 @@ async def stop_tracking(user_id, message, user):
     session_dir = os.path.join("accounts", user_id)
     os.makedirs(session_dir, exist_ok=True)
 
-    # === Поиск любого .session файла ===
-    # session_path = None
-    # for file in os.listdir(session_dir):
-    #     if file.endswith(".session"):
-    #         session_path = os.path.join(session_dir, file)
-    #         break
-    #
-    # if not session_path:
-    #     logger.error(f"❌ Не найден файл .session в {session_dir}")
-    #     await message.answer(
-    #         get_text(user.language, "account_missing"),
-    #         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-    #     )
-    #     return
-    session_path = await session_file_search(session_dir, user)
+    session_path = await find_session_file(session_dir, user, message)
 
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
@@ -461,28 +447,3 @@ async def stop_tracking(user_id, message, user):
 
     logger.info("🛑 Остановка отслеживания сообщений...")
     await client.disconnect()
-
-
-async def session_file_search(session_dir, user):
-    """
-    Поиск файла сессии в папке accounts/. Поиск любого .session файла
-    :param session_dir: (str) Путь к папке с сессиями
-    :param user: (User) Модель пользователя (для языка и данных).
-    :return: session_path или None
-    """
-
-    session_path = None
-    for file in os.listdir(session_dir):
-        if file.endswith(".session"):
-            session_path = os.path.join(session_dir, file)
-            break
-
-    if not session_path:
-        logger.error(f"❌ Не найден файл .session в {session_dir}")
-        await message.answer(
-            get_text(user.language, "account_missing"),
-            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-        )
-        return
-
-    return session_path

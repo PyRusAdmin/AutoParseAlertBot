@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.tl.types import Message
 
+from account_manager.session import find_session_file
 from database.database import User, create_groups_model, getting_number_records_database, count_session_files, \
     getting_group
 from keyboards.keyboards import (
@@ -241,20 +242,21 @@ async def handle_start_tracking(message: Message, state: FSMContext):
     session_dir = os.path.join("accounts", str(user_id))
     os.makedirs(session_dir, exist_ok=True)
 
-    # === Поиск любого .session файла ===
-    session_path = None
-    for file in os.listdir(session_dir):
-        if file.endswith(".session"):
-            session_path = os.path.join(session_dir, file)
-            break
-
-    if not session_path:
-        logger.error(f"❌ Не найден файл .session в {session_dir}")
-        await message.answer(
-            get_text(user.language, "account_missing"),
-            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-        )
-        return
+    # # === Поиск любого .session файла ===
+    # session_path = None
+    # for file in os.listdir(session_dir):
+    #     if file.endswith(".session"):
+    #         session_path = os.path.join(session_dir, file)
+    #         break
+    #
+    # if not session_path:
+    #     logger.error(f"❌ Не найден файл .session в {session_dir}")
+    #     await message.answer(
+    #         get_text(user.language, "account_missing"),
+    #         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+    #     )
+    #     return
+    session_path = await find_session_file(session_dir, user, message)
 
     # Если у пользователя подключенный аккаунт
     await message.answer(
