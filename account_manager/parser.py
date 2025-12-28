@@ -10,6 +10,7 @@ from telethon.tl.types import Message
 
 from account_manager.auth import connect_client
 from account_manager.session import find_session_file
+from account_manager.subscription import subscription_telegram
 from database.database import create_groups_model, create_keywords_model, create_group_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
@@ -50,40 +51,36 @@ async def join_target_group(client, user_id):
     target_username = groups[0].user_group
 
     try:
-        logger.info(f"🔗 Attempting to join target group {target_username}...")
-        await client(JoinChannelRequest(target_username))
-        logger.success(f"✅ Successfully joined target group {target_username}")
 
+        await subscription_telegram(client, target_username)  # Подписываемся на группу
+        logger.success(f"✅ Успешно присоединился к целевой группе {target_username}")
         # Получаем ID группы
         entity = await client.get_entity(target_username)
         return entity.id
 
     except UserAlreadyParticipantError:
-        logger.info(f"ℹ️ Already member of target group {target_username}")
+        logger.info(f"ℹ️ Вы уже являетесь членом целевой группы {target_username}")
         entity = await client.get_entity(target_username)
         return entity.id
-
     except FloodWaitError as e:
-        logger.warning(f"⚠️ FloodWait error. Waiting {e.seconds} seconds...")
+        logger.warning(f"⚠️ Ошибка FloodWait. Ожидание {e.seconds} секунд...")
         await asyncio.sleep(e.seconds)
         try:
             await client(JoinChannelRequest(target_username))
             entity = await client.get_entity(target_username)
             return entity.id
         except Exception as retry_error:
-            logger.error(f"❌ Failed to join target group after retry: {retry_error}")
+            logger.error(f"❌ Не удалось присоединиться к целевой группе после повторной попытки: {retry_error}")
             return None
 
     except ValueError:
-        logger.error(f"❌ Invalid target group username: {target_username}")
+        logger.error(f"❌ Неверное имя пользователя целевой группы: {target_username}")
         return None
-
     except InviteRequestSentError:
-        logger.error(f"❌ Invite request sent for {target_username}, waiting for approval")
+        logger.error(f"❌ Запрос на приглашение отправлен для {target_username}, ожидание одобрения")
         return None
-
     except Exception as e:
-        logger.exception(f"❌ Failed to join target group {target_username}: {e}")
+        logger.exception(f"❌ Не удалось присоединиться к целевой группе {target_username}: {e}")
         return None
 
 
