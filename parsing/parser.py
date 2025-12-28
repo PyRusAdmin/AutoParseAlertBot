@@ -228,7 +228,8 @@ async def join_required_channels(client: TelegramClient, user_id, message):
 
     for channel in channels:
         try:
-            logger.info(f"🔗 Пробую подписаться на {channel}...")
+            logger.info(f"🔗 Пробую подписаться на {channel}")
+
             await client(JoinChannelRequest(channel))
             logger.success(f"✅ Подписка на {channel} выполнена")
 
@@ -268,9 +269,7 @@ async def ensure_joined_target_group(client, message, user_id: int):
     Обеспечивает подключение клиента Telethon к целевой группе пользователя.
 
     Обёртка вокруг `join_target_group`, которая проверяет успешность подключения
-    и при необходимости отправляет пользователю сообщение об ошибке и останавливает процесс.
-
-    Используется в `filter_messages` для централизованной обработки ошибок подключения.
+    и при необходимости отправляет пользователю сообщение об ошибке.
 
     Args:
         client (TelegramClient): Активный клиент для выполнения запросов.
@@ -281,7 +280,7 @@ async def ensure_joined_target_group(client, message, user_id: int):
         int or None: Идентификатор целевой группы (entity.id) при успехе, иначе None.
 
     Notes:
-        - Если подключение не удалось, клиент отключается и функция возвращает None.
+        - Если подключение не удалось, функция возвращает None (клиент НЕ отключается).
         - Используется для упрощения логики в функции `filter_messages`.
     """
     logger.info("Подключаемся к целевой группе для пересылки")
@@ -294,7 +293,7 @@ async def ensure_joined_target_group(client, message, user_id: int):
             text=text_error,
             reply_markup=menu_launch_tracking_keyboard()
         )
-        await client.disconnect()
+        # НЕ отключаем клиент здесь — это будет сделано в finally блоке filter_messages
         return None
 
     return target_group_id
@@ -370,46 +369,60 @@ async def filter_messages(message, user_id, user, session_path):
     session_name = session_path.replace(".session", "")
 
     # === Подключение клиента Telethon ===
-    client = TelegramClient(session_name, api_id, api_hash)
-    if client.is_connected():
-        await client.disconnect()
-    await client.connect()
+    client = TelegramClient(session_name, api_id, api_hash, system_version="4.16.30-vxCUSTOM")
 
-    # === Проверка авторизации ===
-    if not await client.is_user_authorized():
-        logger.error(f"⚠️ Сессия {session_path} недействительна — требуется повторный вход.")
-        await message.answer(
-            get_text(user.language, "account_missing_2"),
-            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-        )
-        return
-
-    logger.info("✅ Сессия активна, подключение успешно!")
-
-    # === Подключаемся к целевой группе для пересылки ===
-    target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id)
-
-    # === Подключаемся к обязательным каналам ===
-    await join_required_channels(client=client, user_id=user_id, message=message)
-
-    # === Загружаем список каналов из базы ===
-    channels = await get_user_channels_or_notify(user_id=user_id, user=user, message=message, client=client)
-
-    # === Обработка новых сообщений ===
-    @client.on(events.NewMessage(chats=channels))
-    async def handle_new_message(event: events.NewMessage.Event):
-        await process_message(client, event.message, event.chat_id, user_id, target_group_id)
-
-    logger.info("👂 Бот слушает новые сообщения...")
-    await message.answer(
-        "👂 Бот слушает новые сообщения...",
-        reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-    )
     try:
+        await client.connect()
+
+        # === Проверка авторизации ===
+        if not await client.is_user_authorized():
+            logger.error(f"⚠️ Сессия {session_path} недействительна — требуется повторный вход.")
+            await message.answer(
+                get_text(user.language, "account_missing_2"),
+                reply_markup=menu_launch_tracking_keyboard()
+            )
+            return
+
+        logger.info("✅ Сессия активна, подключение успешно!")
+
+        # === Подключаемся к целевой группе для пересылки ===
+        target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id)
+
+        # Если не удалось подключиться к целевой группе — выходим
+        if not target_group_id:
+            return
+
+        # === Подключаемся к обязательным каналам ===
+        await join_required_channels(client=client, user_id=user_id, message=message)
+
+        # === Загружаем список каналов из базы ===
+        channels = await get_user_channels_or_notify(user_id=user_id, user=user, message=message, client=client)
+
+        # Если каналов нет — выходим
+        if not channels:
+            return
+
+        # === Обработка новых сообщений ===
+        @client.on(events.NewMessage(chats=channels))
+        async def handle_new_message(event: events.NewMessage.Event):
+            await process_message(client, event.message, event.chat_id, user_id, target_group_id)
+
+        logger.info("👂 Бот слушает новые сообщения...")
+        await message.answer(
+            "👂 Бот слушает новые сообщения...",
+            reply_markup=menu_launch_tracking_keyboard()
+        )
+
         await client.run_until_disconnected()
+
+    except Exception as e:
+        logger.exception(f"❌ Критическая ошибка в filter_messages: {e}")
+
     finally:
-        await client.disconnect()
-        logger.info("🛑 Бот остановлен.")
+        # Гарантированное отключение клиента в любом случае
+        if client.is_connected():
+            await client.disconnect()
+            logger.info("🛑 Клиент отключён.")
 
 
 async def stop_tracking(user_id, message, user):

@@ -262,7 +262,7 @@ async def handle_start_tracking(message: Message, state: FSMContext):
         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
     )
 
-    await  filter_messages(
+    await filter_messages(
         message=message,  # сообщение
         user_id=user_id,  # ID пользователя
         user=user,  # модель пользователя

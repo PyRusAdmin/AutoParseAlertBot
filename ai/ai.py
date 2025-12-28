@@ -82,7 +82,7 @@ async def search_groups_in_telegram(group_names):
         - Пропускает пустые строки в списке запросов.
         - Использует Telethon для низкоуровневого взаимодействия с Telegram API.
     """
-    client = TelegramClient('accounts/535185511/998339414118', api_id, api_hash)
+    client = TelegramClient('accounts/ai/998339414118', api_id, api_hash)
     await client.connect()
 
     if not await client.is_user_authorized():
