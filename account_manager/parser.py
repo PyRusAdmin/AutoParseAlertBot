@@ -361,12 +361,9 @@ async def filter_messages(message, user_id, user, session_path):
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
     logger.info(f"🚀 Запуск бота для user_id={user_id}...")
-
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
-    session_name = session_path.replace(".session", "")
-
-    client = await connect_client(session_name, user)  # <-- ✅ подключаемся к клиенту Telethon
+    client = await connect_client(session_path.replace(".session", ""), user)  # <-- ✅ подключаемся к клиенту Telethon
 
     try:
 
@@ -414,14 +411,12 @@ async def stop_tracking(user_id, message, user):
     """
     Останавливает процесс отслеживания сообщений для пользователя.
 
-    Находит сессию пользователя в папке 'accounts/', инициализирует клиент Telethon
-    и отключает его, что приводит к остановке `client.run_until_disconnected()`
-    в функции `filter_messages`.
+    Находит сессию пользователя в папке 'accounts/', инициализирует клиент Telethon и отключает его, что приводит к
+    остановке `client.run_until_disconnected()` в функции `filter_messages`.
 
-    Args:
-        user_id (int): Идентификатор пользователя Telegram.
-        message (Message): Объект сообщения AIOgram для отправки подтверждения.
-        user (User): Модель пользователя (не используется напрямую, но может быть нужно для будущих уведомлений).
+    :param user_id: (int) Идентификатор пользователя Telegram.
+    :param message: (Message) Объект сообщения AIOgram для отправки подтверждения.
+    :param user: (User) Модель пользователя (не используется напрямую, но может быть нужно для будущих уведомлений).
 
     Returns:
         None
@@ -441,9 +436,8 @@ async def stop_tracking(user_id, message, user):
 
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
-    session_name = session_path.replace(".session", "")
 
-    client = await connect_client(session_name, user)  # <-- ✅ подключаемся к клиенту Telethon
+    client = await connect_client(session_path.replace(".session", ""), user)  # <-- ✅ подключаемся к клиенту Telethon
 
     logger.info("🛑 Остановка отслеживания сообщений...")
     await client.disconnect()
