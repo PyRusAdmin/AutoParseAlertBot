@@ -3,7 +3,7 @@ import asyncio
 import os
 
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon import TelegramClient, events
+from telethon import events
 from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
@@ -12,13 +12,12 @@ from account_manager.auth import connect_client
 from database.database import create_groups_model, create_keywords_model, create_group_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
-from system.dispatcher import api_id, api_hash
 
 # 🧠 Простейший трекер сообщений (в памяти)
 forwarded_messages = set()
 
 
-async def join_target_group(client: TelegramClient, user_id):
+async def join_target_group(client, user_id):
     """
     Подписывает клиента Telethon на целевую группу пользователя для пересылки сообщений.
 
@@ -193,7 +192,7 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
             logger.exception(f"❌ Ошибка при отправке сообщения с контекстом: {e}")
 
 
-async def join_required_channels(client: TelegramClient, user_id, message):
+async def join_required_channels(client, user_id, message):
     """
     Подписывает клиента на все отслеживаемые каналы и группы пользователя.
 
@@ -345,14 +344,11 @@ async def filter_messages(message, user_id, user, session_path):
 
     Работает до принудительной остановки (stop_tracking).
 
-    Args:
-        message (Message): Объект сообщения AIOgram для взаимодействия с пользователем.
-        user_id (int): Идентификатор пользователя Telegram.
-        user (User): Модель пользователя из базы данных (для языка и данных).
-        session_path (str): Полный путь к файлу сессии (.session) для авторизации.
-
-    Returns:
-        None
+    :param message: (Message) Объект сообщения AIOgram для взаимодействия с пользователем.
+    :param user_id: (int) Идентификатор пользователя Telegram.
+    :param user: (User) Модель пользователя из базы данных (для языка и данных).
+    :param session_path: (str) Полный путь к файлу сессии (.session) для авторизации.
+    :return: None
 
     Raises:
         Exception: Логируется при ошибках инициализации или подключения.
@@ -369,7 +365,7 @@ async def filter_messages(message, user_id, user, session_path):
     # Telethon ожидает session_name без расширения
     session_name = session_path.replace(".session", "")
 
-    client = await connect_client(session_name)
+    client = await connect_client(session_name, user)  # <-- ✅ подключаемся к клиенту Telethon
 
     try:
 
@@ -460,7 +456,7 @@ async def stop_tracking(user_id, message, user):
     session_name = session_path.replace(".session", "")
 
     # === Подключение клиента Telethon ===
-    client = TelegramClient(session_name, api_id, api_hash)
+    client = await connect_client(session_name, user)  # <-- ✅ подключаемся к клиенту Telethon
 
     logger.info("🛑 Остановка отслеживания сообщений...")
     await client.disconnect()
