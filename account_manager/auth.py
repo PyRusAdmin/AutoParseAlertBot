@@ -9,9 +9,10 @@ from system.dispatcher import api_id, api_hash
 
 
 # === Подключение клиента Telethon ===
-async def connect_client(session_name):
+async def connect_client(session_name, user):
     """
     Подключение клиента Telethon. Возвращается client.connect()
+    :param user: Пользователь из базы данных, для определения языка пользователя
     :param session_name: имя сессии Telethon
     :return: client - клиент Telethon
     """
