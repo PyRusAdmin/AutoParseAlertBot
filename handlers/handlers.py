@@ -13,7 +13,7 @@ from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
 )
 from locales.locales import get_text
-from parsing.parser import filter_messages
+from account_manager.parser import filter_messages
 from states.states import MyStates
 from system.dispatcher import router
 
