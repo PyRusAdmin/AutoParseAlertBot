@@ -2,12 +2,13 @@
 import asyncio
 import os
 
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import TelegramClient, events
 from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
+from account_manager.auth import connect_client
 from database.database import create_groups_model, create_keywords_model, create_group_model
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
@@ -368,22 +369,9 @@ async def filter_messages(message, user_id, user, session_path):
     # Telethon ожидает session_name без расширения
     session_name = session_path.replace(".session", "")
 
-    # === Подключение клиента Telethon ===
-    client = TelegramClient(session_name, api_id, api_hash, system_version="4.16.30-vxCUSTOM")
+    client = await connect_client(session_name)
 
     try:
-        await client.connect()
-
-        # === Проверка авторизации ===
-        if not await client.is_user_authorized():
-            logger.error(f"⚠️ Сессия {session_path} недействительна — требуется повторный вход.")
-            await message.answer(
-                get_text(user.language, "account_missing_2"),
-                reply_markup=menu_launch_tracking_keyboard()
-            )
-            return
-
-        logger.info("✅ Сессия активна, подключение успешно!")
 
         # === Подключаемся к целевой группе для пересылки ===
         target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id)
