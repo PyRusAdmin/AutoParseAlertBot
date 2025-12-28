@@ -53,15 +53,12 @@ async def join_target_group(client, user_id):
     try:
 
         await subscription_telegram(client, target_username)  # Подписываемся на группу
-        logger.success(f"✅ Успешно присоединился к целевой группе {target_username}")
+
         # Получаем ID группы
         entity = await client.get_entity(target_username)
         return entity.id
 
-    except UserAlreadyParticipantError:
-        logger.info(f"ℹ️ Вы уже являетесь членом целевой группы {target_username}")
-        entity = await client.get_entity(target_username)
-        return entity.id
+
     except FloodWaitError as e:
         logger.warning(f"⚠️ Ошибка FloodWait. Ожидание {e.seconds} секунд...")
         await asyncio.sleep(e.seconds)
