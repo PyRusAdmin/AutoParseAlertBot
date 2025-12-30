@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
+from typing import Any
 
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
@@ -44,11 +45,8 @@ def create_groups_model(user_id):
     добавленных пользователем для мониторинга. Создаётся отдельная таблица
     для каждого пользователя по шаблону 'groups_<user_id>'.
 
-    Args:
-        user_id (int): Уникальный идентификатор пользователя Telegram.
-
-    Returns:
-        peewee.Model: Класс модели Peewee с полем `username_chat_channel`.
+    :param user_id: (int) Уникальный идентификатор пользователя Telegram.
+    :return: peewee.Model: Класс модели Peewee с полем `username_chat_channel`.
 
     Model Fields:
         username_chat_channel (CharField):
@@ -72,11 +70,8 @@ def create_keywords_model(user_id):
     хочет фильтровать сообщения в группах. Создаётся отдельная таблица
     для каждого пользователя по шаблону 'keywords_<user_id>'.
 
-    Args:
-        user_id (int): Уникальный идентификатор пользователя Telegram.
-
-    Returns:
-        peewee.Model: Класс модели Peewee с полями `id` и `user_keyword`.
+    :param user_id: (int) Уникальный идентификатор пользователя Telegram.
+    :return peewee.Model: Класс модели Peewee с полями `id` и `user_keyword`.
 
     Model Fields:
         id (AutoField):
@@ -103,11 +98,8 @@ def create_group_model(user_id):
     куда бот будет пересылать найденные сообщения, содержащие ключевые слова.
     Создаётся отдельная таблица для каждого пользователя по шаблону 'group_<user_id>'.
 
-    Args:
-        user_id (int): Уникальный идентификатор пользователя Telegram.
-
-    Returns:
-        peewee.Model: Класс модели Peewee с полями `id` и `user_group`.
+    :param user_id: (int) Уникальный идентификатор пользователя Telegram.
+    :return peewee.Model: Класс модели Peewee с полями `id` и `user_group`.
 
     Model Fields:
         id (AutoField):
@@ -196,11 +188,8 @@ def getting_group(user_id: int) -> int:
 
     Ищет записи в таблице `group_{user_id}`.
 
-    Args:
-        user_id (int): ID пользователя Telegram.
-
-    Returns:
-        int: Количество записей (обычно 0 или 1, так как группа одна).
+    :param user_id: (int) ID пользователя Telegram.
+    :return int: Количество записей (обычно 0 или 1, так как группа одна).
     """
     GroupModel = create_group_model(user_id)
 
@@ -215,11 +204,8 @@ def count_session_files(user_id: int) -> int:
     """
     Подсчитывает количество .session файлов в папке accounts/{user_id}/.
 
-    Args:
-        user_id (int): ID пользователя Telegram.
-
-    Returns:
-        int: Количество .session файлов (0, если папка не существует или файлов нет).
+    :param user_id: (int) ID пользователя Telegram.
+    :return int: Количество .session файлов (0, если папка не существует или файлов нет).
     """
     session_dir = os.path.join("accounts", str(user_id))
     if not os.path.exists(session_dir):
@@ -230,3 +216,19 @@ def count_session_files(user_id: int) -> int:
         if f.endswith(".session")
     ]
     return len(session_files)
+
+
+def get_connetc_groups(user_id: int):
+    """
+    Получение количества подключенных групп для отслеживания ключевых слов
+
+    :param user_id: (int) ID пользователя Telegram.
+    :return int: Количество записей (обычно 0 или 1, так как группа одна).
+    """
+    GroupModel = create_groups_model(user_id)
+
+    # Убедимся, что таблица существует, иначе count() вызовет ошибку
+    if not GroupModel.table_exists():
+        return 0
+
+    return GroupModel.select().count()
