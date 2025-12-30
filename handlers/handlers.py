@@ -10,7 +10,7 @@ from telethon.tl.types import Message
 from account_manager.session import find_session_file
 from database.database import (
     User, create_groups_model, getting_number_records_database, count_session_files,
-    getting_group, get_connetc_groups
+    getting_group, get_connetc_groups, get_keywords
 )
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
@@ -82,11 +82,14 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
         count = count_session_files(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
         group_count = getting_group(user_id=user_tg.id)  # Получает количество подключенных технических групп.
         get_groups = get_connetc_groups(user_id=user_tg.id)  # Получает количество подключенных групп.
+        keywords_count = get_keywords(user_id=user_tg.id)  # Получает количество подключенных ключевых слов.
 
-        text = template.format(version=version, groups_count=groups_count, count=count, group_count=group_count,
-                               get_groups=get_groups)
+        text = template.format(
+            version=version, groups_count=groups_count, count=count, group_count=group_count,
+            get_groups=get_groups, keywords_count=keywords_count
+        )
 
-        await message.answer(text, reply_markup=main_menu_keyboard())
+        await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
 
 
 @router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))

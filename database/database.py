@@ -232,3 +232,19 @@ def get_connetc_groups(user_id: int):
         return 0
 
     return GroupModel.select().count()
+
+
+def get_keywords(user_id: int):
+    """
+    Получение колличества ключевых слов для отслеживания
+    :param user_id:
+    :return int: Количество записей (обычно 0 или 1, так как группа одна).
+    """
+
+    Keywords = create_keywords_model(user_id)
+
+    # Убедимся, что таблица существует, иначе count() вызовет ошибку
+    if not Keywords.table_exists():
+        return 0
+
+    return Keywords.select().count()
