@@ -73,7 +73,7 @@ def menu_launch_tracking_keyboard():
         ReplyKeyboardMarkup: Объект клавиатуры с кнопками управления отслеживанием.
 
     Layout:
-        [Остановить отслеживание]
+        [🛑 Остановить отслеживание]
         [🔙 Назад]
 
     Notes:
@@ -82,7 +82,7 @@ def menu_launch_tracking_keyboard():
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="Остановить отслеживание")],
+            [KeyboardButton(text="🛑 Остановить отслеживание")],
             [KeyboardButton(text="🔙 Назад")],
         ],
         resize_keyboard=True,
