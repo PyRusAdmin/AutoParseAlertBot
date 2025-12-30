@@ -236,7 +236,7 @@ def get_tracked_channels_count(user_id: int):
 
 def get_keywords_count(user_id: int):
     """
-    Получение колличества ключевых слов для отслеживания
+    Получение количества ключевых слов для отслеживания
     :param user_id:
     :return int: Количество записей (обычно 0 или 1, так как группа одна).
     """
