@@ -9,8 +9,8 @@ from telethon.tl.types import Message
 
 from account_manager.session import find_session_file
 from database.database import (
-    User, create_groups_model, getting_number_records_database, count_session_files,
-    getting_group, get_connetc_groups, get_keywords
+    User, create_groups_model, getting_number_records_database, get_session_count,
+    get_target_group_count, get_tracked_channels_count, get_keywords_count
 )
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
@@ -79,10 +79,10 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
         template = get_text(user.language, "welcome_message_template")
         version = "0.0.4"  # Версия бота
         groups_count = getting_number_records_database()  # Получает количество подключенных аккаунтов.
-        count = count_session_files(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
-        group_count = getting_group(user_id=user_tg.id)  # Получает количество подключенных технических групп.
-        get_groups = get_connetc_groups(user_id=user_tg.id)  # Получает количество подключенных групп.
-        keywords_count = get_keywords(user_id=user_tg.id)  # Получает количество подключенных ключевых слов.
+        count = get_session_count(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
+        group_count = get_target_group_count(user_id=user_tg.id)  # Получает количество подключенных технических групп.
+        get_groups = get_tracked_channels_count(user_id=user_tg.id)  # Получает количество подключенных групп.
+        keywords_count = get_keywords_count(user_id=user_tg.id)  # Получает количество подключенных ключевых слов.
 
         text = template.format(
             version=version, groups_count=groups_count, count=count, group_count=group_count,

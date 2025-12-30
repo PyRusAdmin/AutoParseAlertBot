@@ -6,17 +6,17 @@ LOCALES = {
 
         "welcome_message_template": (
             "🤖 Добро пожаловать в Telegram-бота для отслеживания 🔍 ключевых слов в группах и каналах!\n\n"
-            
+
             "📋 <b>Версия:</b> {version}\n"
             "📅 <b>Дата выхода:</b> 28 декабря 2025 года\n\n"
-            
+
             "📊 <b>Найдено групп / каналов пользователями:</b> {groups_count}\n\n"
 
             "📱 <b>Подключённых аккаунтов:</b> {count}\n"
             "📤 <b>Технических групп (для пересылки):</b> {group_count}\n"
             "🔍 <b>Ключевых слов:</b> {keywords_count}\n"
             "📡 <b>Отслеживаемых каналов:</b> {get_groups}\n\n"
-            
+
             "💡 <b>Совет:</b> для получения обновлённого функционала рекомендуется перезапускать бота через /start"
         ),
 
@@ -54,12 +54,20 @@ LOCALES = {
     "en": {
         "welcome_ask_language": "🌍 Hi! Please choose your interface language:",
 
-        "welcome_message_template": (
+        "welcome_message_template_en": (
             "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!\n\n"
-            "Version: {version}\n"
-            "Release date: October 30, 2025\n\n"
-            "📊 Groups/channels found by users: {groups_count}\n\n"
-            "💡 To get the latest features, please restart the bot using /start"
+
+            "📋 <b>Version:</b> {version}\n"
+            "📅 <b>Release date:</b> December 28, 2025\n\n"
+
+            "📊 <b>Groups/channels found by users:</b> {groups_count}\n\n"
+
+            "📱 <b>Connected accounts:</b> {count}\n"
+            "📤 <b>Technical groups (for forwarding):</b> {group_count}\n"
+            "🔍 <b>Keywords tracked:</b> {keywords_count}\n"
+            "📡 <b>Channels being monitored:</b> {get_groups}\n\n"
+
+            "💡 <b>Tip:</b> to get the latest features, please restart the bot using /start"
         ),
 
         "lang_selected": "✅ Great! The interface will now be displayed in your selected language.",

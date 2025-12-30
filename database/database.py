@@ -181,7 +181,7 @@ def getting_number_records_database():
     return TelegramGroup.select().count()
 
 
-def getting_group(user_id: int) -> int:
+def get_target_group_count(user_id: int) -> int:
     """
     Получает количество технических групп (куда пересылаются уведомления),
     подключённых конкретным пользователем.
@@ -200,7 +200,7 @@ def getting_group(user_id: int) -> int:
     return GroupModel.select().count()
 
 
-def count_session_files(user_id: int) -> int:
+def get_session_count(user_id: int) -> int:
     """
     Подсчитывает количество .session файлов в папке accounts/{user_id}/.
 
@@ -218,7 +218,7 @@ def count_session_files(user_id: int) -> int:
     return len(session_files)
 
 
-def get_connetc_groups(user_id: int):
+def get_tracked_channels_count(user_id: int):
     """
     Получение количества подключенных групп для отслеживания ключевых слов
 
@@ -234,7 +234,7 @@ def get_connetc_groups(user_id: int):
     return GroupModel.select().count()
 
 
-def get_keywords(user_id: int):
+def get_keywords_count(user_id: int):
     """
     Получение колличества ключевых слов для отслеживания
     :param user_id:
