@@ -11,10 +11,10 @@ from states.states import MyStates
 from system.dispatcher import router
 
 
-@router.message(F.text == "Ввод ключевого слова")
+@router.message(F.text == "🔍 Ввод ключевого слова")
 async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     """
-    Обработчик команды "Ввод ключевого слова".
+    Обработчик команды "🔍 Ввод ключевого слова".
 
     Очищает текущее состояние FSM, получает данные пользователя из базы,
     логирует переход в меню и отправляет приглашение ввести ключевые слова.
@@ -34,7 +34,7 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     user = User.get(User.user_id == telegram_user.id)
 
     logger.info(
-        f"Пользователь {telegram_user.id} {telegram_user.username} {telegram_user.first_name} {telegram_user.last_name} перешел в меню Ввод ключевого слова")
+        f"Пользователь {telegram_user.id} {telegram_user.username} {telegram_user.first_name} {telegram_user.last_name} перешел в меню 🔍 Ввод ключевого слова")
 
     await message.answer(
         get_text(user.language, "enter_keyword"),
@@ -163,7 +163,7 @@ def register_entering_keyword_handler():
     Регистрирует обработчики для ввода ключевых слов.
 
     Добавляет в маршрутизатор (router) два обработчика:
-        1. handle_enter_keyword_menu — реагирует на нажатие кнопки "Ввод ключевого слова".
+        1. handle_enter_keyword_menu — реагирует на нажатие кнопки "🔍 Ввод ключевого слова".
         2. handle_keywords_submission — обрабатывает ввод ключевых слов в состоянии MyStates.entering_keyword.
 
     Эти обработчики позволяют пользователю добавлять слова или фразы для отслеживания
