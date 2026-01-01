@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
-from typing import Any
 
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
@@ -46,7 +45,7 @@ def create_groups_model(user_id):
     для каждого пользователя по шаблону 'groups_<user_id>'.
 
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
-    :return: peewee.Model: Класс модели Peewee с полем `username_chat_channel`.
+    :return peewee.Model: Класс модели Peewee с полем `username_chat_channel`.
 
     Model Fields:
         username_chat_channel (CharField):

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-import hashlib
-import re
 import csv
+import hashlib
 import io
+import os
+import re
 from datetime import datetime
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, BufferedInputFile
+from aiogram.types import BufferedInputFile
+from aiogram.types import Message, FSInputFile
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from ai.ai import get_groq_response, search_groups_in_telegram
@@ -220,7 +222,47 @@ def format_summary_message(groups_count):
 
 @router.message(F.text == "Получить всю базу")
 async def get_all_database(message: Message, state: FSMContext):
-    """Выдает всю базу с группами и каналами пользователю по запросу"""
+    """Выдаёт CSV-файл со всей базой данных групп и каналов."""
+    # Путь к временному CSV-файлу
+    csv_file_path = "telegram_groups_export.csv"
+
+    try:
+        # Получаем все записи из базы
+        groups = TelegramGroup.select()
+
+        # Записываем данные в CSV
+        with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            # Заголовки
+            writer.writerow([
+                "Название", "Юзернейм", "Описание", "Участники",
+                "Категория", "Тип", "Ссылка", "Дата добавления"
+            ])
+            # Данные
+            for group in groups:
+                writer.writerow([
+                    group.name,
+                    group.username or "",
+                    group.description or "",
+                    group.participants,
+                    group.category or "",
+                    group.group_type,
+                    group.link,
+                    group.date_added.strftime("%Y-%m-%d %H:%M:%S")
+                ])
+
+        # Отправляем файл пользователю
+        document = FSInputFile(csv_file_path, filename="База_групп_и_каналов.csv")
+        await message.answer_document(document=document, caption="📦 Вот вся база данных Telegram-групп и каналов.")
+
+    except Exception as e:
+        await message.answer("❌ Произошла ошибка при создании файла.")
+        print(f"Error generating CSV: {e}")
+
+    finally:
+        # Удаляем временный файл после отправки
+        if os.path.exists(csv_file_path):
+            os.remove(csv_file_path)
 
 
 @router.message(F.text == "🔎 Поиск групп / каналов")
@@ -347,6 +389,7 @@ def register_handlers_pars_ai():
     Добавляет в маршрутизатор (router) два обработчика:
         1. handle_enter_keyword_menu — реагирует на кнопку "🔎 Поиск групп / каналов".
         2. handle_enter_keyword — обрабатывает 🔍 Ввод ключевого слова в состоянии MyStates.entering_keyword_ai_search.
+        3. get_all_database - выдает всю базу с найденными группами / каналами
 
     Эти обработчики позволяют пользователю найти публичные Telegram-группы и каналы
     по тематике с помощью искусственного интеллекта (Groq API), сохранить их в базу
@@ -357,3 +400,4 @@ def register_handlers_pars_ai():
     """
     router.message.register(handle_enter_keyword_menu)
     router.message.register(handle_enter_keyword)
+    router.message.register(get_all_database)
