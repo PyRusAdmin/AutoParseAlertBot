@@ -13,7 +13,8 @@ from database.database import (
     get_target_group_count, get_tracked_channels_count, get_keywords_count
 )
 from keyboards.keyboards import (
-    get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard
+    get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard,
+    connect_keyboard_account
 )
 from locales.locales import get_text
 from account_manager.parser import filter_messages
@@ -239,31 +240,44 @@ async def handle_start_tracking(message: Message, state: FSMContext):
         - Используется первое найденное .session-расширение.
         - Сообщение о запуске отправляется до начала парсинга.
     """
-    user_tg = message.from_user  # Получаем данные пользователя из Telegram
-    user_id = user_tg.id  # Получаем ID пользователя
-    user = User.get(User.user_id == user_tg.id)
+    try:
+        user_tg = message.from_user  # Получаем данные пользователя из Telegram
+        user_id = user_tg.id  # Получаем ID пользователя
+        user = User.get(User.user_id == user_tg.id)
 
-    logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню запуска парсинга.")
+        logger.info(
+            f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню запуска парсинга.")
 
-    # === Папка, где хранятся сессии ===
-    session_dir = os.path.join("accounts", str(user_id))
-    os.makedirs(session_dir, exist_ok=True)
+        # === Папка, где хранятся сессии ===
+        session_dir = os.path.join("accounts", str(user_id))
+        os.makedirs(session_dir, exist_ok=True)
 
-    session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
+        session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
 
-    # Если у пользователя подключенный аккаунт
-    await message.answer(
-        get_text(user.language, "launching_tracking"),
-        reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
-    )
+        logger.info(session_path)
+        if session_path is None:
+            logger.warning("Нет подключенного аккаунта")
 
-    await filter_messages(
-        message=message,  # сообщение
-        user_id=user_id,  # ID пользователя
-        user=user,  # модель пользователя
-        session_path=session_path  # путь к сессии
-    )
+            await message.answer(
+                text="Нет подключенного аккаунта. Подключите аккаунт.",
+                reply_markup=connect_keyboard_account()
+            )
+            return  # Правильный способ прервать выполнение обработчика
+
+            # Если у пользователя подключенный аккаунт
+        await message.answer(
+            get_text(user.language, "launching_tracking"),
+            reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+        )
+
+        await filter_messages(
+            message=message,  # сообщение
+            user_id=user_id,  # ID пользователя
+            user=user,  # модель пользователя
+            session_path=session_path  # путь к сессии
+        )
+    except Exception as e:
+        logger.exception(e)
 
 
 @router.message(F.text == "🔁 Обновить список")

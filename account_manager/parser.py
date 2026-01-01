@@ -12,7 +12,7 @@ from account_manager.auth import connect_client
 from account_manager.session import find_session_file
 from account_manager.subscription import subscription_telegram
 from database.database import create_groups_model, create_keywords_model, create_group_model
-from keyboards.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
+from keyboards.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech, connect_keyboard_account
 from locales.locales import get_text
 
 # 🧠 Простейший трекер сообщений (в памяти)
@@ -323,25 +323,29 @@ async def filter_messages(message, user_id, user, session_path):
 
     Работает до принудительной остановки (stop_tracking).
 
+    - Использует event-based обработку через `client.on(events.NewMessage)`.
+    - Состояние отслеживания хранится в памяти (`forwarded_messages`).
+    - После остановки клиент корректно отключается.
+
     :param message: (Message) Объект сообщения AIOgram для взаимодействия с пользователем.
     :param user_id: (int) Идентификатор пользователя Telegram.
     :param user: (User) Модель пользователя из базы данных (для языка и данных).
     :param session_path: (str) Полный путь к файлу сессии (.session) для авторизации.
     :return: None
     :raises Exception: Логируется при ошибках инициализации или подключения.
-
-    Notes:
-        - Использует event-based обработку через `client.on(events.NewMessage)`.
-        - Состояние отслеживания хранится в памяти (`forwarded_messages`).
-        - После остановки клиент корректно отключается.
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
     logger.info(f"🚀 Запуск бота для user_id={user_id}...")
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
-    client = await connect_client(session_path.replace(".session", ""), user)  # <-- ✅ подключаемся к клиенту Telethon
-
     try:
+
+        # Проверка на наличие подключенного аккаунта у пользователя для избежания ошибки
+
+        client = await connect_client(
+            session_name=session_path.replace(".session", ""),
+            user=user
+        )  # <-- ✅ подключаемся к клиенту Telethon
 
         # === Подключаемся к целевой группе для пересылки ===
         target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id, user=user)
@@ -363,19 +367,19 @@ async def filter_messages(message, user_id, user, session_path):
         # === Обработка новых сообщений ===
         @client.on(events.NewMessage(chats=channels))
         async def handle_new_message(event: events.NewMessage.Event):
-            await process_message(client, event.message, event.chat_id, user_id, target_group_id)
+            await process_message(
+                client=client, message=event.message, chat_id=event.chat_id, user_id=user_id,
+                target_group_id=target_group_id
+            )
 
         logger.info("👂 Бот слушает новые сообщения...")
         await message.answer(
-            "👂 Бот слушает новые сообщения...",
+            text="👂 Бот слушает новые сообщения...",
             reply_markup=menu_launch_tracking_keyboard()
         )
-
         await client.run_until_disconnected()
-
     except Exception as e:
         logger.exception(f"❌ Критическая ошибка в filter_messages: {e}")
-
     finally:
         # Гарантированное отключение клиента в любом случае
         if client.is_connected():
