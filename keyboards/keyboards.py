@@ -89,6 +89,16 @@ def menu_launch_tracking_keyboard():
         one_time_keyboard=False  # Отправлять сообщение только один раз
     )
 
+def search_group_ai():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🛑 Остановить отслеживание")],
+            [KeyboardButton(text="🔙 Назад")],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False  # Отправлять сообщение только один раз
+    )
+
 
 def settings_keyboard():
     """

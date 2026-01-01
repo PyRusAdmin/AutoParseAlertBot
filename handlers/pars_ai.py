@@ -14,7 +14,7 @@ from loguru import logger  # https://github.com/Delgan/loguru
 
 from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
-from keyboards.keyboards import back_keyboard
+from keyboards.keyboards import back_keyboard, search_group_ai
 from locales.locales import get_text
 from states.states import MyStates
 from system.dispatcher import router
@@ -267,6 +267,17 @@ async def get_all_database(message: Message, state: FSMContext):
 
 @router.message(F.text == "🔎 Поиск групп / каналов")
 async def handle_enter_keyword_menu(message: Message, state: FSMContext):
+    text = (
+        "Для поиска групп и каналов с помощью ИИ, воспользуйтесь AI поиск. Для получениея базы групп / каналов Telegram, то воспользуйтесь Получить всю базу. Для возврата в начальное меню, нажмите кнопку 🔙 Назад"
+    )
+    await message.answer(
+        text=text,
+        reply_markup=search_group_ai()
+    )
+
+
+@router.message(F.text == "AI поиск")
+async def ai_search(message: Message, state: FSMContext):
     """
     Обработчик команды "🔎 Поиск групп / каналов".
 
@@ -401,3 +412,4 @@ def register_handlers_pars_ai():
     router.message.register(handle_enter_keyword_menu)
     router.message.register(handle_enter_keyword)
     router.message.register(get_all_database)
+    router.message.register(ai_search)
