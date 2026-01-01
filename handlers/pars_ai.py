@@ -220,7 +220,7 @@ def format_summary_message(groups_count):
     return message
 
 
-@router.message(F.text == "Получить всю базу")
+@router.message(F.text == "📥 Получить всю базу")
 async def get_all_database(message: Message, state: FSMContext):
     """Выдаёт CSV-файл со всей базой данных групп и каналов."""
     # Путь к временному CSV-файлу
@@ -296,7 +296,7 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     )
 
 
-@router.message(F.text == "AI поиск")
+@router.message(F.text == "🤖 AI поиск")
 async def ai_search(message: Message, state: FSMContext):
     """
     Обработчик команды "🔎 Поиск групп / каналов".
