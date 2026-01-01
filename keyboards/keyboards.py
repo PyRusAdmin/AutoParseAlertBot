@@ -91,6 +91,7 @@ def menu_launch_tracking_keyboard():
 
 
 def search_group_ai():
+    """Клавиатура меню 🔎 Поиск групп / каналов"""
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Получить всю базу")],
