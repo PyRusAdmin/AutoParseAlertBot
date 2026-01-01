@@ -250,12 +250,9 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     и запрашивает у пользователя ключевое слово для поиска групп через AI.
     Переводит пользователя в состояние ожидания ввода (MyStates.entering_keyword_ai_search).
 
-    Args:
-        message (Message): Входящее сообщение от пользователя.
-        state (FSMContext): Контекст машины состояний, сбрасывается при входе.
-
-    Returns:
-        None
+    :param message : (Message) Входящее сообщение от пользователя.
+    :param state : (FSMContext) Контекст машины состояний, сбрасывается при входе.
+    :return : None
     """
     await state.clear()  # Сбрасывает состояние
 
