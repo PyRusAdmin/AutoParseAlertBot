@@ -1,3 +1,5 @@
+01.01.2026
+
 **Русский язык**
 
 * Версия: 0.0.5
@@ -15,3 +17,7 @@
 * Added AI functionality for 🔎 searching Telegram groups/channels and delivering results to users.
 
 You can test it via the link: https://t.me/AutoParseAlertBot
+
+02.01.2026
+
+- Добавлена выдача общей базы групп/каналов пользователю бота.
