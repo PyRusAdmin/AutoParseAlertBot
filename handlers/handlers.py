@@ -76,9 +76,8 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
             reply_markup=get_lang_keyboard()
         )
     else:
-        # Язык уже выбран — приветствуем
-        template = get_text(user.language, "welcome_message_template")
-        version = "0.0.4"  # Версия бота
+        template = get_text(user.language, "welcome_message_template")  # Язык уже выбран — приветствуем
+        version = "0.0.5"  # Версия бота
         groups_count = getting_number_records_database()  # Получает количество подключенных аккаунтов.
         count = get_session_count(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
         group_count = get_target_group_count(user_id=user_tg.id)  # Получает количество подключенных технических групп.
