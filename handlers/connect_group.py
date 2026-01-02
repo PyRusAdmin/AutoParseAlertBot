@@ -50,12 +50,9 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
     и сохраняет введённый username. Уведомляет пользователя об успешном добавлении
     или ошибке (например, дубликат).
 
-    Args:
-        message (Message): Объект входящего сообщения с username группы.
-        state (FSMContext): Контекст машины состояний, используется для сброса состояния после обработки.
-
-    Returns:
-        None
+    :param message: (Message) Объект входящего сообщения с username группы.
+    :param state: (FSMContext) Контекст машины состояний, используется для сброса состояния после обработки.
+    :return: None
 
     Raises:
         Exception: При ошибке добавления в БД (например, нарушение уникальности).
