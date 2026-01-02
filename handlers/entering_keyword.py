@@ -22,12 +22,9 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
 
     Переводит пользователя в состояние ожидания ввода (MyStates.entering_keyword).
 
-    Args:
-        message (Message): Объект входящего сообщения от пользователя.
-        state (FSMContext): Контекст машины состояний, используется для сброса и установки состояния.
-
-    Returns:
-        None
+    :param message: (Message) Объект входящего сообщения от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, используется для сброса и установки состояния.
+    :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
     telegram_user = message.from_user
