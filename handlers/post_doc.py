@@ -42,6 +42,7 @@ async def send_instruction(message: Message, state: FSMContext):
         await message.answer_document(
             document=FSInputFile("doc/doc.md"),
             caption=text,
+            parse_mode="html",
         )
 
     except FileNotFoundError:

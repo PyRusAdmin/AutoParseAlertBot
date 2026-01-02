@@ -163,14 +163,14 @@ async def handle_back_to_main_menu(message: Message, state: FSMContext):
 
     Используется для навигации из подменю (настройки, добавление групп и т.д.) в основное меню.
 
+    - Повторно использует логику инициализации из handle_start_command.
+    - Не сохраняет состояние после возврата.
+
     :param message: (Message) Входящее сообщение от пользователя.
     :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
     :return: None
-
-    Notes:
-        - Повторно использует логику инициализации из handle_start_command.
-        - Не сохраняет состояние после возврата.
     """
+    await state.clear()
     user_tg = message.from_user
 
     # Создаём пользователя с language = "unset", если его нет
