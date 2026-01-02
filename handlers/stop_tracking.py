@@ -54,7 +54,6 @@ def register_stop_tracking_handler():
 
     Вызывается при инициализации бота в `main.py`.
 
-    Returns:
-        None
+    :return: None
     """
     router.message.register(handle_stop_tracking)  # Регистрация обработчика
