@@ -85,7 +85,7 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
         else:
             await message.answer("⚠️ Ошибка при добавлении группы.")
         logger.error(f"Ошибка при добавлении ключевого слова: {e}")
-    await state.clear()  # Очищаем состояние
+    await state.clear()  # Завершаем текущее состояние машины состояния
 
 
 def register_entering_group_handler():

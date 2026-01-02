@@ -343,7 +343,7 @@ async def handle_group_usernames_input(message: Message, state: FSMContext):
 
     if not usernames:
         await message.answer("⚠️ Вы не указали ни одной группы.")
-        await state.clear()
+        await state.clear() # Завершаем текущее состояние машины состояния
         return
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
@@ -380,7 +380,7 @@ async def handle_group_usernames_input(message: Message, state: FSMContext):
         response.append("❌ Ошибки при добавлении:\n" + "\n".join(f"{u}: {e}" for u, e in errors))
 
     await message.answer("\n\n".join(response))
-    await state.clear()
+    await state.clear() # Завершаем текущее состояние машины состояния
 
 
 def register_greeting_handlers():

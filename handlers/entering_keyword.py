@@ -78,7 +78,7 @@ async def handle_keywords_submission(message: Message, state: FSMContext):
 
     if not keywords_list:
         await message.answer("⚠️ Вы не указали ни одного ключевого слова.")
-        await state.clear()
+        await state.clear() # Завершаем текущее состояние машины состояния
         return
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
@@ -149,7 +149,7 @@ async def handle_keywords_submission(message: Message, state: FSMContext):
         f"added={len(added_keywords)}, skipped={len(skipped_keywords)}, errors={len(error_keywords)}"
     )
 
-    await state.clear()
+    await state.clear() # Завершаем текущее состояние машины состояния
 
 
 def register_entering_keyword_handler():
