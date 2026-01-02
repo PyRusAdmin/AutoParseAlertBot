@@ -33,12 +33,9 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
 
     Является точкой входа в бота.
 
-    Args:
-        message (Message): Входящее сообщение от пользователя с командой /start.
-        state (FSMContext): Контекст машины состояний, сбрасывается при старте.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение от пользователя с командой /start.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается при старте.
+    :return: None
 
     Notes:
         - Создаёт или получает запись в таблице `User`.
