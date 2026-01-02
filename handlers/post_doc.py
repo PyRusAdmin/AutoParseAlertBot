@@ -15,12 +15,9 @@ async def send_instruction(message: Message, state: FSMContext):
     Файл берётся из локальной директории 'doc/'. В случае успеха добавляет ссылку на онлайн-документацию.
     Обрабатывает ошибки, если файл отсутствует или произошла ошибка отправки.
 
-    Args:
-        message (Message): Входящее сообщение от пользователя.
-        state (FSMContext): Контекст машины состояний, сбрасывается перед отправкой.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается перед отправкой.
+    :return: None
 
     Raises:
         FileNotFoundError: Если файл 'doc/doc.md' не существует.

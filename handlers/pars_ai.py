@@ -343,10 +343,12 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
     - Результаты сохраняются через `save_group_to_db`.
     - Файл создаётся через `create_csv_file` и отправляется как документ.
 
-    :param message : (Message) Входящее сообщение с ключевым словом.
-    :param state : (FSMContext) Контекст машины состояний, сбрасывается после обработки.
-    :return None
-    :raise Exception: Перехватывается локально, логируется и преобразуется в пользовательское сообщение.
+    :param message: (Message) Входящее сообщение с ключевым словом.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается после обработки.
+    :return: None
+
+    Raises:
+        Exception: Перехватывается локально, логируется и преобразуется в пользовательское сообщение.
     """
 
     telegram_user = message.from_user
