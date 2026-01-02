@@ -99,12 +99,9 @@ async def handle_language_selection(message: Message, state: FSMContext):
 
     Используется при первом запуске бота, когда язык установлен в "unset".
 
-    Args:
-        message (Message): Входящее сообщение с выбранным языком.
-        state (FSMContext): Контекст машины состояний, сбрасывается перед обработкой.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение с выбранным языком.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается перед обработкой.
+    :return: None
 
     Raises:
         Exception: Не ожидается, но возможна ошибка записи в БД.
@@ -137,12 +134,9 @@ async def handle_settings_menu(message: Message, state: FSMContext):
     Отображает меню настроек с возможностью смены языка интерфейса.
     Не требует предварительной настройки аккаунта.
 
-    Args:
-        message (Message): Входящее сообщение от пользователя.
-        state (FSMContext): Контекст машины состояний, не используется напрямую.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, не используется напрямую.
+    :return: None
 
     Notes:
         - Текст меню локализован в зависимости от языка пользователя.
