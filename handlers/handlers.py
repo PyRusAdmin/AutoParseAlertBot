@@ -272,12 +272,9 @@ async def handle_refresh_groups_list(message: Message, state: FSMContext):
     Позволяет пользователю добавить новые группы или каналы для отслеживания.
     Отправляет приглашение ввести username-ы и переводит пользователя в состояние ожидания ввода.
 
-    Args:
-        message (Message): Входящее сообщение от пользователя.
-        state (FSMContext): Контекст машины состояний, используется для установки состояния.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, используется для установки состояния.
+    :return: None
 
     Notes:
         - Принимает несколько username за раз, разделённые пробелами или переносами строк.
@@ -306,12 +303,9 @@ async def handle_group_usernames_input(message: Message, state: FSMContext):
     и добавляет их в персональную таблицу пользователя. Поддерживает массовую загрузку.
     Обрабатывает дубликаты и ошибки, формирует отчёт.
 
-    Args:
-        message (Message): Входящее сообщение с @username-ами.
-        state (FSMContext): Контекст машины состояний, сбрасывается после обработки.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение с @username-ами.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается после обработки.
+    :return: None
 
     Raises:
         Exception: Перехватывается локально при ошибках добавления (например, нарушение уникальности).
