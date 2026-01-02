@@ -22,12 +22,9 @@ async def handle_connect_message_group(message: Message, state: FSMContext):
 
     Переводит пользователя в состояние ожидания ввода (MyStates.entering_group).
 
-    Args:
-        message (Message): Объект входящего сообщения от пользователя.
-        state (FSMContext): Контекст машины состояний, используется для сброса и установки состояния.
-
-    Returns:
-        None
+    :param message: (Message) Объект входящего сообщения от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, используется для сброса и установки состояния.
+    :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
