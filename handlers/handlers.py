@@ -199,8 +199,20 @@ async def handle_back_to_main_menu(message: Message, state: FSMContext):
         )
     else:
         # Язык уже выбран — приветствуем
-        text = get_text(user.language, "welcome_message")
-        await message.answer(text, reply_markup=main_menu_keyboard())
+        template = get_text(user.language, "welcome_message_template")  # Язык уже выбран — приветствуем
+        version = "0.0.5"  # Версия бота
+        groups_count = getting_number_records_database()  # Получает количество подключенных аккаунтов.
+        count = get_session_count(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
+        group_count = get_target_group_count(user_id=user_tg.id)  # Получает количество подключенных технических групп.
+        get_groups = get_tracked_channels_count(user_id=user_tg.id)  # Получает количество подключенных групп.
+        keywords_count = get_keywords_count(user_id=user_tg.id)  # Получает количество подключенных ключевых слов.
+
+        text = template.format(
+            version=version, groups_count=groups_count, count=count, group_count=group_count,
+            get_groups=get_groups, keywords_count=keywords_count
+        )
+
+        await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
 
 
 @router.message(F.text == "⏯ Запуск отслеживания")
