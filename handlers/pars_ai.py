@@ -207,11 +207,8 @@ def format_summary_message(groups_count):
 
     Сообщение отправляется перед CSV-файлом.
 
-    Args:
-        groups_count (int): Количество успешно сохранённых и отправленных групп.
-
-    Returns:
-        str: Сообщение с HTML-разметкой (теги <b>).</n
+    :param groups_count: (int) Количество успешно сохранённых и отправленных групп.
+    :return: (str) Сообщение с HTML-разметкой (теги <b>).
     """
 
     message = f"✅ <b>Поиск завершён!</b>\n\n"
