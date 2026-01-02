@@ -19,12 +19,9 @@ async def handle_stop_tracking(message: Message, state: FSMContext):
     для прекращения фонового парсинга сообщений в отслеживаемых группах.
     После остановки отправляет подтверждение пользователю.
 
-    Args:
-        message (Message): Входящее сообщение от пользователя.
-        state (FSMContext): Контекст машины состояний, сбрасывается перед остановкой.
-
-    Returns:
-        None
+    :param message: (Message) Входящее сообщение от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается перед остановкой.
+    :return: None
 
     Raises:
         Exception: Передаётся в `stop_tracking`, где обрабатывается.

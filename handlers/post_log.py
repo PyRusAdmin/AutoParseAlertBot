@@ -16,12 +16,9 @@ async def log(message: types.Message, state: FSMContext):
     Используется для диагностики ошибок и мониторинга работы.
     Файл отправляется как документ Telegram с HTML-капшном.
 
-    Args:
-        message (types.Message): Входящее сообщение с командой /log.
-        state (FSMContext): Контекст машины состояний, сбрасывается перед отправкой.
-
-    Returns:
-        None
+    :param message: (types.Message) Входящее сообщение с командой /log.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается перед отправкой.
+    :return: None
 
     Raises:
         Exception: Не обрабатывается явно, но может возникнуть при отсутствии файла или ошибках отправки.
