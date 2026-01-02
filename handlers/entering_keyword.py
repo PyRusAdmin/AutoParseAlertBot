@@ -55,12 +55,9 @@ async def handle_keywords_submission(message: Message, state: FSMContext):
 
     После обработки сбрасывает состояние FSM.
 
-    Args:
-        message (Message): Объект входящего сообщения с ключевыми словами.
-        state (FSMContext): Контекст машины состояний, используется для сброса состояния после обработки.
-
-    Returns:
-        None
+    :param message: (Message) Объект входящего сообщения с ключевыми словами.
+    :param state: (FSMContext) Контекст машины состояний, используется для сброса состояния после обработки.
+    :return: None
 
     Raises:
         Exception: При ошибке добавления в БД (например, нарушение уникальности или другие DB-ошибки).
