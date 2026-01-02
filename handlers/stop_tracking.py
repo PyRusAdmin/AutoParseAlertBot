@@ -19,16 +19,13 @@ async def handle_stop_tracking(message: Message, state: FSMContext):
     для прекращения фонового парсинга сообщений в отслеживаемых группах.
     После остановки отправляет подтверждение пользователю.
 
+    - Команда доступна только во время активного отслеживания.
+    - Использует глобальный механизм управления задачами в `parsing/parser.py`.
+
     :param message: (Message) Входящее сообщение от пользователя.
     :param state: (FSMContext) Контекст машины состояний, сбрасывается перед остановкой.
     :return: None
-
-    Raises:
-        Exception: Передаётся в `stop_tracking`, где обрабатывается.
-
-    Notes:
-        - Команда доступна только во время активного отслеживания.
-        - Использует глобальный механизм управления задачами в `parsing/parser.py`.
+    :raise Exception: Передаётся в `stop_tracking`, где обрабатывается.
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
@@ -40,7 +37,7 @@ async def handle_stop_tracking(message: Message, state: FSMContext):
     await stop_tracking(user_id=user_tg.id, message=message, user=user)
 
     await message.answer(
-        "Отслеживание отменено",
+        text="Отслеживание отменено",
         reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
     )
 

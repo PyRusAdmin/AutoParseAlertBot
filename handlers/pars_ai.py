@@ -409,7 +409,7 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
             "❌ Произошла ошибка при поиске. Попробуйте ещё раз.",
             reply_markup=back_keyboard()
         )
-    await state.clear() # Завершаем текущее состояние машины состояния
+    await state.clear()  # Завершаем текущее состояние машины состояния
 
 
 def register_handlers_pars_ai():
