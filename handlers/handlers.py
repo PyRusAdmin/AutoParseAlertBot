@@ -22,6 +22,40 @@ from states.states import MyStates
 from system.dispatcher import router
 
 
+def get_or_create_user(user_tg):
+    """
+    Получает существующего пользователя из базы данных или создаёт нового, если он не существует.
+
+    При создании нового пользователя устанавливает язык интерфейса в "unset" (не выбран).
+    При наличии существующего пользователя обновляет его профиль (username, имя, фамилия),
+    чтобы синхронизировать данные с актуальной информацией из Telegram.
+
+    :param user_tg: (User) Объект пользователя из Telegram (aiogram.types.User).
+    :return: (User) Экземпляр модели пользователя из базы данных.
+    """
+    # Создаём пользователя с language = "unset", если его нет
+    user, created = User.get_or_create(
+        user_id=user_tg.id,
+        defaults={
+            "username": user_tg.username,
+            "first_name": user_tg.first_name,
+            "last_name": user_tg.last_name,
+            "language": "unset"  # ← ключевое: "unset" = язык не выбран
+        }
+    )
+    if not created:
+        # Обновляем профиль (на случай смены имени и т.п.)
+        user.username = user_tg.username
+        user.first_name = user_tg.first_name
+        user.last_name = user_tg.last_name
+        user.save()
+
+    logger.info(
+        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} начал работу с ботом.")
+
+    return user
+
+
 @router.message(CommandStart())
 async def handle_start_command(message: Message, state: FSMContext) -> None:
     """
@@ -44,25 +78,7 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
-    # Создаём пользователя с language = "unset", если его нет
-    user, created = User.get_or_create(
-        user_id=user_tg.id,
-        defaults={
-            "username": user_tg.username,
-            "first_name": user_tg.first_name,
-            "last_name": user_tg.last_name,
-            "language": "unset"  # ← ключевое: "unset" = язык не выбран
-        }
-    )
-    if not created:
-        # Обновляем профиль (на случай смены имени и т.п.)
-        user.username = user_tg.username
-        user.first_name = user_tg.first_name
-        user.last_name = user_tg.last_name
-        user.save()
-
-    logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} начал работу с ботом.")
+    user = get_or_create_user(user_tg)
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
@@ -172,22 +188,7 @@ async def handle_back_to_main_menu(message: Message, state: FSMContext):
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
-    # Создаём пользователя с language = "unset", если его нет
-    user, created = User.get_or_create(
-        user_id=user_tg.id,
-        defaults={
-            "username": user_tg.username,
-            "first_name": user_tg.first_name,
-            "last_name": user_tg.last_name,
-            "language": "unset"  # ← ключевое: "unset" = язык не выбран
-        }
-    )
-    if not created:
-        # Обновляем профиль (на случай смены имени и т.п.)
-        user.username = user_tg.username
-        user.first_name = user_tg.first_name
-        user.last_name = user_tg.last_name
-        user.save()
+    user = get_or_create_user(user_tg)
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
