@@ -33,14 +33,13 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
 
     Является точкой входа в бота.
 
+    - Создаёт или получает запись в таблице `User`.
+    - При повторном запуске обновляет имя и username пользователя.
+    - Использует ключ "unset" для обозначения незаданного языка.
+
     :param message: (Message) Входящее сообщение от пользователя с командой /start.
     :param state: (FSMContext) Контекст машины состояний, сбрасывается при старте.
     :return: None
-
-    Notes:
-        - Создаёт или получает запись в таблице `User`.
-        - При повторном запуске обновляет имя и username пользователя.
-        - Использует ключ "unset" для обозначения незаданного языка.
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
@@ -170,7 +169,7 @@ async def handle_back_to_main_menu(message: Message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
     :return: None
     """
-    await state.clear()
+    await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
     # Создаём пользователя с language = "unset", если его нет
