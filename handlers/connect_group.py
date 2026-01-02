@@ -99,8 +99,7 @@ def register_entering_group_handler():
     Эти обработчики позволяют пользователю указать чат, куда бот будет пересылать
     найденные сообщения, содержащие ключевые слова.
 
-    Returns:
-        None
+    :return: None
     """
     router.message.register(handle_connect_message_group)  # Регистрация обработчика
     router.message.register(handle_group_username_submission)  # Регистрация обработчика ввода username
