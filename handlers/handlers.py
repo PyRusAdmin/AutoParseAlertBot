@@ -78,7 +78,9 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
-    user = get_or_create_user(user_tg)
+    user = get_or_create_user(
+        user_tg
+    )  # Получаем или создаём пользователя в базе данных, синхронизируя его данные с Telegram
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
@@ -188,7 +190,9 @@ async def handle_back_to_main_menu(message: Message, state: FSMContext):
     await state.clear()  # Завершаем текущее состояние машины состояния
     user_tg = message.from_user
 
-    user = get_or_create_user(user_tg)
+    user = get_or_create_user(
+        user_tg
+    )  # Получаем или создаём пользователя в базе данных, синхронизируя его данные с Telegram
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
