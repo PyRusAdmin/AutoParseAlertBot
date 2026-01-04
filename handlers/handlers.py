@@ -14,12 +14,12 @@ from database.database import (
 )
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard,
-    connect_keyboard_account
+    connect_keyboard_account, main_admin_keyboard
 )
 from locales.locales import get_text
 from account_manager.parser import filter_messages
 from states.states import MyStates
-from system.dispatcher import router
+from system.dispatcher import router, ADMIN_USER_ID
 
 
 @router.message(CommandStart())
@@ -35,29 +35,39 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
 
     - Создаёт или получает запись в таблице `User`.
     - При повторном запуске обновляет имя и username пользователя.
+    - Проверяет, является ли пользователь администратором по ID.
     - Использует ключ "unset" для обозначения незаданного языка.
 
     :param message: (Message) Входящее сообщение от пользователя с командой /start.
     :param state: (FSMContext) Контекст машины состояний, сбрасывается при старте.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояния
+    await state.clear()  # Завершаем текущее состояние машины состояний
     user_tg = message.from_user
 
-    user = get_or_create_user(
-        user_tg
-    )  # Получаем или создаём пользователя в базе данных, синхронизируя его данные с Telegram
+    user = get_or_create_user(user_tg)  # Получаем или создаём пользователя
+
+    # Проверяем, является ли пользователь администратором
+    # from config import ADMIN_USER_ID  # Импортируем ID администраторов
+    is_admin = user_tg.id in ADMIN_USER_ID
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
-        # Можно предложить язык по умолчанию из Telegram, но всё равно дать выбор
         await message.answer(
             "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
             reply_markup=get_lang_keyboard()
         )
     else:
+        # Генерируем приветственное сообщение
         text = generate_welcome_message(user_language=user.language, user_tg_id=user_tg.id)
-        await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
+
+        # Выбираем клавиатуру в зависимости от роли
+        if is_admin:
+            reply_markup = main_admin_keyboard()
+        else:
+            reply_markup = main_menu_keyboard()
+
+        await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
 
 
 @router.message(F.text == "🔙 Назад")
@@ -78,24 +88,29 @@ async def handle_back_to_main_menu(message: Message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояния
+    await state.clear()  # Завершаем текущее состояние машины состояний
     user_tg = message.from_user
 
-    user = get_or_create_user(
-        user_tg
-    )  # Получаем или создаём пользователя в базе данных, синхронизируя его данные с Telegram
+    user = get_or_create_user(user_tg)  # Получаем или создаём пользователя
+
+    # Проверяем, является ли пользователь администратором
+    # from config import ADMIN_USER_ID
+    is_admin = user_tg.id in ADMIN_USER_ID
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
-        # Можно предложить язык по умолчанию из Telegram, но всё равно дать выбор
         await message.answer(
             "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
             reply_markup=get_lang_keyboard()
         )
     else:
-        # Язык уже выбран — приветствуем
+        # Генерируем приветственное сообщение
         text = generate_welcome_message(user_language=user.language, user_tg_id=user_tg.id)
-        await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
+
+        # Выбираем клавиатуру в зависимости от роли
+        reply_markup = main_admin_keyboard() if is_admin else main_menu_keyboard()
+
+        await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
 
 
 def generate_welcome_message(user_language: str, user_tg_id: int) -> str:
