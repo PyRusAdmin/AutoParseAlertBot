@@ -22,40 +22,6 @@ from states.states import MyStates
 from system.dispatcher import router
 
 
-def get_or_create_user(user_tg):
-    """
-    Получает существующего пользователя из базы данных или создаёт нового, если он не существует.
-
-    При создании нового пользователя устанавливает язык интерфейса в "unset" (не выбран).
-    При наличии существующего пользователя обновляет его профиль (username, имя, фамилия),
-    чтобы синхронизировать данные с актуальной информацией из Telegram.
-
-    :param user_tg: (User) Объект пользователя из Telegram (aiogram.types.User).
-    :return: (User) Экземпляр модели пользователя из базы данных.
-    """
-    # Создаём пользователя с language = "unset", если его нет
-    user, created = User.get_or_create(
-        user_id=user_tg.id,
-        defaults={
-            "username": user_tg.username,
-            "first_name": user_tg.first_name,
-            "last_name": user_tg.last_name,
-            "language": "unset"  # ← ключевое: "unset" = язык не выбран
-        }
-    )
-    if not created:
-        # Обновляем профиль (на случай смены имени и т.п.)
-        user.username = user_tg.username
-        user.first_name = user_tg.first_name
-        user.last_name = user_tg.last_name
-        user.save()
-
-    logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} начал работу с ботом.")
-
-    return user
-
-
 @router.message(CommandStart())
 async def handle_start_command(message: Message, state: FSMContext) -> None:
     """
@@ -90,20 +56,114 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
             reply_markup=get_lang_keyboard()
         )
     else:
-        template = get_text(user.language, "welcome_message_template")  # Язык уже выбран — приветствуем
-        version = "0.0.5"  # Версия бота
-        groups_count = getting_number_records_database()  # Получает количество подключенных аккаунтов.
-        count = get_session_count(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
-        group_count = get_target_group_count(user_id=user_tg.id)  # Получает количество подключенных технических групп.
-        get_groups = get_tracked_channels_count(user_id=user_tg.id)  # Получает количество подключенных групп.
-        keywords_count = get_keywords_count(user_id=user_tg.id)  # Получает количество подключенных ключевых слов.
-
-        text = template.format(
-            version=version, groups_count=groups_count, count=count, group_count=group_count,
-            get_groups=get_groups, keywords_count=keywords_count
-        )
-
+        text = generate_welcome_message(user_language=user.language, user_tg_id=user_tg.id)
         await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
+
+
+@router.message(F.text == "🔙 Назад")
+async def handle_back_to_main_menu(message: Message, state: FSMContext):
+    """
+    Обработчик команды "🔙 Назад".
+
+    Очищает состояние FSM и возвращает пользователя в главное меню.
+    Логика аналогична обработчику /start: проверяет наличие пользователя,
+    обновляет профиль и показывает главное меню или запрос языка.
+
+    Используется для навигации из подменю (настройки, добавление групп и т.д.) в основное меню.
+
+    - Повторно использует логику инициализации из handle_start_command.
+    - Не сохраняет состояние после возврата.
+
+    :param message: (Message) Входящее сообщение от пользователя.
+    :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
+    :return: None
+    """
+    await state.clear()  # Завершаем текущее состояние машины состояния
+    user_tg = message.from_user
+
+    user = get_or_create_user(
+        user_tg
+    )  # Получаем или создаём пользователя в базе данных, синхронизируя его данные с Telegram
+
+    # Если язык ещё не выбран — просим выбрать
+    if user.language == "unset":
+        # Можно предложить язык по умолчанию из Telegram, но всё равно дать выбор
+        await message.answer(
+            "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
+            reply_markup=get_lang_keyboard()
+        )
+    else:
+        # Язык уже выбран — приветствуем
+        text = generate_welcome_message(user_language=user.language, user_tg_id=user_tg.id)
+        await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
+
+
+def generate_welcome_message(user_language: str, user_tg_id: int) -> str:
+    """
+    Генерирует приветственное сообщение для пользователя с подставленными данными.
+
+    Собирает информацию о:
+    - версии бота
+    - общем количестве найденных групп в базе
+    - количестве подключённых пользователем сессий (аккаунтов)
+    - количестве подключённых технических групп (для пересылки)
+    - количестве отслеживаемых каналов
+    - количестве сохранённых ключевых слов
+
+    :param user_language: Язык пользователя (например, 'ru', 'en') для выбора шаблона.
+    :param user_tg_id: Telegram ID пользователя для получения его данных.
+    :return: Готовое текстовое сообщение для отправки.
+    """
+    template = get_text(user_language, "welcome_message_template")
+    version = "0.0.5"
+    groups_count = getting_number_records_database()  # Общее число найденных групп
+    count = get_session_count(user_id=user_tg_id)  # Сессии пользователя
+    group_count = get_target_group_count(user_id=user_tg_id)  # Группы для пересылки
+    get_groups = get_tracked_channels_count(user_id=user_tg_id)  # Отслеживаемые каналы
+    keywords_count = get_keywords_count(user_id=user_tg_id)  # Ключевые слова
+
+    return template.format(
+        version=version,
+        groups_count=groups_count,
+        count=count,
+        group_count=group_count,
+        get_groups=get_groups,
+        keywords_count=keywords_count
+    )
+
+
+def get_or_create_user(user_tg):
+    """
+    Получает существующего пользователя из базы данных или создаёт нового, если он не существует.
+
+    При создании нового пользователя устанавливает язык интерфейса в "unset" (не выбран).
+    При наличии существующего пользователя обновляет его профиль (username, имя, фамилия),
+    чтобы синхронизировать данные с актуальной информацией из Telegram.
+
+    :param user_tg: (User) Объект пользователя из Telegram (aiogram.types.User).
+    :return: (User) Экземпляр модели пользователя из базы данных.
+    """
+    # Создаём пользователя с language = "unset", если его нет
+    user, created = User.get_or_create(
+        user_id=user_tg.id,
+        defaults={
+            "username": user_tg.username,
+            "first_name": user_tg.first_name,
+            "last_name": user_tg.last_name,
+            "language": "unset"  # ← ключевое: "unset" = язык не выбран
+        }
+    )
+    if not created:
+        # Обновляем профиль (на случай смены имени и т.п.)
+        user.username = user_tg.username
+        user.first_name = user_tg.first_name
+        user.last_name = user_tg.last_name
+        user.save()
+
+    logger.info(
+        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} начал работу с ботом.")
+
+    return user
 
 
 @router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))
@@ -167,56 +227,6 @@ async def handle_settings_menu(message: Message, state: FSMContext):
         get_text(user.language, "settings_message"),
         reply_markup=settings_keyboard()  # клавиатура выбора языка
     )
-
-
-@router.message(F.text == "🔙 Назад")
-async def handle_back_to_main_menu(message: Message, state: FSMContext):
-    """
-    Обработчик команды "🔙 Назад".
-
-    Очищает состояние FSM и возвращает пользователя в главное меню.
-    Логика аналогична обработчику /start: проверяет наличие пользователя,
-    обновляет профиль и показывает главное меню или запрос языка.
-
-    Используется для навигации из подменю (настройки, добавление групп и т.д.) в основное меню.
-
-    - Повторно использует логику инициализации из handle_start_command.
-    - Не сохраняет состояние после возврата.
-
-    :param message: (Message) Входящее сообщение от пользователя.
-    :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
-    :return: None
-    """
-    await state.clear()  # Завершаем текущее состояние машины состояния
-    user_tg = message.from_user
-
-    user = get_or_create_user(
-        user_tg
-    )  # Получаем или создаём пользователя в базе данных, синхронизируя его данные с Telegram
-
-    # Если язык ещё не выбран — просим выбрать
-    if user.language == "unset":
-        # Можно предложить язык по умолчанию из Telegram, но всё равно дать выбор
-        await message.answer(
-            "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
-            reply_markup=get_lang_keyboard()
-        )
-    else:
-        # Язык уже выбран — приветствуем
-        template = get_text(user.language, "welcome_message_template")  # Язык уже выбран — приветствуем
-        version = "0.0.5"  # Версия бота
-        groups_count = getting_number_records_database()  # Получает количество подключенных аккаунтов.
-        count = get_session_count(user_id=user_tg.id)  # Получает количество подключенных аккаунтов пользователем.
-        group_count = get_target_group_count(user_id=user_tg.id)  # Получает количество подключенных технических групп.
-        get_groups = get_tracked_channels_count(user_id=user_tg.id)  # Получает количество подключенных групп.
-        keywords_count = get_keywords_count(user_id=user_tg.id)  # Получает количество подключенных ключевых слов.
-
-        text = template.format(
-            version=version, groups_count=groups_count, count=count, group_count=group_count,
-            get_groups=get_groups, keywords_count=keywords_count
-        )
-
-        await message.answer(text=text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
 
 
 @router.message(F.text == "⏯ Запуск отслеживания")
@@ -343,7 +353,7 @@ async def handle_group_usernames_input(message: Message, state: FSMContext):
 
     if not usernames:
         await message.answer("⚠️ Вы не указали ни одной группы.")
-        await state.clear() # Завершаем текущее состояние машины состояния
+        await state.clear()  # Завершаем текущее состояние машины состояния
         return
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
@@ -380,7 +390,7 @@ async def handle_group_usernames_input(message: Message, state: FSMContext):
         response.append("❌ Ошибки при добавлении:\n" + "\n".join(f"{u}: {e}" for u, e in errors))
 
     await message.answer("\n\n".join(response))
-    await state.clear() # Завершаем текущее состояние машины состояния
+    await state.clear()  # Завершаем текущее состояние машины состояния
 
 
 def register_greeting_handlers():

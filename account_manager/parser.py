@@ -90,20 +90,17 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
     Контекст включает название источника, ссылку на сообщение и сам текст.
     Использует глобальный set `forwarded_messages` для предотвращения дубликатов.
 
+    - Сообщение пересылается только один раз (проверка по chat_id-message.id).
+    - Ссылка формируется по разным правилам для супергрупп и обычных чатов.
+    - Ключевые слова загружаются динамически из базы данных пользователя.
+
     :param client: (TelegramClient) Активный клиент для отправки сообщений.
     :param message: (Message) Входящее сообщение для обработки.
     :param chat_id: (int) Идентификатор чата-источника.
     :param user_id: (int) Идентификатор пользователя, чьи ключевые слова используются.
     :param target_group_id: (int) Идентификатор целевой группы для пересылки.
     :return: None
-
-    Raises:
-        Exception: Логируется при ошибках отправки сообщения.
-
-    Notes:
-        - Сообщение пересылается только один раз (проверка по chat_id-message.id).
-        - Ссылка формируется по разным правилам для супергрупп и обычных чатов.
-        - Ключевые слова загружаются динамически из базы данных пользователя.
+    :raises Exception: Логируется при ошибках отправки сообщения.
     """
     if not message.message:
         return
@@ -152,13 +149,13 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
                 clean_chat_id = str(chat_id)[4:]
                 message_link = f"https://t.me/c/{clean_chat_id}/{message.id}"
             else:
-                # Для чатов с юзернеймом (если есть)
+                # Для чатов с username (если есть)
                 try:
                     chat_entity = await client.get_entity(chat_id)
                     if chat_entity.username:
                         message_link = f"https://t.me/{chat_entity.username}/{message.id}"
                     else:
-                        message_link = "Ссылка недоступна (нет юзернейма)"
+                        message_link = "Ссылка недоступна (нет username)"
                 except Exception:
                     message_link = "Ссылка недоступна"
 
@@ -187,19 +184,18 @@ async def join_required_channels(client, user_id, message):
     Получает список username из персональной таблицы пользователя и пытается присоединиться к каждому. При успехе
     уведомляет пользователя. Невалидные ссылки удаляются из базы данных.
 
-    :param client: (TelegramClient)  Активный клиент для выполнения запросов.
+    - Между подписками добавляется задержка в 5 секунд для избежания Flood.
+    - Использует модель `create_groups_model` для доступа к данным.
+
+    :param client: (TelegramClient) Активный клиент для выполнения запросов.
     :param user_id: (int) Идентификатор пользователя, чьи каналы нужно подключить.
-    :param message: (Message) Объект сообщения AIOgram для отправки уведомлений.
+    :param message: (Message) Объект сообщения aiogram для отправки уведомлений.
     :return: None
     :raises UserAlreadyParticipantError: Если клиент уже участник (обрабатывается).
     :raises FloodWaitError: Если достигнут лимит запросов (обрабатывается с задержкой).
     :raises InviteRequestSentError: Если требуется подтверждение приглашения.
     :raises ValueError: Если username невалиден (обрабатывается с удалением из БД).
     :raises Exception: Логируется при любых других ошибках.
-
-    Notes:
-        - Между подписками добавляется задержка в 5 секунд для избежания Flood.
-        - Использует модель `create_groups_model` для доступа к данным.
     """
 
     # Получаем все username из базы данных
@@ -253,14 +249,14 @@ async def ensure_joined_target_group(client, message, user_id: int, user):
     Обёртка вокруг `join_target_group`, которая проверяет успешность подключения и при необходимости отправляет
     пользователю сообщение об ошибке.
 
+    - Если подключение не удалось, функция возвращает None (клиент НЕ отключается).
+    - Используется для упрощения логики в функции `filter_messages`.
+
     :param client: (TelegramClient) Активный клиент для выполнения запросов.
-    :param message: (Message) Объект сообщения AIOgram для отправки уведомления об ошибке.
+    :param message: (Message) Объект сообщения aiogram для отправки уведомления об ошибке.
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
     :param user: (User) Пользователь, чьи данные используются для поиска группы.
     :return: int or None: Идентификатор целевой группы (entity.id) при успехе, иначе None.
-    Notes:
-        - Если подключение не удалось, функция возвращает None (клиент НЕ отключается).
-        - Используется для упрощения логики в функции `filter_messages`.
     """
     logger.info("Подключаемся к целевой группе для пересылки")
     target_group_id = await join_target_group(client=client, user_id=user_id, message=message)
@@ -324,7 +320,7 @@ async def filter_messages(message, user_id, user, session_path):
     - Состояние отслеживания хранится в памяти (`forwarded_messages`).
     - После остановки клиент корректно отключается.
 
-    :param message: (Message) Объект сообщения AIOgram для взаимодействия с пользователем.
+    :param message: (Message) Объект сообщения aiogram для взаимодействия с пользователем.
     :param user_id: (int) Идентификатор пользователя Telegram.
     :param user: (User) Модель пользователя из базы данных (для языка и данных).
     :param session_path: (str) Полный путь к файлу сессии (.session) для авторизации.
@@ -391,15 +387,14 @@ async def stop_tracking(user_id, message, user):
     Находит сессию пользователя в папке 'accounts/', инициализирует клиент Telethon и отключает его, что приводит к
     остановке `client.run_until_disconnected()` в функции `filter_messages`.
 
+    - Функция не проверяет, активно ли отслеживание — всегда пытается отключить сессию.
+    - Использует тот же механизм подключения, что и `filter_messages`, для доступа к сессии.
+    - После вызова `client.disconnect()` управление возвращается в `filter_messages`.
+
     :param user_id: (int) Идентификатор пользователя Telegram.
-    :param message: (Message) Объект сообщения AIOgram для отправки подтверждения.
+    :param message: (Message) Объект сообщения aiogram для отправки подтверждения.
     :param user: (User) Модель пользователя (не используется напрямую, но может быть нужно для будущих уведомлений).
     :return: None
-
-    Notes:
-        - Функция не проверяет, активно ли отслеживание — всегда пытается отключить сессию.
-        - Использует тот же механизм подключения, что и `filter_messages`, для доступа к сессии.
-        - После вызова `client.disconnect()` управление возвращается в `filter_messages`.
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
 

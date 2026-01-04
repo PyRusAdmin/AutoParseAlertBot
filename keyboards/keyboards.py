@@ -1,6 +1,25 @@
 # -*- coding: utf-8 -*-
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+def main_admin_keyboard():
+    """
+    Клавиатура администратора
+    :return:
+    """
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⏯ Запуск отслеживания")],
+            [KeyboardButton(text="Проверка группы на наличие ключевых слов")],
+            [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
+            [KeyboardButton(text="🔎 Поиск групп / каналов")],
+            [KeyboardButton(text="📘 Инструкция по использованию")],
+            [KeyboardButton(text="⚙ Настройки")],
+            [KeyboardButton(text="Панель администратора")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False  # Отправлять сообщение только один раз
+    )
+
 def get_lang_keyboard():
     """
     Создаёт клавиатуру для выбора языка интерфейса.
