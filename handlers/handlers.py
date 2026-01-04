@@ -219,6 +219,7 @@ async def handle_settings_menu(message: Message, state: FSMContext):
         - Текст меню локализован в зависимости от языка пользователя.
         - Клавиатура включает кнопку для смены языка.
     """
+    await state.clear()  # Завершаем текущее состояние машины состояния
 
     user_tg = message.from_user
     user = User.get(User.user_id == user_tg.id)
@@ -250,6 +251,7 @@ async def handle_start_tracking(message: Message, state: FSMContext):
         - Используется первое найденное .session-расширение.
         - Сообщение о запуске отправляется до начала парсинга.
     """
+    await state.clear()  # Завершаем текущее состояние машины состояния
     try:
         user_tg = message.from_user  # Получаем данные пользователя из Telegram
         user_id = user_tg.id  # Получаем ID пользователя

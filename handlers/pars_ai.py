@@ -220,6 +220,7 @@ def format_summary_message(groups_count):
 @router.message(F.text == "📥 Получить всю базу")
 async def get_all_database(message: Message, state: FSMContext):
     """Выдаёт CSV-файл со всей базой данных групп и каналов."""
+    await state.clear()  # Завершаем текущее состояние машины состояния
     # Путь к временному CSV-файлу
     csv_file_path = "telegram_groups_export.csv"
 
