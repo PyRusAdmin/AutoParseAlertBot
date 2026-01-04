@@ -19,22 +19,19 @@ from locales.locales import get_text
 forwarded_messages = set()
 
 
-async def join_target_group(client, user_id, message, user):
+async def join_target_group(client, user_id, message):
     """
     Подписывает клиента Telethon на целевую группу пользователя для пересылки сообщений.
 
     Получает username целевой группы из персональной таблицы пользователя в базе данных и пытается присоединиться к ней.
     Возвращает идентификатор группы для дальнейшей отправки.
 
-    Notes:
-        - Использует модель `create_group_model` для доступа к данным пользователя.
-        - Предполагается, что в таблице всегда одна запись (первый элемент списка).
+    - Использует модель `create_group_model` для доступа к данным пользователя.
+    - Предполагается, что в таблице всегда одна запись (первый элемент списка).
 
     :param client: (TelegramClient) Активный клиент Telethon для выполнения запросов.
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
     :param message: (Message) Сообщение, которое вызвало команду (для ответа).
-    :param user: (User) Пользователь, чьи данные используются для поиска группы.
-
     :return: int or None: Идентификатор целевой группы (entity.id) или None при ошибке.
 
     :raises UserAlreadyParticipantError: Если клиент уже участник группы (обрабатывается).
@@ -266,7 +263,7 @@ async def ensure_joined_target_group(client, message, user_id: int, user):
         - Используется для упрощения логики в функции `filter_messages`.
     """
     logger.info("Подключаемся к целевой группе для пересылки")
-    target_group_id = await join_target_group(client=client, user_id=user_id, message=message, user=user)
+    target_group_id = await join_target_group(client=client, user_id=user_id, message=message)
 
     if not target_group_id:
         text_error = "❌ Аккаунту не удалось присоединиться к целевой группе, проверьте подключенную группу"
