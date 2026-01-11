@@ -5,6 +5,7 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
+from telethon.errors import FloodWaitError
 from telethon.sync import TelegramClient
 
 from database.database import TelegramGroup, add_id_column, db
@@ -73,11 +74,14 @@ async def update_db(message: Message):
         if db.is_closed():
             db.connect()
 
-        # 4. Получаем записи с username, которые ещё НЕ обновлены
+        # 4. Получаем записи с username и group_type='group', которые ещё НЕ обновлены
         groups_to_update = TelegramGroup.select().where(
-            TelegramGroup.username.is_null(False)
+            (TelegramGroup.username.is_null(False)) &
+            (TelegramGroup.group_type == 'group')
         )
-        updated_count = 0
+
+        logger.info(f"Найдено {groups_to_update.count()} групп для обновления")
+
         for group in groups_to_update:
             try:
                 # 5. Получаем сущность Telegram по username
@@ -85,39 +89,45 @@ async def update_db(message: Message):
 
                 # 6. Определяем тип сущности
                 if entity.megagroup:
-                    group_type = 'Группа (супергруппа)'
+                    new_group_type = 'Группа (супергруппа)'
                 elif entity.broadcast:
-                    group_type = 'Канал'
+                    new_group_type = 'Канал'
                 else:
-                    group_type = 'Обычный чат (группа старого типа)'
+                    new_group_type = 'Обычный чат (группа старого типа)'
 
                 # 7. Обновляем запись через UPDATE запрос
                 TelegramGroup.update(
                     id=entity.id,
-                    group_type=group_type
+                    group_type=new_group_type
                 ).where(
                     TelegramGroup.group_hash == group.group_hash
                 ).execute()
 
-                logger.info(f"Запись сохранена в БД: ID={group.id}, group_type={group.group_type}")
-
                 logger.info(
-                    f"Обновлено: {group.username} | ID: {entity.id} | Тип: {group_type}"
+                    f"Обновлено: {group.username} | ID: {entity.id} | Тип: {new_group_type}"
                 )
-
-                updated_count += 1
-
                 # 8. Пауза для избежания бана от Telegram
                 await asyncio.sleep(5)
+
+            except FloodWaitError as e:  # Обработка FloodWaitError
+                wait_time = e.seconds
+                logger.warning(
+                    f"FloodWait для {group.username}: нужно подождать {wait_time} секунд "
+                    f"({wait_time / 3600:.1f} часов). Останавливаем обработку."
+                )
+                # Прерываем цикл и ждём
+                await message.answer(
+                    f"⚠️ Telegram ограничил запросы. "
+                    f"Необходимо подождать {wait_time / 3600:.1f} часов."
+                )
+                break  # Останавливаем обработку
+
             except Exception as e:
                 logger.error(f"Ошибка при обработке {group.username}: {e}")
-
-        logger.info(f"Актуализировано записей: {updated_count}")
 
     except Exception as e:
         logger.error(f"Критическая ошибка: {e}")
     finally:
-
         if not db.is_closed():
             db.close()
 
