@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import time
+import asyncio
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
@@ -7,7 +7,7 @@ from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.sync import TelegramClient
 
-from database.database import TelegramGroup
+from database.database import TelegramGroup, add_id_column, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash
 from system.dispatcher import router
@@ -59,46 +59,118 @@ async def admin_panel(message: Message, state: FSMContext):
 
 @router.message(F.text == "Актуализация базы данных")
 async def update_db(message: Message):
-    """Актуализация базы данных на группу или канал"""
-    # 1. Считываем с базы данных данные
-    # Получаем все записи
-    all_groups = TelegramGroup.select()
-    # Создаем список для результатов
-    result_list = []
-    # Перебираем все записи
-    for group in all_groups:
-        # Результат делаем в словарь
-        result = [group.name, group.username]
-        # Выводим полученные данные
-        logger.info(result)
-        result_list.append(result)
-    # Выводим полученные данные
-    logger.info(result_list)
+    """Актуализация базы данных: обновление ID и типа групп/каналов."""
 
-    # Подключаемся к аккаунту телеграмм (Путь к аккаунту для перебора accounts/parsing/998771571378)
+    # 1. Выполняем миграцию (один раз за вызов)
+    add_id_column()
+
+    # 2. Подключаемся к Telegram
     client = TelegramClient('accounts/parsing/998771571378', api_id, api_hash)
     await client.connect()
 
-    for group in result_list:
-        logger.info(f"Проверяемый username: {group[1]}")
+    try:
+        # 3. Убедимся, что БД подключена
+        if db.is_closed():
+            db.connect()
 
-        entity = await client.get_entity(group[1])
+        # 4. Получаем записи с username, которые ещё НЕ обновлены
+        groups_to_update = TelegramGroup.select().where(
+            TelegramGroup.username.is_null(False)
+        )
+        updated_count = 0
+        for group in groups_to_update:
+            try:
+                # 5. Получаем сущность Telegram по username
+                entity = await client.get_entity(group.username)
 
-        # Проверяем тип сущности
-        if entity.megagroup:
-            print(f"Ссылка: {group[1]}")
-            print("Тип: Группа (супергруппа)")
-            print(f"ID: {entity.id}")
-        elif entity.broadcast:
-            print(f"Ссылка: {group[1]}")
-            print("Тип: Канал")
-            print(f"ID: {entity.id}")
-        else:
-            print(f"Ссылка: {group[1]}")
-            print("Тип: Обычный чат (группа старого типа)")
-            print(f"ID: {entity.id}")
+                # 6. Определяем тип сущности
+                if entity.megagroup:
+                    group_type = 'Группа (супергруппа)'
+                elif entity.broadcast:
+                    group_type = 'Канал'
+                else:
+                    group_type = 'Обычный чат (группа старого типа)'
 
-        time.sleep(3)
+                # 7. Обновляем запись через UPDATE запрос
+                TelegramGroup.update(
+                    id=entity.id,
+                    group_type=group_type
+                ).where(
+                    TelegramGroup.group_hash == group.group_hash
+                ).execute()
+
+                logger.info(f"Запись сохранена в БД: ID={group.id}, group_type={group.group_type}")
+
+                logger.info(
+                    f"Обновлено: {group.username} | ID: {entity.id} | Тип: {group_type}"
+                )
+
+                updated_count += 1
+
+                # 8. Пауза для избежания бана от Telegram
+                await asyncio.sleep(5)
+            except Exception as e:
+                logger.error(f"Ошибка при обработке {group.username}: {e}")
+
+        logger.info(f"Актуализировано записей: {updated_count}")
+
+    except Exception as e:
+        logger.error(f"Критическая ошибка: {e}")
+    finally:
+
+        if not db.is_closed():
+            db.close()
+
+        await client.disconnect()
+        logger.info("Актуализация завершена.")
+
+
+# @router.message(F.text == "Актуализация базы данных")
+# async def update_db(message: Message):
+#     """Актуализация базы данных на группу или канал"""
+#
+#     add_id_column()  # Добавляем колонку id в таблицу TelegramGroup
+#
+#     # 1. Считываем с базы данных данные
+#     # Получаем все записи
+#     groups_to_update = TelegramGroup.select()
+#     # Создаем список для результатов
+#     result_list = []
+#     # Перебираем все записи
+#     for group in groups_to_update:
+#         # Результат делаем в словарь
+#         result = [group.name, group.username]
+#         # Выводим полученные данные
+#         logger.info(result)
+#         result_list.append(result)
+#     # Выводим полученные данные
+#     logger.info(result_list)
+#
+#     # Подключаемся к аккаунту телеграмм (Путь к аккаунту для перебора accounts/parsing/998771571378)
+#     client = TelegramClient('accounts/parsing/998771571378', api_id, api_hash)
+#     await client.connect()
+#
+#     for group in result_list:
+#
+#         logger.info(f"Проверяемый username: {group[1]}")
+#
+#         entity = await client.get_entity(group[1])
+#
+#         # Проверяем тип сущности
+#         if entity.megagroup:
+#             print(f"Ссылка: {group[1]}")
+#             print("Тип: Группа (супергруппа)")
+#             print(f"ID: {entity.id}")
+#         elif entity.broadcast:
+#             print(f"Ссылка: {group[1]}")
+#             print("Тип: Канал")
+#             print(f"ID: {entity.id}")
+#         else:
+#             print(f"Ссылка: {group[1]}")
+#             print("Тип: Обычный чат (группа старого типа)")
+#             print(f"ID: {entity.id}")
+#
+#         time.sleep(3)
 
 
 def register_handlers_admin_panel():

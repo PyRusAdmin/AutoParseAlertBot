@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
-
+from loguru import logger  # https://github.com/Delgan/loguru
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
 db = SqliteDatabase('bot.db')
@@ -117,6 +117,23 @@ def create_group_model(user_id):
     return Group  # Возвращаем класс модели
 
 
+# def add_id_column():
+#     """Добавляет колонку `id` в таблицу `telegram_groups`."""
+#     if db.is_closed():
+#         db.connect()
+#
+#     # Проверяем, есть ли колонка `id`
+#     cursor = db.execute_sql("PRAGMA table_info(telegram_groups);")
+#     columns = [row[1] for row in cursor.fetchall()]
+#     if 'id' not in columns:
+#         db.execute_sql("ALTER TABLE telegram_groups ADD COLUMN id INTEGER;")
+#         print("Колонка `id` добавлена в таблицу `telegram_groups`.")
+#     else:
+#         print("Колонка `id` уже существует.")
+#
+#     db.close()
+
+
 class TelegramGroup(BaseModel):
     """
     Модель для хранения данных о найденных Telegram-группах и каналах.
@@ -149,30 +166,35 @@ class TelegramGroup(BaseModel):
     link = CharField()  # Ссылка на группу
     date_added = DateTimeField(default=datetime.now)  # Дата добавления
 
+    id = IntegerField(null=True)  # Новое поле: Telegram entity ID
+
     class Meta:
         table_name = 'telegram_groups'
 
 
-def init_db():
-    """
-    Инициализирует базу данных приложения при первом запуске бота.
+def add_id_column():
+    """Добавляет колонку `id` в таблицу `telegram_groups`."""
+    try:
+        if not db.is_closed():
+            db.close()  # Обязательно закрываем перед миграцией
 
-    Подключается к SQLite-базе данных ('bot.db'), создаёт таблицы `telegram_groups` и `user`,
-    если они ещё не существуют, и закрывает соединение.
+        db.connect()
 
-    Вызывается один раз при запуске бота в функции `main()`.
+        # Проверяем наличие колонки через PRAGMA
+        cursor = db.execute_sql("PRAGMA table_info(telegram_groups);")
+        columns = [row[1] for row in cursor.fetchall()]
 
-    Note:
-        Используется параметр `safe=True` для безопасного создания таблиц
-        (не вызывает ошибку, если таблица уже существует).
-        Перед подключением проверяет, не открыто ли уже соединение.
-    """
-    if not db.is_closed():
-        db.close()  # Закрываем соединение, если оно уже открыто
+        if 'id' not in columns:
+            db.execute_sql("ALTER TABLE telegram_groups ADD COLUMN id INTEGER;")
+            logger.info("Колонка `id` успешно добавлена в таблицу `telegram_groups`.")
+        else:
+            logger.info("Колонка `id` уже существует.")
 
-    db.connect()
-    db.create_tables([TelegramGroup, User], safe=True)
-    db.close()
+    except Exception as e:
+        logger.error(f"Ошибка при добавлении колонки `id`: {e}")
+    finally:
+        if not db.is_closed():
+            db.close()
 
 
 def getting_number_records_database():

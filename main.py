@@ -5,7 +5,7 @@ import sys
 
 from loguru import logger  # https://github.com/Delgan/loguru
 
-from database.database import init_db
+# from database.database import init_db
 from handlers.admin.admin import register_handlers_admin_panel
 from handlers.user.connect_account import register_connect_account_handler
 from handlers.user.connect_group import register_entering_group_handler
@@ -39,7 +39,7 @@ async def main() -> None:
 
     :return: None
     """
-    init_db()  # Инициализация базы данных (создание таблиц при необходимости)
+    # init_db()  # Инициализация базы данных (создание таблиц при необходимости)
 
     """
     Панель пользователя
