@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+from pathlib import Path
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
@@ -57,6 +58,10 @@ async def admin_panel(message: Message, state: FSMContext):
         logger.exception(e)
 
 
+import os
+from pathlib import Path
+
+
 @router.message(F.text == "Актуализация базы данных")
 async def update_db(message: Message):
     """
@@ -64,15 +69,16 @@ async def update_db(message: Message):
     обновление ID и типа групп/каналов.
 
     Последовательность действий:
+     - Сканирует папку accounts/parsing для поиска доступных сессий;
      - Подключается к Telegram API для получения метаданных по username;
      - Определяет тип сущности (канал, супергруппа и т.д.);
      - Обновляет записи в базе через прямой UPDATE-запрос;
-     - Отправляет прогресс и статистику в чат администратора;
-     - Обрабатывает FloodWaitError и другие исключения.
+     - При FloodWaitError переключается на следующий аккаунт;
+     - Отправляет прогресс и статистику в чат администратора.
 
      Особенности:
      - Доступ только для администраторов;
-     - Реализована защита от FloodWait;
+     - Автоматическое переключение между аккаунтами при FloodWait;
      - Используется режим WAL для избежания блокировок БД.
 
      :param message: (Message) Входящее сообщение от администратора.
@@ -82,12 +88,23 @@ async def update_db(message: Message):
     # 1. Выполняем миграцию (один раз за вызов)
     add_id_column()
 
-    # 2. Подключаемся к Telegram
-    client = TelegramClient('accounts/parsing/998771571378', api_id, api_hash)
-    await client.connect()
+    # 2. Сканируем папку на наличие session-файлов
+    sessions_dir = Path('accounts/parsing')
+    session_files = list(sessions_dir.glob('*.session'))
 
-    # 3. Небольшая пауза для стабильности
-    await asyncio.sleep(1)
+    if not session_files:
+        await message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
+        logger.error("Session-файлы не найдены")
+        return
+
+    # Получаем имена сессий (без расширения .session)
+    available_sessions = [str(f.stem) for f in session_files]
+    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+
+    await message.answer(
+        f"🔍 Найдено аккаунтов: {len(available_sessions)}\n"
+        f"📱 Аккаунты: {', '.join([s.split('/')[-1] for s in available_sessions])}"
+    )
 
     try:
         # 3. Убедимся, что БД подключена
@@ -95,12 +112,12 @@ async def update_db(message: Message):
             db.connect()
 
         # 4. Получаем записи с username и group_type='group', которые ещё НЕ обновлены
-        groups_to_update = TelegramGroup.select().where(
+        groups_to_update = list(TelegramGroup.select().where(
             (TelegramGroup.username.is_null(False)) &
             (TelegramGroup.group_type == 'group')
-        )
+        ))
 
-        total_count = groups_to_update.count()
+        total_count = len(groups_to_update)
         logger.info(f"Найдено {total_count} групп для обновления")
 
         # Отправляем начальное сообщение
@@ -109,78 +126,129 @@ async def update_db(message: Message):
         processed = 0
         updated = 0
         errors = 0
+        current_session_index = 0
 
-        for group in groups_to_update:
+        # 5. Основной цикл обработки групп
+        while processed < total_count and current_session_index < len(available_sessions):
+            # Подключаемся к текущему аккаунту
+            session_path = f'accounts/parsing/{available_sessions[current_session_index]}'
+            client = TelegramClient(session_path, api_id, api_hash)
+
             try:
-                # 5. Получаем сущность Telegram по username
-                entity = await client.get_entity(group.username)
+                await client.connect()
+                await asyncio.sleep(1)
 
-                # 6. Определяем тип сущности
-                if entity.megagroup:
-                    new_group_type = 'Группа (супергруппа)'
-                elif entity.broadcast:
-                    new_group_type = 'Канал'
-                else:
-                    new_group_type = 'Обычный чат (группа старого типа)'
+                current_account = available_sessions[current_session_index].split('/')[-1]
+                logger.info(f"Используется аккаунт: {current_account}")
+                await message.answer(f"📱 Используется аккаунт: {current_account}")
 
-                # 7. Обновляем запись через UPDATE запрос
-                TelegramGroup.update(
-                    id=entity.id,
-                    group_type=new_group_type
-                ).where(
-                    TelegramGroup.group_hash == group.group_hash
-                ).execute()
+                # Обрабатываем группы с текущим аккаунтом
+                for group in groups_to_update[processed:]:
+                    try:
+                        # Получаем сущность Telegram по username
+                        entity = await client.get_entity(group.username)
 
-                processed += 1
-                updated += 1
+                        # Определяем тип сущности
+                        if entity.megagroup:
+                            new_group_type = 'Группа (супергруппа)'
+                        elif entity.broadcast:
+                            new_group_type = 'Канал'
+                        else:
+                            new_group_type = 'Обычный чат (группа старого типа)'
 
-                logger.info(
-                    f"[{processed}/{total_count}] Обновлено: {group.username} | ID: {entity.id} | Тип: {new_group_type}"
-                )
+                        # Обновляем запись через UPDATE запрос
+                        TelegramGroup.update(
+                            id=entity.id,
+                            group_type=new_group_type
+                        ).where(
+                            TelegramGroup.group_hash == group.group_hash
+                        ).execute()
 
-                # Каждые 10 обновлений отправляем прогресс
-                if processed % 10 == 0:
-                    await message.answer(
-                        f"📊 Прогресс: {processed}/{total_count}\n"
-                        f"✅ Обновлено: {updated}\n"
-                        f"❌ Ошибок: {errors}"
-                    )
+                        processed += 1
+                        updated += 1
 
-                # 8. Пауза для избежания бана от Telegram
-                await asyncio.sleep(5)
+                        logger.info(
+                            f"[{processed}/{total_count}] Обновлено: {group.username} | "
+                            f"ID: {entity.id} | Тип: {new_group_type}"
+                        )
 
-            except FloodWaitError as e:
-                wait_time = e.seconds
-                processed += 1
-                errors += 1
+                        # Каждые 10 обновлений отправляем прогресс
+                        if processed % 10 == 0:
+                            await message.answer(
+                                f"📊 Прогресс: {processed}/{total_count}\n"
+                                f"✅ Обновлено: {updated}\n"
+                                f"❌ Ошибок: {errors}\n"
+                                f"📱 Аккаунт: {current_account}"
+                            )
 
-                logger.warning(
-                    f"FloodWait для {group.username}: нужно подождать {wait_time} секунд "
-                    f"({wait_time / 3600:.1f} часов). Останавливаем обработку."
-                )
+                        # Пауза для избежания бана от Telegram
+                        await asyncio.sleep(5)
 
-                # Отправляем итоговую статистику при FloodWait
-                await message.answer(
-                    f"⚠️ Telegram ограничил запросы.\n\n"
-                    f"📊 Обработано: {processed}/{total_count}\n"
-                    f"✅ Обновлено: {updated}\n"
-                    f"❌ Ошибок: {errors}\n\n"
-                    f"⏱ Необходимо подождать {wait_time / 3600:.1f} часов ({wait_time} сек)"
-                )
-                break  # Останавливаем обработку
+                    except FloodWaitError as e:
+                        wait_time = e.seconds
+                        errors += 1
+
+                        logger.warning(
+                            f"FloodWait для {group.username} (аккаунт {current_account}): "
+                            f"нужно подождать {wait_time} секунд ({wait_time / 3600:.1f} часов)"
+                        )
+
+                        # Отправляем уведомление о FloodWait
+                        await message.answer(
+                            f"⚠️ FloodWait на аккаунте {current_account}\n\n"
+                            f"📊 Обработано: {processed}/{total_count}\n"
+                            f"✅ Обновлено: {updated}\n"
+                            f"❌ Ошибок: {errors}\n\n"
+                            f"⏱ Ожидание: {wait_time / 3600:.1f} ч ({wait_time} сек)"
+                        )
+
+                        # Переключаемся на следующий аккаунт
+                        current_session_index += 1
+
+                        if current_session_index < len(available_sessions):
+                            await message.answer(
+                                f"🔄 Переключаюсь на аккаунт "
+                                f"{available_sessions[current_session_index].split('/')[-1]}"
+                            )
+                        else:
+                            await message.answer(
+                                "❌ Все аккаунты исчерпаны. Актуализация остановлена."
+                            )
+
+                        break  # Выходим из цикла групп, переключаемся на новый аккаунт
+
+                    except Exception as e:
+                        processed += 1
+                        errors += 1
+                        logger.error(
+                            f"[{processed}/{total_count}] Ошибка при обработке "
+                            f"{group.username}: {e}"
+                        )
 
             except Exception as e:
-                processed += 1
-                errors += 1
-                logger.error(f"[{processed}/{total_count}] Ошибка при обработке {group.username}: {e}")
+                logger.error(f"Ошибка подключения к аккаунту {current_account}: {e}")
+                await message.answer(f"❌ Ошибка аккаунта {current_account}: {e}")
+                current_session_index += 1
 
-        # Финальная статистика (если не было FloodWait)
-        else:
+            finally:
+                await client.disconnect()
+
+        # Финальная статистика
+        if processed >= total_count:
             await message.answer(
                 f"✅ Актуализация завершена!\n\n"
                 f"📊 Всего обработано: {processed}/{total_count}\n"
                 f"✅ Успешно обновлено: {updated}\n"
-                f"❌ Ошибок: {errors}"
+                f"❌ Ошибок: {errors}\n"
+                f"📱 Использовано аккаунтов: {current_session_index + 1}/{len(available_sessions)}"
+            )
+        else:
+            await message.answer(
+                f"⚠️ Актуализация остановлена.\n\n"
+                f"📊 Обработано: {processed}/{total_count}\n"
+                f"✅ Успешно обновлено: {updated}\n"
+                f"❌ Ошибок: {errors}\n"
+                f"📱 Все {len(available_sessions)} аккаунтов исчерпаны"
             )
 
     except Exception as e:
@@ -191,7 +259,6 @@ async def update_db(message: Message):
         if not db.is_closed():
             db.close()
 
-        await client.disconnect()
         logger.info("Актуализация завершена.")
 
 
