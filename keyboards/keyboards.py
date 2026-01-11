@@ -123,6 +123,9 @@ def search_group_ai():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📥 Получить всю базу")],
+            [KeyboardButton(text="📥 Получить всю базу Каналов")],
+            [KeyboardButton(text="📥 Получить всю базу Групп (супергрупп)")],
+            [KeyboardButton(text="📥 Получить всю базу Обычных чатов (группы старого типа)")],
             [KeyboardButton(text="🤖 AI поиск")],
             [KeyboardButton(text="🔙 Назад")],
         ],

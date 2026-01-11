@@ -218,7 +218,7 @@ def format_summary_message(groups_count):
 
 
 @router.message(F.text == "📥 Получить всю базу")
-async def get_all_database(message: Message, state: FSMContext):
+async def export_all_groups(message: Message, state: FSMContext):
     """Выдаёт CSV-файл со всей базой данных групп и каналов."""
     await state.clear()  # Завершаем текущее состояние машины состояния
     # Путь к временному CSV-файлу
@@ -227,6 +227,11 @@ async def get_all_database(message: Message, state: FSMContext):
     try:
         # Получаем все записи из базы
         groups = TelegramGroup.select()
+
+        count = groups.count()
+        if count == 0:
+            await message.answer("📭 База данных пуста.")
+            return
 
         # Записываем данные в CSV
         with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
@@ -250,8 +255,183 @@ async def get_all_database(message: Message, state: FSMContext):
                 ])
 
         # Отправляем файл пользователю
-        document = FSInputFile(csv_file_path, filename="База_групп_и_каналов.csv")
-        await message.answer_document(document=document, caption="📦 Вот вся база данных Telegram-групп и каналов.")
+        document = FSInputFile(csv_file_path, filename="База_всех_групп.csv")
+        await message.answer_document(
+            document=document,
+            caption=f"📦 Вся база данных Telegram-групп и каналов.\n\n"
+                    f"📊 Всего записей: {count}"
+        )
+
+    except Exception as e:
+        await message.answer("❌ Произошла ошибка при создании файла.")
+        print(f"Error generating CSV: {e}")
+
+    finally:
+        # Удаляем временный файл после отправки
+        if os.path.exists(csv_file_path):
+            os.remove(csv_file_path)
+
+
+@router.message(F.text == "📥 Получить всю базу Каналов")
+async def export_channels(message: Message, state: FSMContext):
+    """Выдаёт CSV-файл со всей базой данных групп и каналов."""
+    await state.clear()  # Завершаем текущее состояние машины состояния
+    # Путь к временному CSV-файлу
+    csv_file_path = "telegram_channels_export.csv"
+
+    try:
+        # Получаем только КАНАЛЫ
+        groups = TelegramGroup.select().where(
+            TelegramGroup.group_type == 'Канал'
+        )
+
+        count = groups.count()
+        if count == 0:
+            await message.answer("📭 В базе данных нет каналов.")
+            return
+
+        # Записываем данные в CSV
+        with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            # Заголовки
+            writer.writerow([
+                "Название", "Юзернейм", "Описание", "Участники",
+                "Категория", "Тип", "Ссылка", "Дата добавления"
+            ])
+            # Данные
+            for group in groups:
+                writer.writerow([
+                    group.name,
+                    group.username or "",
+                    group.description or "",
+                    group.participants,
+                    group.category or "",
+                    group.group_type,
+                    group.link,
+                    group.date_added.strftime("%Y-%m-%d %H:%M:%S")
+                ])
+
+        # Отправляем файл
+        document = FSInputFile(csv_file_path, filename="База_каналов.csv")
+        await message.answer_document(
+            document=document,
+            caption=f"📺 База данных Telegram-каналов.\n\n"
+                    f"📊 Всего каналов: {count}"
+        )
+
+    except Exception as e:
+        await message.answer("❌ Произошла ошибка при создании файла.")
+        print(f"Error generating CSV: {e}")
+
+    finally:
+        # Удаляем временный файл после отправки
+        if os.path.exists(csv_file_path):
+            os.remove(csv_file_path)
+
+
+@router.message(F.text == "📥 Получить всю базу Групп (супергрупп)")
+async def export_supergroups(message: Message, state: FSMContext):
+    """Выдаёт CSV-файл со всей базой данных групп и каналов."""
+    await state.clear()  # Завершаем текущее состояние машины состояния
+    # Путь к временному CSV-файлу
+    csv_file_path = "telegram_supergroups_export.csv"
+
+    try:
+        # Получаем только СУПЕРГРУППЫ
+        groups = TelegramGroup.select().where(
+            TelegramGroup.group_type == 'Группа (супергруппа)'
+        )
+
+        count = groups.count()
+        if count == 0:
+            await message.answer("📭 В базе данных нет супергрупп.")
+            return
+
+        # Записываем данные в CSV
+        with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            # Заголовки
+            writer.writerow([
+                "Название", "Юзернейм", "Описание", "Участники",
+                "Категория", "Тип", "Ссылка", "Дата добавления"
+            ])
+            # Данные
+            for group in groups:
+                writer.writerow([
+                    group.name,
+                    group.username or "",
+                    group.description or "",
+                    group.participants,
+                    group.category or "",
+                    group.group_type,
+                    group.link,
+                    group.date_added.strftime("%Y-%m-%d %H:%M:%S")
+                ])
+
+        # Отправляем файл
+        document = FSInputFile(csv_file_path, filename="База_супергрупп.csv")
+        await message.answer_document(
+            document=document,
+            caption=f"👥 База данных Telegram-супергрупп.\n\n"
+                    f"📊 Всего супергрупп: {count}"
+        )
+
+    except Exception as e:
+        await message.answer("❌ Произошла ошибка при создании файла.")
+        print(f"Error generating CSV: {e}")
+
+    finally:
+        # Удаляем временный файл после отправки
+        if os.path.exists(csv_file_path):
+            os.remove(csv_file_path)
+
+
+@router.message(F.text == "📥 Получить всю базу Обычных чатов (группы старого типа)")
+async def export_legacy_groups(message: Message, state: FSMContext):
+    """Выдаёт CSV-файл со всей базой данных групп и каналов."""
+    await state.clear()  # Завершаем текущее состояние машины состояния
+    # Путь к временному CSV-файлу
+    csv_file_path = "telegram_oldgroups_export.csv"
+
+    try:
+        # Получаем только ОБЫЧНЫЕ ЧАТЫ (группы старого типа)
+        groups = TelegramGroup.select().where(
+            TelegramGroup.group_type == 'Обычный чат (группа старого типа)'
+        )
+
+        count = groups.count()
+        if count == 0:
+            await message.answer("📭 В базе данных нет обычных чатов.")
+            return
+
+        # Записываем данные в CSV
+        with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f)
+            # Заголовки
+            writer.writerow([
+                "Название", "Юзернейм", "Описание", "Участники",
+                "Категория", "Тип", "Ссылка", "Дата добавления"
+            ])
+            # Данные
+            for group in groups:
+                writer.writerow([
+                    group.name,
+                    group.username or "",
+                    group.description or "",
+                    group.participants,
+                    group.category or "",
+                    group.group_type,
+                    group.link,
+                    group.date_added.strftime("%Y-%m-%d %H:%M:%S")
+                ])
+
+        # Отправляем файл
+        document = FSInputFile(csv_file_path, filename="База_обычных_чатов.csv")
+        await message.answer_document(
+            document=document,
+            caption=f"💬 База данных обычных чатов (группы старого типа).\n\n"
+                    f"📊 Всего чатов: {count}"
+        )
 
     except Exception as e:
         await message.answer("❌ Произошла ошибка при создании файла.")
@@ -415,21 +595,27 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
 
 def register_handlers_pars_ai():
     """
-    Регистрирует обработчики для AI-поиска групп и каналов.
+    Регистрирует обработчики для AI-поиска и экспорта Telegram-групп и каналов.
 
-    Добавляет в маршрутизатор (router) два обработчика:
-        1. handle_enter_keyword_menu — реагирует на кнопку "🔎 Поиск групп / каналов".
-        2. handle_enter_keyword — обрабатывает 🔍 Ввод ключевого слова в состоянии MyStates.entering_keyword_ai_search.
-        3. get_all_database - выдает всю базу с найденными группами / каналами
+    Добавляет в маршрутизатор (router) следующие обработчики:
+        1. search_menu — отображает меню поиска по нажатию кнопки "🔎 Поиск групп / каналов".
+        2. start_ai_search — запускает процесс AI-поиска по нажатию "🤖 AI поиск".
+        3. process_ai_search_keyword — обрабатывает ввод ключевого слова в состоянии MyStates.entering_keyword_ai_search.
+        4. export_all_groups — экспортирует всю базу групп и каналов в CSV.
+        5. export_channels — экспортирует только каналы.
+        6. export_supergroups — экспортирует только супергруппы.
+        7. export_legacy_groups — экспортирует обычные чаты (группы старого типа).
 
-    Эти обработчики позволяют пользователю найти публичные Telegram-группы и каналы
-    по тематике с помощью искусственного интеллекта (Groq API), сохранить их в базу
-    и получить результаты в виде CSV-файла.
+    Эти обработчики позволяют пользователю:
+        - Использовать ИИ для поиска релевантных Telegram-чats по ключевому слову.
+        - Получать результаты в виде CSV-файла.
+        - Экспортировать всю или часть базы данных по типам чатов.
 
-    Returns:
-        None
+    :return: None
     """
-    router.message.register(handle_enter_keyword_menu)
-    router.message.register(handle_enter_keyword)
-    router.message.register(get_all_database)
-    router.message.register(ai_search)
+    router.message.register(handle_enter_keyword_menu, F.text == "🔎 Поиск групп / каналов")
+    router.message.register(ai_search, F.text == "🤖 AI поиск")
+    router.message.register(export_all_groups, F.text == "📥 Получить всю базу")
+    router.message.register(export_channels, F.text == "📥 Получить всю базу Каналов")
+    router.message.register(export_supergroups, F.text == "📥 Получить всю базу Групп (супергрупп)")
+    router.message.register(export_legacy_groups, F.text == "📥 Получить всю базу Обычных чатов (группы старого типа)")
