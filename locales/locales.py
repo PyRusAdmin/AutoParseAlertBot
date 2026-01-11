@@ -58,7 +58,7 @@ LOCALES = {
             "🤖 Welcome to the Telegram bot for tracking 🔍 keywords in groups and channels!\n\n"
 
             "📋 <b>Version:</b> {version}\n"
-            "📅 <b>Release date:</b> December 28, 2025\n\n"
+            "📅 <b>Release date:</b> January 11, 2026\n\n"
 
             "📊 <b>Groups/channels found by users:</b> {groups_count}\n\n"
 
