@@ -69,6 +69,9 @@ async def update_db(message: Message):
     client = TelegramClient('accounts/parsing/998771571378', api_id, api_hash)
     await client.connect()
 
+    # 3. Небольшая пауза для стабильности
+    await asyncio.sleep(1)
+
     try:
         # 3. Убедимся, что БД подключена
         if db.is_closed():
@@ -80,7 +83,15 @@ async def update_db(message: Message):
             (TelegramGroup.group_type == 'group')
         )
 
-        logger.info(f"Найдено {groups_to_update.count()} групп для обновления")
+        total_count = groups_to_update.count()
+        logger.info(f"Найдено {total_count} групп для обновления")
+
+        # Отправляем начальное сообщение
+        await message.answer(f"🔄 Начинаю актуализацию {total_count} групп...")
+
+        processed = 0
+        updated = 0
+        errors = 0
 
         for group in groups_to_update:
             try:
@@ -103,84 +114,68 @@ async def update_db(message: Message):
                     TelegramGroup.group_hash == group.group_hash
                 ).execute()
 
+                processed += 1
+                updated += 1
+
                 logger.info(
-                    f"Обновлено: {group.username} | ID: {entity.id} | Тип: {new_group_type}"
+                    f"[{processed}/{total_count}] Обновлено: {group.username} | ID: {entity.id} | Тип: {new_group_type}"
                 )
+
+                # Каждые 10 обновлений отправляем прогресс
+                if processed % 10 == 0:
+                    await message.answer(
+                        f"📊 Прогресс: {processed}/{total_count}\n"
+                        f"✅ Обновлено: {updated}\n"
+                        f"❌ Ошибок: {errors}"
+                    )
+
                 # 8. Пауза для избежания бана от Telegram
                 await asyncio.sleep(5)
 
-            except FloodWaitError as e:  # Обработка FloodWaitError
+            except FloodWaitError as e:
                 wait_time = e.seconds
+                processed += 1
+                errors += 1
+
                 logger.warning(
                     f"FloodWait для {group.username}: нужно подождать {wait_time} секунд "
                     f"({wait_time / 3600:.1f} часов). Останавливаем обработку."
                 )
-                # Прерываем цикл и ждём
+
+                # Отправляем итоговую статистику при FloodWait
                 await message.answer(
-                    f"⚠️ Telegram ограничил запросы. "
-                    f"Необходимо подождать {wait_time / 3600:.1f} часов."
+                    f"⚠️ Telegram ограничил запросы.\n\n"
+                    f"📊 Обработано: {processed}/{total_count}\n"
+                    f"✅ Обновлено: {updated}\n"
+                    f"❌ Ошибок: {errors}\n\n"
+                    f"⏱ Необходимо подождать {wait_time / 3600:.1f} часов ({wait_time} сек)"
                 )
                 break  # Останавливаем обработку
 
             except Exception as e:
-                logger.error(f"Ошибка при обработке {group.username}: {e}")
+                processed += 1
+                errors += 1
+                logger.error(f"[{processed}/{total_count}] Ошибка при обработке {group.username}: {e}")
+
+        # Финальная статистика (если не было FloodWait)
+        else:
+            await message.answer(
+                f"✅ Актуализация завершена!\n\n"
+                f"📊 Всего обработано: {processed}/{total_count}\n"
+                f"✅ Успешно обновлено: {updated}\n"
+                f"❌ Ошибок: {errors}"
+            )
 
     except Exception as e:
         logger.error(f"Критическая ошибка: {e}")
+        await message.answer(f"❌ Критическая ошибка: {e}")
+
     finally:
         if not db.is_closed():
             db.close()
 
         await client.disconnect()
         logger.info("Актуализация завершена.")
-
-
-# @router.message(F.text == "Актуализация базы данных")
-# async def update_db(message: Message):
-#     """Актуализация базы данных на группу или канал"""
-#
-#     add_id_column()  # Добавляем колонку id в таблицу TelegramGroup
-#
-#     # 1. Считываем с базы данных данные
-#     # Получаем все записи
-#     groups_to_update = TelegramGroup.select()
-#     # Создаем список для результатов
-#     result_list = []
-#     # Перебираем все записи
-#     for group in groups_to_update:
-#         # Результат делаем в словарь
-#         result = [group.name, group.username]
-#         # Выводим полученные данные
-#         logger.info(result)
-#         result_list.append(result)
-#     # Выводим полученные данные
-#     logger.info(result_list)
-#
-#     # Подключаемся к аккаунту телеграмм (Путь к аккаунту для перебора accounts/parsing/998771571378)
-#     client = TelegramClient('accounts/parsing/998771571378', api_id, api_hash)
-#     await client.connect()
-#
-#     for group in result_list:
-#
-#         logger.info(f"Проверяемый username: {group[1]}")
-#
-#         entity = await client.get_entity(group[1])
-#
-#         # Проверяем тип сущности
-#         if entity.megagroup:
-#             print(f"Ссылка: {group[1]}")
-#             print("Тип: Группа (супергруппа)")
-#             print(f"ID: {entity.id}")
-#         elif entity.broadcast:
-#             print(f"Ссылка: {group[1]}")
-#             print("Тип: Канал")
-#             print(f"ID: {entity.id}")
-#         else:
-#             print(f"Ссылка: {group[1]}")
-#             print("Тип: Обычный чат (группа старого типа)")
-#             print(f"ID: {entity.id}")
-#
-#         time.sleep(3)
 
 
 def register_handlers_admin_panel():

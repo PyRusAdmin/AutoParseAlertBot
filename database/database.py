@@ -4,7 +4,7 @@ from datetime import datetime
 from loguru import logger  # https://github.com/Delgan/loguru
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
-db = SqliteDatabase('bot.db')
+db = SqliteDatabase('bot.db', timeout=30, pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'})
 
 
 class BaseModel(Model):
