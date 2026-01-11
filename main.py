@@ -6,6 +6,7 @@ import sys
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from database.database import init_db
+from handlers.admin.admin import register_handlers_admin_panel
 from handlers.user.connect_account import register_connect_account_handler
 from handlers.user.connect_group import register_entering_group_handler
 from handlers.user.entering_keyword import register_entering_keyword_handler
@@ -40,6 +41,10 @@ async def main() -> None:
     """
     init_db()  # Инициализация базы данных (создание таблиц при необходимости)
 
+    """
+    Панель пользователя
+    """
+
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
     register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
@@ -47,10 +52,13 @@ async def main() -> None:
     register_stop_tracking_handler()  # Остановка отслеживания ключевых слов
     register_handlers_pars_ai()  # Ищет группы и каналы с помощью ИИ
     register_handlers_post_doc()  # Выдает пользователю документацию к проекту
-
-    register_handlers_log()  # Логирование
-
     register_connect_account_handler()  # Подключение аккаунта
+
+    """
+    Панель администратора
+    """
+    register_handlers_admin_panel()
+    register_handlers_log()  # Логирование
 
     await dp.start_polling(bot)
 

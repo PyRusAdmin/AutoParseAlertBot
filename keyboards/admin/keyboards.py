@@ -9,6 +9,7 @@ def admin_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Получить лог файл")],
+            [KeyboardButton(text="Актуализация базы данных")],
             [KeyboardButton(text="🔙 Назад")]
         ],
         resize_keyboard=True,
