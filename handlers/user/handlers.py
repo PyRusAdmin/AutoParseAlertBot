@@ -418,7 +418,7 @@ def register_greeting_handlers():
         - Команды /start (приветствие и инициализация)
         - Выбора языка интерфейса
         - Открытия меню настроек
-        - Возврата в главное меню (кнопка "Назад")
+        - Возврата в главное меню (кнопка 🔙 Назад)
         - Запуска отслеживания сообщений
         - Обновления списка отслеживаемых групп
 
@@ -432,7 +432,7 @@ def register_greeting_handlers():
     router.message.register(handle_start_command)  # обработчик команды /start
     router.message.register(handle_language_selection)  # обработчик выбора языка
     router.message.register(handle_settings_menu)  # обработчик меню настроек
-    router.message.register(handle_back_to_main_menu)  # обработчик для кнопки "Назад"
+    router.message.register(handle_back_to_main_menu)  # обработчик для кнопки 🔙 Назад
     router.message.register(handle_start_tracking)  # обработчик запуска отслеживания
     router.message.register(handle_refresh_groups_list)  # обработчик запуска 🔁 Обновить список
     router.message.register(handle_group_usernames_input)  # обработчик ввода username групп
