@@ -21,3 +21,27 @@ You can test it via the link: https://t.me/AutoParseAlertBot
 02.01.2026
 
 - Добавлена выдача общей базы групп/каналов пользователю бота.
+
+11.01.2026
+
+**Русский язык**
+
+* Версия: 0.0.6
+* Дата выхода: 11 января 2026 года
+* Добавлены режимы выдачи базы данных по типам чатов: все группы/каналы, только каналы, только супергруппы, только обычные чаты.
+* Улучшен нейминг функций в pars_ai.py для лучшей читаемости и поддержки.
+* Обновлены языковые строки в locales.py с актуальной датой релиза.
+* Добавлена административная панель с функцией актуализации базы данных (обновление ID и типа групп/каналов).
+* Реализована возможность пересылки сообщений с ключевыми словами в указанную техническую группу.
+
+**English version**
+
+* Version: 0.0.6
+* Release date: January 11, 2026
+* Added database export modes by chat type: all groups/channels, channels only, supergroups only, basic groups only.
+* Improved function naming in pars_ai.py for better code readability and maintainability.
+* Updated locale strings in locales.py with current release date.
+* Added admin panel with database update functionality (refreshing group/channel IDs and types).
+* Implemented message forwarding feature for keyword-triggered messages to a designated technical group.
+
+You can test the latest features via the link: https://t.me/AutoParseAlertBot
