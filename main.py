@@ -6,15 +6,15 @@ import sys
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from database.database import init_db
-from handlers.connect_account import register_connect_account_handler
-from handlers.connect_group import register_entering_group_handler
-from handlers.entering_keyword import register_entering_keyword_handler
-from handlers.get_dada import register_data_export_handlers
-from handlers.handlers import register_greeting_handlers
-from handlers.pars_ai import register_handlers_pars_ai
-from handlers.post_doc import register_handlers_post_doc
-from handlers.post_log import register_handlers_log
-from handlers.stop_tracking import register_stop_tracking_handler
+from handlers.user.connect_account import register_connect_account_handler
+from handlers.user.connect_group import register_entering_group_handler
+from handlers.user.entering_keyword import register_entering_keyword_handler
+from handlers.user.get_dada import register_data_export_handlers
+from handlers.user.handlers import register_greeting_handlers
+from handlers.user.pars_ai import register_handlers_pars_ai
+from handlers.user.post_doc import register_handlers_post_doc
+from handlers.admin.post_log import register_handlers_log
+from handlers.user.stop_tracking import register_stop_tracking_handler
 from system.dispatcher import dp, bot
 
 logger.add("logs/log.log", rotation="1 MB", enqueue=True)  # Логирование бота
