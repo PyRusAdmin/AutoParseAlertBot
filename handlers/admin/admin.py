@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
+import time
+
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
+from loguru import logger  # https://github.com/Delgan/loguru
+from telethon.sync import TelegramClient
 
 from database.database import TelegramGroup
 from keyboards.admin.keyboards import admin_keyboard
+from system.dispatcher import api_id, api_hash
 from system.dispatcher import router
-from loguru import logger  # https://github.com/Delgan/loguru
 
 
 @router.message(F.text == "Панель администратора")
@@ -70,6 +74,31 @@ async def update_db(message: Message):
         result_list.append(result)
     # Выводим полученные данные
     logger.info(result_list)
+
+    # Подключаемся к аккаунту телеграмм (Путь к аккаунту для перебора accounts/parsing/998771571378)
+    client = TelegramClient('accounts/parsing/998771571378', api_id, api_hash)
+    await client.connect()
+
+    for group in result_list:
+        logger.info(f"Проверяемый username: {group[1]}")
+
+        entity = await client.get_entity(group[1])
+
+        # Проверяем тип сущности
+        if entity.megagroup:
+            print(f"Ссылка: {group[1]}")
+            print("Тип: Группа (супергруппа)")
+            print(f"ID: {entity.id}")
+        elif entity.broadcast:
+            print(f"Ссылка: {group[1]}")
+            print("Тип: Канал")
+            print(f"ID: {entity.id}")
+        else:
+            print(f"Ссылка: {group[1]}")
+            print("Тип: Обычный чат (группа старого типа)")
+            print(f"ID: {entity.id}")
+
+        time.sleep(3)
 
 
 def register_handlers_admin_panel():
