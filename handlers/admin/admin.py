@@ -56,15 +56,20 @@ async def admin_panel(message: Message, state: FSMContext):
 @router.message(F.text == "Актуализация базы данных")
 async def update_db(message: Message):
     """Актуализация базы данных на группу или канал"""
-
     # 1. Считываем с базы данных данные
-
     # Получаем все записи
     all_groups = TelegramGroup.select()
+    # Создаем список для результатов
+    result_list = []
     # Перебираем все записи
     for group in all_groups:
+        # Результат делаем в словарь
+        result = [group.name, group.username]
         # Выводим полученные данные
-        logger.info(group.name, group.username)
+        logger.info(result)
+        result_list.append(result)
+    # Выводим полученные данные
+    logger.info(result_list)
 
 
 def register_handlers_admin_panel():
