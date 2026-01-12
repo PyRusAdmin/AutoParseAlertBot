@@ -14,6 +14,7 @@ api_hash = os.getenv("HASH")
 
 bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
+
 dp = Dispatcher(storage=storage)
 
 # ID администраторов бота с особыми привилегиями
