@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
-
+from pathlib import Path
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -9,7 +9,7 @@ from telethon.errors import FloodWaitError
 from telethon.sync import TelegramClient
 
 from account_manager.auth import connect_client_test
-from database.database import TelegramGroup, add_id_column, db, User
+from database.database import TelegramGroup, db, User
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router
 
@@ -57,9 +57,6 @@ async def admin_panel(message: Message, state: FSMContext):
         logger.exception(e)
 
 
-from pathlib import Path
-
-
 @router.message(F.text == "Актуализация базы данных")
 async def update_db(message: Message):
     """
@@ -90,9 +87,6 @@ async def update_db(message: Message):
     except User.DoesNotExist:
         await message.answer("❌ Пользователь не найден в базе данных.")
         return
-
-    # 1. Выполняем миграцию (один раз за вызов)
-    add_id_column()
 
     # 2. Сканируем папку на наличие session-файлов
     sessions_dir = Path('accounts/parsing')
@@ -160,6 +154,9 @@ async def update_db(message: Message):
                 # Обрабатываем группы с текущим аккаунтом
                 for group in groups_to_update[processed:]:
                     try:
+
+                        await asyncio.sleep(2)
+
                         # Получаем сущность Telegram по username
                         entity = await client.get_entity(group.username)
 
@@ -231,20 +228,15 @@ async def update_db(message: Message):
                             )
 
                         break  # Выходим из цикла групп, переключаемся на новый аккаунт
-
+                    except ValueError as e:
+                        logger.warning(f"Не правильный username: {group.username}")
                     except Exception as e:
-                        processed += 1
-                        errors += 1
-                        logger.error(
-                            f"[{processed}/{total_count}] Ошибка при обработке "
-                            f"{group.username}: {e}"
-                        )
-
+                        logger.exception(e)
             except Exception as e:
-                logger.error(f"Ошибка подключения к аккаунту {current_account}: {e}")
+                logger.exception(e)
+                # logger.error(f"Ошибка подключения к аккаунту {current_account}: {e}")
                 await message.answer(f"❌ Ошибка аккаунта {current_account}: {e}")
                 current_session_index += 1
-
             finally:
                 await client.disconnect()
 

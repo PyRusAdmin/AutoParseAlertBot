@@ -172,29 +172,29 @@ class TelegramGroup(BaseModel):
         table_name = 'telegram_groups'
 
 
-def add_id_column():
-    """Добавляет колонку `id` в таблицу `telegram_groups`."""
-    try:
-        if not db.is_closed():
-            db.close()  # Обязательно закрываем перед миграцией
-
-        db.connect()
-
-        # Проверяем наличие колонки через PRAGMA
-        cursor = db.execute_sql("PRAGMA table_info(telegram_groups);")
-        columns = [row[1] for row in cursor.fetchall()]
-
-        if 'id' not in columns:
-            db.execute_sql("ALTER TABLE telegram_groups ADD COLUMN id INTEGER;")
-            logger.info("Колонка `id` успешно добавлена в таблицу `telegram_groups`.")
-        else:
-            logger.info("Колонка `id` уже существует.")
-
-    except Exception as e:
-        logger.error(f"Ошибка при добавлении колонки `id`: {e}")
-    finally:
-        if not db.is_closed():
-            db.close()
+# def add_id_column():
+#     """Добавляет колонку `id` в таблицу `telegram_groups`."""
+#     try:
+#         if not db.is_closed():
+#             db.close()  # Обязательно закрываем перед миграцией
+#
+#         db.connect()
+#
+#         # Проверяем наличие колонки через PRAGMA
+#         cursor = db.execute_sql("PRAGMA table_info(telegram_groups);")
+#         columns = [row[1] for row in cursor.fetchall()]
+#
+#         if 'id' not in columns:
+#             db.execute_sql("ALTER TABLE telegram_groups ADD COLUMN id INTEGER;")
+#             logger.info("Колонка `id` успешно добавлена в таблицу `telegram_groups`.")
+#         else:
+#             logger.info("Колонка `id` уже существует.")
+#
+#     except Exception as e:
+#         logger.error(f"Ошибка при добавлении колонки `id`: {e}")
+#     finally:
+#         if not db.is_closed():
+#             db.close()
 
 
 def getting_number_records_database():
