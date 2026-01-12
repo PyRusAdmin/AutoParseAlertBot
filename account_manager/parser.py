@@ -337,7 +337,8 @@ async def filter_messages(message, user_id, user, session_path):
 
         client = await connect_client(
             session_name=session_path.replace(".session", ""),
-            user=user
+            user=user,
+            message=message
         )  # <-- ✅ подключаемся к клиенту Telethon
 
         # === Подключаемся к целевой группе для пересылки ===
@@ -407,7 +408,8 @@ async def stop_tracking(user_id, message, user):
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
 
-    client = await connect_client(session_path.replace(".session", ""), user)  # <-- ✅ подключаемся к клиенту Telethon
+    client = await connect_client(session_path.replace(".session", ""), user,
+                                  message)  # <-- ✅ подключаемся к клиенту Telethon
 
     logger.info("🛑 Остановка отслеживания сообщений...")
     await client.disconnect()

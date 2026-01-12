@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from pathlib import Path
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
@@ -9,10 +8,10 @@ from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.errors import FloodWaitError
 from telethon.sync import TelegramClient
 
-from database.database import TelegramGroup, add_id_column, db
+from account_manager.auth import connect_client_test
+from database.database import TelegramGroup, add_id_column, db, User
 from keyboards.admin.keyboards import admin_keyboard
-from system.dispatcher import api_id, api_hash
-from system.dispatcher import router
+from system.dispatcher import api_id, api_hash, router
 
 
 @router.message(F.text == "Панель администратора")
@@ -58,7 +57,6 @@ async def admin_panel(message: Message, state: FSMContext):
         logger.exception(e)
 
 
-import os
 from pathlib import Path
 
 
@@ -85,6 +83,14 @@ async def update_db(message: Message):
      :return: None
      """
 
+    user_id = message.from_user.id  # ID текущего пользователя
+
+    try:
+        user = User.get(User.user_id == user_id)
+    except User.DoesNotExist:
+        await message.answer("❌ Пользователь не найден в базе данных.")
+        return
+
     # 1. Выполняем миграцию (один раз за вызов)
     add_id_column()
 
@@ -100,6 +106,59 @@ async def update_db(message: Message):
     # Получаем имена сессий (без расширения .session)
     available_sessions = [str(f.stem) for f in session_files]
     logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+
+    # Проверка аккаунтов на валидность из папки parsing
+    for session_name in available_sessions:
+        session_path = f"accounts/parsing/{session_name}"
+
+        try:
+            # ⏱ Ограничиваем проверку 10 секундами
+            await asyncio.wait_for(
+                connect_client_test(session_path, user, message),
+                timeout=10.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning(f"⏰ Таймаут: сессия {session_name} не ответила за 10 секунд")
+            await message.answer(f"⏰ Сессия {session_name} — таймаут подключения")
+            try:
+                with open("sessions.txt", "a", encoding="utf-8") as f:
+                    f.write(f"{session_path}\n")
+                logger.info(f"📝 Таймаут-сессия добавлена в sessions.txt: {session_name}")
+            except Exception as e:
+                logger.error(f"❌ Не удалось записать в sessions.txt: {e}")
+    # Ждем пока сессии закроются
+    await asyncio.sleep(4)
+
+    # Удаляем не валидные сессии
+
+    with open("sessions.txt", "r", encoding="utf-8") as f:
+        invalid_sessions = [line.strip() for line in f if line.strip()]
+    deleted_count = 0
+    for session_line in invalid_sessions:
+        # Получаем имя сессии (например, 'accounts/parsing/153512558_telethon')
+        session_path = Path(session_line)
+        if session_path.exists():
+            # Удаляем .session файл
+            session_session = session_path.with_suffix(".session")
+            if session_session.exists():
+                session_session.unlink()
+                logger.info(f"🗑️ Удалён .session файл: {session_session}")
+                deleted_count += 1
+            else:
+                logger.warning(f"⚠️ Файл не найден: {session_session}")
+        else:
+            logger.warning(f"⚠️ Путь сессии не существует: {session_path}")
+
+
+    # Опционально: очищаем файл после удаления
+    with open("sessions.txt", "w", encoding="utf-8") as f:
+        pass  # очищаем
+    logger.info("📄 Файл sessions.txt очищен.")
+
+    await message.answer(f"✅ Удалено {deleted_count} невалидных сессий.")
+
+    await message.answer("✅ Проверка завершена.")
+
 
     await message.answer(
         f"🔍 Найдено аккаунтов: {len(available_sessions)}\n"

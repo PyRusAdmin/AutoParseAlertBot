@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from aiogram.types import message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import TelegramClient
 
@@ -9,11 +8,12 @@ from system.dispatcher import api_id, api_hash
 
 
 # === Подключение клиента Telethon ===
-async def connect_client(session_name, user):
+async def connect_client(session_name, user, message):
     """
-    Подключение клиента Telethon. Возвращается client.connect()
+    Подключение клиента Telethon и проверка сессий. Возвращается client.connect()
     :param user: Пользователь из базы данных, для определения языка пользователя
     :param session_name: имя сессии Telethon
+    :param message: сообщение от пользователя
     :return: client - клиент Telethon
     """
 
@@ -29,6 +29,49 @@ async def connect_client(session_name, user):
             reply_markup=menu_launch_tracking_keyboard()
         )
         return
+
+    me = await client.get_me()
+    phone = me.phone or ""
+    logger.info(f"🧾 Аккаунт: | ID: {me.id} | Phone: {phone}")
+
+    logger.info("✅ Сессия активна, подключение успешно!")
+
+    return client
+
+# === Подключение клиента Telethon ===
+async def connect_client_test(session_name, user, message):
+    """
+    Подключение клиента Telethon и проверка сессий. Возвращается client.connect()
+    :param user: Пользователь из базы данных, для определения языка пользователя
+    :param session_name: имя сессии Telethon
+    :param message: сообщение от пользователя
+    :return: client - клиент Telethon
+    """
+
+    client = TelegramClient(session_name, api_id, api_hash, system_version="4.16.30-vxCUSTOM")
+
+    await client.connect()
+
+    # === Проверка авторизации ===
+    if not await client.is_user_authorized():
+        logger.error(f"⚠️ Сессия {session_name} недействительна — требуется повторный вход.")
+        await message.answer(
+            get_text(user.language, "account_missing_2"),
+            # reply_markup=menu_launch_tracking_keyboard()
+        )
+        # Записываем имя сессии в файл (в режиме 'a', чтобы добавлять)
+        try:
+            with open("sessions.txt", "a", encoding="utf-8") as file:
+                file.write(f"{session_name}\n")
+            logger.info(f"📝 Неактивная сессия записана в sessions.txt: {session_name}")
+        except Exception as e:
+            logger.error(f"❌ Не удалось записать в sessions.txt: {e}")
+
+        return
+
+    me = await client.get_me()
+    phone = me.phone or ""
+    logger.info(f"🧾 Аккаунт: | ID: {me.id} | Phone: {phone}")
 
     logger.info("✅ Сессия активна, подключение успешно!")
 
