@@ -178,8 +178,9 @@ async def update_db(message: Message):
                         # Получаем полную информацию
                         full_entity = await client(GetFullChannelRequest(channel=entity))
 
-                        # Описание находится в full_chat
-                        description = full_entity.full_chat.about
+                        # Извлекаем данные из полной сущности
+                        description = full_entity.full_chat.about or ""
+                        participants_count = full_entity.full_chat.participants_count or 0
                         logger.info(f"Описание: {description}")
 
                         # Определяем тип сущности
@@ -190,10 +191,13 @@ async def update_db(message: Message):
                         else:
                             new_group_type = 'Обычный чат (группа старого типа)'
 
-                        # Обновляем запись через UPDATE запрос
+                        # Обновляем запись через UPDATE запрос со всеми доступными данными
                         TelegramGroup.update(
                             id=entity.id,
-                            group_type=new_group_type
+                            group_type=new_group_type,
+                            description=description,
+                            participants=participants_count,
+                            name=entity.title  # Также обновляем название на актуальное
                         ).where(
                             TelegramGroup.group_hash == group.group_hash
                         ).execute()
@@ -203,7 +207,7 @@ async def update_db(message: Message):
 
                         logger.info(
                             f"[{processed}/{total_count}] Обновлено: {group.username} | "
-                            f"ID: {entity.id} | Тип: {new_group_type}"
+                            f"ID: {entity.id} | Тип: {new_group_type} | Описание: {description} | Участники: {participants_count} | Аккаунт: {current_account}"
                         )
 
                         # Каждые 10 обновлений отправляем прогресс
