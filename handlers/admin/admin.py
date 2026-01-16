@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import sqlite3
 from pathlib import Path
 from aiogram import F
 from aiogram.fsm.context import FSMContext
@@ -7,7 +8,7 @@ from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.errors import FloodWaitError
 from telethon.sync import TelegramClient
-
+from telethon.sessions import StringSession
 from account_manager.auth import connect_client_test
 from database.database import TelegramGroup, db, User
 from keyboards.admin.keyboards import admin_keyboard
@@ -142,6 +143,16 @@ async def update_db(message: Message):
             # Подключаемся к текущему аккаунту
             session_path = f'accounts/parsing/{available_sessions[current_session_index]}'
             client = TelegramClient(session_path, api_id, api_hash)
+            await client.connect()
+            session_string = StringSession.save(client.session)
+            # Создаем клиент, используя StringSession и вашу строку
+            client = TelegramClient(
+                StringSession(session_string),
+                api_id=api_id,
+                api_hash=api_hash,
+                # proxy=self.proxy.reading_proxy_data_from_the_database(),
+                system_version="4.16.30-vxCUSTOM"
+            )
 
             try:
                 await client.connect()
@@ -159,6 +170,12 @@ async def update_db(message: Message):
 
                         # Получаем сущность Telegram по username
                         entity = await client.get_entity(group.username)
+
+                        logger.info(entity)
+
+                        # Получаем описание
+                        description = entity.about if hasattr(entity, 'about') else None
+                        logger.info(f"Описание: {description}")
 
                         # Определяем тип сущности
                         if entity.megagroup:
@@ -228,8 +245,15 @@ async def update_db(message: Message):
                             )
 
                         break  # Выходим из цикла групп, переключаемся на новый аккаунт
+
+                    # except sqlite3.DatabaseError:
+                    #     logger.error(
+                    #         f"Ошибка базы данных (аккаунта {current_account}, переключаюсь на следующий аккаунт)")
+                    #     break  # Выходим из цикла групп, переключаемся на новый аккаунт
+
                     except ValueError as e:
                         logger.warning(f"Не правильный username: {group.username}")
+
                     except Exception as e:
                         logger.exception(e)
             except Exception as e:
