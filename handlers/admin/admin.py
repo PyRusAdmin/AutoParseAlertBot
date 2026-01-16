@@ -9,6 +9,8 @@ from loguru import logger  # https://github.com/Delgan/loguru
 from telethon.errors import FloodWaitError
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
+from telethon.tl.functions.channels import GetFullChannelRequest
+
 from account_manager.auth import connect_client_test
 from database.database import TelegramGroup, db, User
 from keyboards.admin.keyboards import admin_keyboard
@@ -173,8 +175,11 @@ async def update_db(message: Message):
 
                         logger.info(entity)
 
-                        # Получаем описание
-                        description = entity.about if hasattr(entity, 'about') else None
+                        # Получаем полную информацию
+                        full_entity = await client(GetFullChannelRequest(channel=entity))
+
+                        # Описание находится в full_chat
+                        description = full_entity.full_chat.about
                         logger.info(f"Описание: {description}")
 
                         # Определяем тип сущности
