@@ -10,6 +10,7 @@ from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 
 from account_manager.auth import connect_client_test
+from account_manager.subscription import subscription_telegram
 from keyboards.keyboards import back_keyboard
 from states.states import MyStatesParsing
 from system.dispatcher import api_id, api_hash
@@ -126,6 +127,8 @@ async def parse_group_for_keywords(url, keyword, message: Message):
 
         await client.connect()
         await asyncio.sleep(1)
+
+        await subscription_telegram(client, url)
 
 
 def register_handlers_checking_group_for_keywords():

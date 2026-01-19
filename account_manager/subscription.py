@@ -2,7 +2,9 @@
 import asyncio
 
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
+from telethon.errors import (
+    UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError, AuthKeyUnregisteredError
+)
 from telethon.tl.functions.channels import JoinChannelRequest
 
 
@@ -31,9 +33,15 @@ async def subscription_telegram(client, target_username):
         except Exception as retry_error:
             logger.error(f"❌ Не удалось присоединиться к целевой группе после повторной попытки: {retry_error}")
             return None
+    except AuthKeyUnregisteredError:
+        logger.error(f"Не валидная сеесия Telegram. Разорвано соединение")
+        return None
     except ValueError:
         logger.error(f"❌ Неверное имя пользователя целевой группы: {target_username}")
         return None
     except InviteRequestSentError:
         logger.error(f"❌ Запрос на приглашение отправлен для {target_username}, ожидание одобрения")
+        return None
+    except Exception as e:
+        logger.exception(e)
         return None
