@@ -52,7 +52,6 @@ async def connect_client_test(path, available_sessions):
 
     for session_name in available_sessions:
 
-        # client = TelegramClient(f"accounts/parsing/{session_name}", api_id, api_hash, system_version="4.16.30-vxCUSTOM")
         client = TelegramClient(f"{path}/{session_name}", api_id, api_hash, system_version="4.16.30-vxCUSTOM")
 
         await client.connect()

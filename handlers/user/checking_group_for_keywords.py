@@ -108,30 +108,30 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     available_sessions = [str(f.stem) for f in session_files]
     logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
-    processed = 0
-    current_session_index = 0
-    while processed < len(available_sessions):
-        # Подключаемся к текущему аккаунту
-        session_path = f'accounts/parsing_grup/{available_sessions[current_session_index]}'
-        logger.info(f"Подключаемся к сессии: {session_path}")
-        client = TelegramClient(
-            session_path, api_id, api_hash,
-            system_version="4.16.30-vxCUSTOM"
-        )
-        await client.connect()
-        session_string = StringSession.save(client.session)
-        # Создаем клиент, используя StringSession и вашу строку
-        client = TelegramClient(
-            StringSession(session_string),
-            api_id=api_id,
-            api_hash=api_hash,
-            system_version="4.16.30-vxCUSTOM"
-        )
+    # processed = 0
+    # current_session_index = 0
+    # while processed < len(available_sessions):
+    # Подключаемся к текущему аккаунту
+    session_path = f'accounts/parsing_grup/{available_sessions[0]}'
+    logger.info(f"Подключаемся к сессии: {session_path}")
+    client = TelegramClient(
+        session_path, api_id, api_hash,
+        system_version="4.16.30-vxCUSTOM"
+    )
+    await client.connect()
+    session_string = StringSession.save(client.session)
+    # Создаем клиент, используя StringSession и вашу строку
+    client = TelegramClient(
+        StringSession(session_string),
+        api_id=api_id,
+        api_hash=api_hash,
+        system_version="4.16.30-vxCUSTOM"
+    )
 
-        await client.connect()
-        await asyncio.sleep(1)
+    await client.connect()
+    await asyncio.sleep(1)
 
-        await subscription_telegram(client, url)
+    await subscription_telegram(client, url)
 
 
 def register_handlers_checking_group_for_keywords():
