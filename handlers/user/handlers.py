@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 
-from aiogram import Router, F
+from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
@@ -13,7 +13,6 @@ from database.database import (
     User, create_groups_model, getting_number_records_database, get_session_count,
     get_target_group_count, get_tracked_channels_count, get_keywords_count
 )
-
 from keyboards.keyboards import (
     get_lang_keyboard, main_menu_keyboard, settings_keyboard, back_keyboard, menu_launch_tracking_keyboard,
     connect_keyboard_account, main_admin_keyboard

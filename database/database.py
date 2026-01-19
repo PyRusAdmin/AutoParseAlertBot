@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
-from loguru import logger  # https://github.com/Delgan/loguru
+
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
 db = SqliteDatabase('bot.db', timeout=30, pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'})
@@ -117,23 +117,6 @@ def create_group_model(user_id):
     return Group  # Возвращаем класс модели
 
 
-# def add_id_column():
-#     """Добавляет колонку `id` в таблицу `telegram_groups`."""
-#     if db.is_closed():
-#         db.connect()
-#
-#     # Проверяем, есть ли колонка `id`
-#     cursor = db.execute_sql("PRAGMA table_info(telegram_groups);")
-#     columns = [row[1] for row in cursor.fetchall()]
-#     if 'id' not in columns:
-#         db.execute_sql("ALTER TABLE telegram_groups ADD COLUMN id INTEGER;")
-#         print("Колонка `id` добавлена в таблицу `telegram_groups`.")
-#     else:
-#         print("Колонка `id` уже существует.")
-#
-#     db.close()
-
-
 class TelegramGroup(BaseModel):
     """
     Модель для хранения данных о найденных Telegram-группах и каналах.
@@ -170,31 +153,6 @@ class TelegramGroup(BaseModel):
 
     class Meta:
         table_name = 'telegram_groups'
-
-
-# def add_id_column():
-#     """Добавляет колонку `id` в таблицу `telegram_groups`."""
-#     try:
-#         if not db.is_closed():
-#             db.close()  # Обязательно закрываем перед миграцией
-#
-#         db.connect()
-#
-#         # Проверяем наличие колонки через PRAGMA
-#         cursor = db.execute_sql("PRAGMA table_info(telegram_groups);")
-#         columns = [row[1] for row in cursor.fetchall()]
-#
-#         if 'id' not in columns:
-#             db.execute_sql("ALTER TABLE telegram_groups ADD COLUMN id INTEGER;")
-#             logger.info("Колонка `id` успешно добавлена в таблицу `telegram_groups`.")
-#         else:
-#             logger.info("Колонка `id` уже существует.")
-#
-#     except Exception as e:
-#         logger.error(f"Ошибка при добавлении колонки `id`: {e}")
-#     finally:
-#         if not db.is_closed():
-#             db.close()
 
 
 def getting_number_records_database():

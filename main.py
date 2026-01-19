@@ -42,8 +42,6 @@ async def main() -> None:
     """
     Панель пользователя
     """
-
-
     register_greeting_handlers()
     register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
     register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
