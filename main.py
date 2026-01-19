@@ -7,6 +7,7 @@ from loguru import logger  # https://github.com/Delgan/loguru
 
 from handlers.admin.admin import register_handlers_admin_panel
 from handlers.admin.post_log import register_handlers_log
+from handlers.user.checking_group_for_keywords import register_handlers_checking_group_for_keywords
 from handlers.user.connect_account import register_connect_account_handler
 from handlers.user.connect_group import register_entering_group_handler
 from handlers.user.entering_keyword import register_entering_keyword_handler
@@ -50,6 +51,7 @@ async def main() -> None:
     register_handlers_pars_ai()  # Ищет группы и каналы с помощью ИИ
     register_handlers_post_doc()  # Выдает пользователю документацию к проекту
     register_connect_account_handler()  # Подключение аккаунта
+    register_handlers_checking_group_for_keywords()  # Проверка группы на наличие ключевых слов
 
     """
     Панель администратора
