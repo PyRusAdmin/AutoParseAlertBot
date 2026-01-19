@@ -152,7 +152,6 @@ async def update_db(message: Message):
                 StringSession(session_string),
                 api_id=api_id,
                 api_hash=api_hash,
-                # proxy=self.proxy.reading_proxy_data_from_the_database(),
                 system_version="4.16.30-vxCUSTOM"
             )
 
@@ -254,11 +253,6 @@ async def update_db(message: Message):
                             )
 
                         break  # Выходим из цикла групп, переключаемся на новый аккаунт
-
-                    # except sqlite3.DatabaseError:
-                    #     logger.error(
-                    #         f"Ошибка базы данных (аккаунта {current_account}, переключаюсь на следующий аккаунт)")
-                    #     break  # Выходим из цикла групп, переключаемся на новый аккаунт
 
                     except ValueError as e:
                         logger.warning(f"Не правильный username: {group.username}")

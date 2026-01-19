@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
+
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger
+
+from account_manager.auth import connect_client_test
 from keyboards.keyboards import back_keyboard
 from states.states import MyStatesParsing
 from system.dispatcher import router
@@ -55,6 +59,57 @@ async def get_keyword(message: Message, state: FSMContext):
     data = await state.get_data()  # Получаем данные из контекста состояния
     await state.clear()  # Завершаем текущее состояние машины состояния
     logger.info(f"Полученые данные от пользователя: ссылка {data.get("url")}, ключевое слово: {data.get('keyword')}")
+    await parse_group_for_keywords(url=data.get("url"), keyword=data.get("keyword"), message=message)
+
+
+async def scanning_folder_for_session_files(message: Message, path):
+    """
+    Сканируем папку на наличие session-файлов
+    :param message:
+    :param path:
+    :return:
+    """
+    sessions_dir = Path(path)
+    session_files = list(sessions_dir.glob('*.session'))
+
+    if not session_files:
+        await message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
+        logger.error("Session-файлы не найдены")
+        return
+    return session_files
+
+
+async def parse_group_for_keywords(url, keyword, message: Message):
+    """
+    Парсит группу на наличие ключевых слов.
+    :param url:
+    :param keyword:
+    :param message: (telegram.Message) Объект сообщения, отправленный пользователем.
+    :return:
+    """
+
+    # 1. Сканируем папку на наличие session-файлов
+    session_files = await scanning_folder_for_session_files(message=message, path="accounts/parsing_grup")
+    logger.info(f"{session_files}")
+
+    # Получаем имена сессий (без расширения .session)
+    available_sessions = [str(f.stem) for f in session_files]
+    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+
+    # Проверка аккаунтов на валидность из папки parsing
+    await connect_client_test(available_sessions)
+
+    # Получаем имена сессий (без расширения .session)
+    available_sessions = [str(f.stem) for f in session_files]
+    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+
+    processed = 0
+    current_session_index = 0
+    while processed < len(available_sessions):
+        # Подключаемся к текущему аккаунту
+        session_path = f'accounts/parsing/{available_sessions[current_session_index]}'
+
+
 
 
 def register_handlers_checking_group_for_keywords():
