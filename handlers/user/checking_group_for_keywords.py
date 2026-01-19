@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
+import asyncio
 from pathlib import Path
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-from loguru import logger
+from loguru import logger  # https://github.com/Delgan/loguru
+from telethon.sessions import StringSession
+from telethon.sync import TelegramClient
 
 from account_manager.auth import connect_client_test
 from keyboards.keyboards import back_keyboard
 from states.states import MyStatesParsing
+from system.dispatcher import api_id, api_hash
 from system.dispatcher import router
 
 
@@ -109,7 +113,19 @@ async def parse_group_for_keywords(url, keyword, message: Message):
         # Подключаемся к текущему аккаунту
         session_path = f'accounts/parsing/{available_sessions[current_session_index]}'
 
+        client = TelegramClient(session_path, api_id, api_hash)
+        await client.connect()
+        session_string = StringSession.save(client.session)
+        # Создаем клиент, используя StringSession и вашу строку
+        client = TelegramClient(
+            StringSession(session_string),
+            api_id=api_id,
+            api_hash=api_hash,
+            system_version="4.16.30-vxCUSTOM"
+        )
 
+        await client.connect()
+        await asyncio.sleep(1)
 
 
 def register_handlers_checking_group_for_keywords():
