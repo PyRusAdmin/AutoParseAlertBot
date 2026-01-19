@@ -20,7 +20,6 @@ async def checking_group_for_keywords(message: Message, state: FSMContext):
     :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
-    # user_tg = message.from_user
     text = "Введите ссылку на группу, для поиска ключевых слов"
     await message.answer(text, reply_markup=back_keyboard())
 
@@ -29,23 +28,32 @@ async def checking_group_for_keywords(message: Message, state: FSMContext):
 
 @router.message(MyStatesParsing.get_url)
 async def get_url(message: Message, state: FSMContext):
-    # raw_input = message.text.strip()
+    """
+    Обработчик команды "Получить URL".
+    :param message:
+    :param state:
+    :return:
+    """
     await state.update_data(url=message.text.strip())  # Сохраняем URL в контекст данных
     text = "Введите ключевое слово для поиска\n\n"
     await message.answer(text, reply_markup=back_keyboard())
-
     await state.set_state(MyStatesParsing.get_keyword)
 
 
 @router.message(MyStatesParsing.get_keyword)
 async def get_keyword(message: Message, state: FSMContext):
-    keyword = message.text.strip()
+    """
+    J
+    :param message:
+    :param state:
+    :return:
+    """
+    keyword = message.text.strip()  # Получаем ключевое слово из сообщения
     text = "Данные приняты, ожидайте результата\n\n"
     await message.answer(text, reply_markup=back_keyboard())
     await state.update_data(keyword=keyword)
     data = await state.get_data()  # Получаем данные из контекста состояния
     await state.clear()  # Завершаем текущее состояние машины состояния
-
     logger.info(f"Полученые данные от пользователя: ссылка {data.get("url")}, ключевое слово: {data.get('keyword')}")
 
 
