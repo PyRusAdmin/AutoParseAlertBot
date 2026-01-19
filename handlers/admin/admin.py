@@ -105,7 +105,7 @@ async def update_db(message: Message):
     logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
     # Проверка аккаунтов на валидность из папки parsing
-    await connect_client_test(available_sessions)
+    await connect_client_test(available_sessions=available_sessions, path="accounts/parsing")
 
     await message.answer("✅ Проверка завершена.")
 

@@ -102,7 +102,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
     # Проверка аккаунтов на валидность из папки parsing
-    await connect_client_test(available_sessions)
+    await connect_client_test(available_sessions=available_sessions, path="accounts/parsing_grup")
 
     # Получаем имена сессий (без расширения .session)
     available_sessions = [str(f.stem) for f in session_files]
@@ -112,9 +112,12 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     current_session_index = 0
     while processed < len(available_sessions):
         # Подключаемся к текущему аккаунту
-        session_path = f'accounts/parsing/{available_sessions[current_session_index]}'
-
-        client = TelegramClient(session_path, api_id, api_hash)
+        session_path = f'accounts/parsing_grup/{available_sessions[current_session_index]}'
+        logger.info(f"Подключаемся к сессии: {session_path}")
+        client = TelegramClient(
+            session_path, api_id, api_hash,
+            system_version="4.16.30-vxCUSTOM"
+        )
         await client.connect()
         session_string = StringSession.save(client.session)
         # Создаем клиент, используя StringSession и вашу строку

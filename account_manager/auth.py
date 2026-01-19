@@ -41,17 +41,19 @@ async def connect_client(session_name, user, message):
 
 
 # === Подключение клиента Telethon ===
-async def connect_client_test(available_sessions):
+async def connect_client_test(path, available_sessions):
     """
     Подключение клиента Telethon и проверка сессий. Возвращается client.connect()
     :param available_sessions: список доступных сессий Telethon
+    :param path: путь к папке с сессиями
     :return: client - клиент Telethon
     """
     logger.info(f"🧾 Проверка сессий... {available_sessions}")
 
     for session_name in available_sessions:
 
-        client = TelegramClient(f"accounts/parsing/{session_name}", api_id, api_hash, system_version="4.16.30-vxCUSTOM")
+        # client = TelegramClient(f"accounts/parsing/{session_name}", api_id, api_hash, system_version="4.16.30-vxCUSTOM")
+        client = TelegramClient(f"{path}/{session_name}", api_id, api_hash, system_version="4.16.30-vxCUSTOM")
 
         await client.connect()
 
@@ -61,7 +63,7 @@ async def connect_client_test(available_sessions):
             await client.disconnect()
             await asyncio.sleep(1)  # дать время ОС освободить файл
             try:
-                os.remove(f"accounts/parsing/{session_name}.session")
+                os.remove(f"{path}/{session_name}.session")
             except FileNotFoundError:
                 pass  # файл уже удалён
 
@@ -75,10 +77,10 @@ async def connect_client_test(available_sessions):
         await asyncio.sleep(1)  # дать время ОС освободить файл
         await client.disconnect()
         try:
-            os.rename(f"accounts/parsing/{session_name}.session", f"accounts/parsing/{phone}.session")
+            os.rename(f"{path}/{session_name}.session", f"{path}/{phone}.session")
         except FileExistsError:
             await client.disconnect()
-            os.remove(f"accounts/parsing/{session_name}.session")
+            os.remove(f"{path}/{session_name}.session")
 
         if client.is_connected():
-            await client.disconnect()
+            await client.disconnect()  # отключаемся, если подключены
