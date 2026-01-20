@@ -165,7 +165,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     try:
         # Определяем параметры для парсинга
         parse_kwargs = {
-            'limit': 300,  # Количество последних сообщений для проверки
+            'limit': 400,  # Количество последних сообщений для проверки
         }
 
         count = 0
@@ -215,18 +215,18 @@ async def parse_group_for_keywords(url, keyword, message: Message):
                 display_text = text if len(text) <= 500 else text[:500] + "..."
 
                 context_text = (
-                    f"📥 **Новое сообщение**\n\n"
-                    f"**Источник:** {chat_title}\n"
-                    f"**Дата:** {msg_date}\n"
-                    f"**Ссылка:** {message_link}\n\n"
-                    f"**Текст сообщения:**\n{display_text}"
+                    f"📥 <b>Новое сообщение</b>\n\n"
+                    f"<b>Источник:</b> {chat_title}\n"
+                    f"<b>Дата:</b> {msg_date}\n"
+                    f"<b>Ссылка:</b> <a href='{message_link}'>Перейти к сообщению</a>\n\n"
+                    f"<b>Текст сообщения:</b>\n{display_text}"
                 )
 
                 # Отправляем в целевую группу
-                await message.answer(context_text)
+                await message.answer(context_text, parse_mode="HTML")
                 logger.info(f"✅ Сообщение переслано в целевую группу (ID={user_id})")
 
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.3)
 
         await message.answer(
             f"🔍 Поиск завершён:\n"
