@@ -29,9 +29,7 @@ async def checking_group_for_keywords(message: Message, state: FSMContext):
     :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
-    text = "Введите ссылку на группу, для поиска ключевых слов"
-    await message.answer(text, reply_markup=back_keyboard())
-
+    await message.answer("Введите ссылку на группу, для поиска ключевых слов", reply_markup=back_keyboard())
     await state.set_state(MyStatesParsing.get_url)
 
 
@@ -44,8 +42,7 @@ async def get_url(message: Message, state: FSMContext):
     :return:
     """
     await state.update_data(url=message.text.strip())  # Сохраняем URL в контекст данных
-    text = "Введите ключевое слово для поиска\n\n"
-    await message.answer(text, reply_markup=back_keyboard())
+    await message.answer("Введите ключевое слово для поиска\n\n", reply_markup=back_keyboard())
     await state.set_state(MyStatesParsing.get_keyword)
 
 
@@ -58,8 +55,7 @@ async def get_keyword(message: Message, state: FSMContext):
     :return:
     """
     keyword = message.text.strip()  # Получаем ключевое слово из сообщения
-    text = "Данные приняты, ожидайте результата\n\n"
-    await message.answer(text, reply_markup=back_keyboard())
+    await message.answer("Данные приняты, ожидайте результата\n\n", reply_markup=back_keyboard())
     await state.update_data(keyword=keyword)
     data = await state.get_data()  # Получаем данные из контекста состояния
     await state.clear()  # Завершаем текущее состояние машины состояния
@@ -155,16 +151,13 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     :param message: (telegram.Message) Объект сообщения, отправленный пользователем.
     :return:
     """
-
     await checking_accounts_for_validity(message)
     available_sessions = await get_available_sessions(message)
-
     # Подключаемся к текущему аккаунту
-    session_path = f'accounts/parsing_grup/{available_sessions[0]}'
-    logger.info(f"Подключаемся к сессии: {session_path}")
-
-    client = await create_client_from_session(session_path, api_id, api_hash)
-
+    logger.info(f"Подключаемся к сессии: {f'accounts/parsing_grup/{available_sessions[0]}'}")
+    client = await create_client_from_session(
+        f'accounts/parsing_grup/{available_sessions[0]}', api_id, api_hash
+    )
     await subscription_telegram(client, url)
 
 
