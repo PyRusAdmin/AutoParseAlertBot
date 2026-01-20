@@ -84,6 +84,22 @@ async def scanning_folder_for_session_files(message: Message, path):
     return session_files
 
 
+async def checking_accounts_for_validity(message):
+    """
+    Проверка аккаунтов на валидность
+    :param message: (telegram.Message) Объект сообщения, отправленный пользователем.
+    :return:
+    """
+    # 1. Сканируем папку на наличие session-файлов
+    session_files = await scanning_folder_for_session_files(message=message, path="accounts/parsing_grup")
+    logger.info(f"{session_files}")
+    # Получаем имена сессий (без расширения .session)
+    available_sessions = [str(f.stem) for f in session_files]
+    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+    # Проверка аккаунтов на валидность из папки parsing
+    await connect_client_test(available_sessions=available_sessions, path="accounts/parsing_grup")
+
+
 async def parse_group_for_keywords(url, keyword, message: Message):
     """
     Парсит группу на наличие ключевых слов.
@@ -93,17 +109,8 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     :return:
     """
 
-    # 1. Сканируем папку на наличие session-файлов
+    await checking_accounts_for_validity(message)
     session_files = await scanning_folder_for_session_files(message=message, path="accounts/parsing_grup")
-    logger.info(f"{session_files}")
-
-    # Получаем имена сессий (без расширения .session)
-    available_sessions = [str(f.stem) for f in session_files]
-    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
-
-    # Проверка аккаунтов на валидность из папки parsing
-    await connect_client_test(available_sessions=available_sessions, path="accounts/parsing_grup")
-
     # Получаем имена сессий (без расширения .session)
     available_sessions = [str(f.stem) for f in session_files]
     logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
