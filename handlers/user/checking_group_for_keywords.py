@@ -160,6 +160,33 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     )
     await subscription_telegram(client, url)
 
+    try:
+        # Определяем параметры для парсинга
+        parse_kwargs = {
+            'limit': 100,  # Количество последних сообщений для проверки
+        }
+
+        count = 0
+        matched_count = 0
+
+        # Итерируем сообщения
+        async for msg in client.iter_messages(entity=url, **parse_kwargs):
+            count += 1
+            text = msg.message if msg.message else ""
+            if text and keyword.lower() in text.lower():
+                matched_count += 1
+                logger.info(f"✅ Найдено сообщение с ключевым словом: '{keyword}' — {text.strip()}")
+
+        await message.answer(
+            f"🔍 Поиск завершён:\n"
+            f"Проверено сообщений: {count}\n"
+            f"Совпадений с '{keyword}': {matched_count}"
+        )
+    except Exception as e:
+        logger.exception(f"❌ Ошибка при парсинге группы: {e}")
+        await message.answer("❌ Произошла ошибка при парсинге группы. Проверьте ссылку и доступ к чату.")
+    finally:
+        await client.disconnect()
 
 def register_handlers_checking_group_for_keywords():
     """Регистрирует обработчики для проверки группы на наличие ключевых слов."""
