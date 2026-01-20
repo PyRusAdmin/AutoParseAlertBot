@@ -29,7 +29,12 @@ async def checking_group_for_keywords(message: Message, state: FSMContext):
     :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
-    await message.answer("Введите ссылку на группу, для поиска ключевых слов", reply_markup=back_keyboard())
+    await message.answer(
+        "🔍 Введите ссылку на группу или канал для поиска ключевых слов.\n\n"
+        "📌 Пример: <code>https://t.me/example_group</code> или <code>@example_channel</code>",
+        reply_markup=back_keyboard(),
+        parse_mode="HTML"
+    )
     await state.set_state(MyStatesParsing.get_url)
 
 
@@ -42,7 +47,14 @@ async def get_url(message: Message, state: FSMContext):
     :return:
     """
     await state.update_data(url=message.text.strip())  # Сохраняем URL в контекст данных
-    await message.answer("Введите ключевое слово для поиска\n\n", reply_markup=back_keyboard())
+    await message.answer(
+        "✍️ Введите ключевое слово для поиска в сообщениях.\n\n"
+        "📌 Пример: <code>Работа в Москве</code> или <code>ищу дизайнера</code>\n\n"
+        "❗️Важно: Не указывайте слишком короткие или множественные слова (например: <code>работа, Москва, дизайн</code>).\n"
+        "Бот ищет точные совпадения — лучше использовать фразу целиком.",
+        reply_markup=back_keyboard(),
+        parse_mode="HTML"
+    )
     await state.set_state(MyStatesParsing.get_keyword)
 
 
@@ -55,7 +67,12 @@ async def get_keyword(message: Message, state: FSMContext):
     :return:
     """
     keyword = message.text.strip()  # Получаем ключевое слово из сообщения
-    await message.answer("Данные приняты, ожидайте результата\n\n", reply_markup=back_keyboard())
+    await message.answer(
+        "✅ Данные успешно получены!\n\n"
+        "🔍 Начинаю поиск сообщений по указанной группе и ключевому слову…\n\n"
+        "⏳ Пожалуйста, ожидайте — процесс может занять некоторое время.",
+        reply_markup=back_keyboard()
+    )
     await state.update_data(keyword=keyword)
     data = await state.get_data()  # Получаем данные из контекста состояния
     await state.clear()  # Завершаем текущее состояние машины состояния
@@ -165,7 +182,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     try:
         # Определяем параметры для парсинга
         parse_kwargs = {
-            'limit': 400,  # Количество последних сообщений для проверки
+            'limit': 500,  # Количество последних сообщений для проверки
         }
 
         count = 0
@@ -226,7 +243,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
                 await message.answer(context_text, parse_mode="HTML")
                 logger.info(f"✅ Сообщение переслано в целевую группу (ID={user_id})")
 
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(0.4)
 
         await message.answer(
             f"🔍 Поиск завершён:\n"
