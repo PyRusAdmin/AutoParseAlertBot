@@ -115,9 +115,6 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     available_sessions = [str(f.stem) for f in session_files]
     logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
-    # processed = 0
-    # current_session_index = 0
-    # while processed < len(available_sessions):
     # Подключаемся к текущему аккаунту
     session_path = f'accounts/parsing_grup/{available_sessions[0]}'
     logger.info(f"Подключаемся к сессии: {session_path}")
