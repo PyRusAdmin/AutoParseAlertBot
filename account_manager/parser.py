@@ -361,9 +361,14 @@ async def filter_messages(message, user_id, user, session_path):
         # === Обработка новых сообщений ===
         @client.on(events.NewMessage(chats=channels))
         async def handle_new_message(event: events.NewMessage.Event):
+            # Обрабатывает входящее сообщение, проверяет его на совпадение с ключевыми словами и пересылает в целевую
+            # группу с контекстом при совпадении.
             await process_message(
-                client=client, message=event.message, chat_id=event.chat_id, user_id=user_id,
-                target_group_id=target_group_id
+                client=client,  # <-- ✅ передаем клиент для пересылки
+                message=event.message,  # <-- ✅ передаем сообщение для пересылки
+                chat_id=event.chat_id,  # <-- ✅ передаем chat_id для пересылки
+                user_id=user_id,  # <-- ✅ передаем user_id для пересылки
+                target_group_id=target_group_id  # <-- ✅ передаем target_group_id для пересылки
             )
 
         logger.info("👂 Бот слушает новые сообщения...")

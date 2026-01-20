@@ -151,6 +151,8 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     :param message: (telegram.Message) Объект сообщения, отправленный пользователем.
     :return:
     """
+    user_id = message.from_user.id  # Получаем ID пользователя
+
     await checking_accounts_for_validity(message)
     available_sessions = await get_available_sessions(message)
     # Подключаемся к текущему аккаунту
@@ -176,6 +178,53 @@ async def parse_group_for_keywords(url, keyword, message: Message):
             if text and keyword.lower() in text.lower():
                 matched_count += 1
                 logger.info(f"✅ Найдено сообщение с ключевым словом: '{keyword}' — {text.strip()}")
+
+                # ИСПРАВЛЕНО: используем msg.id вместо message.id
+                logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={msg.id}")
+
+                # Получаем дату сообщения
+                msg_date = msg.date.strftime("%d.%m.%Y %H:%M:%S") if msg.date else "Неизвестно"
+
+                # Получаем информацию о чате-источнике
+                try:
+                    chat_entity = await client.get_entity(url)
+                    chat_title = getattr(chat_entity, "title", None) or getattr(chat_entity, "username",
+                                                                                None) or "Неизвестно"
+                    chat_id = chat_entity.id
+                except Exception as e:
+                    logger.warning(f"Не удалось получить название чата: {e}")
+                    chat_title = "Неизвестно"
+                    chat_id = None
+
+                # Формируем ссылку на сообщение
+                # Для чатов с username (если есть)
+                if chat_id:
+                    try:
+                        # Для супергрупп/каналов (chat_id начинается с -100)
+                        if str(chat_id).startswith("-100"):
+                            # Удаляем префикс -100 и получаем чистый ID
+                            clean_chat_id = str(chat_id)[4:]
+                            message_link = f"https://t.me/c/{clean_chat_id}/{msg.id}"
+                        elif hasattr(chat_entity, 'username') and chat_entity.username:
+                            message_link = f"https://t.me/{chat_entity.username}/{msg.id}"
+                    except Exception as e:
+                        logger.warning(f"Не удалось создать ссылку на сообщение: {e}")
+
+                # Формируем итоговое сообщение с контекстом
+                # Обрезаем текст если он слишком длинный
+                display_text = text if len(text) <= 500 else text[:500] + "..."
+
+                context_text = (
+                    f"📥 **Новое сообщение**\n\n"
+                    f"**Источник:** {chat_title}\n"
+                    f"**Дата:** {msg_date}\n"
+                    f"**Ссылка:** {message_link}\n\n"
+                    f"**Текст сообщения:**\n{display_text}"
+                )
+
+                # Отправляем в целевую группу
+                await message.answer(context_text)
+                logger.info(f"✅ Сообщение переслано в целевую группу (ID={user_id})")
 
             await asyncio.sleep(0.1)
 
