@@ -163,7 +163,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     try:
         # Определяем параметры для парсинга
         parse_kwargs = {
-            'limit': 100,  # Количество последних сообщений для проверки
+            'limit': 200,  # Количество последних сообщений для проверки
         }
 
         count = 0
@@ -177,6 +177,8 @@ async def parse_group_for_keywords(url, keyword, message: Message):
                 matched_count += 1
                 logger.info(f"✅ Найдено сообщение с ключевым словом: '{keyword}' — {text.strip()}")
 
+            await asyncio.sleep(0.1)
+
         await message.answer(
             f"🔍 Поиск завершён:\n"
             f"Проверено сообщений: {count}\n"
@@ -187,6 +189,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
         await message.answer("❌ Произошла ошибка при парсинге группы. Проверьте ссылку и доступ к чату.")
     finally:
         await client.disconnect()
+
 
 def register_handlers_checking_group_for_keywords():
     """Регистрирует обработчики для проверки группы на наличие ключевых слов."""
