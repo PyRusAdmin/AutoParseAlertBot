@@ -84,18 +84,27 @@ async def scanning_folder_for_session_files(message: Message, path):
     return session_files
 
 
+async def get_available_sessions(message, path: str = "accounts/parsing_grup"):
+    """
+    Сканирует указанную папку и возвращает список имён session-файлов без расширения.
+
+    :param message: Объект сообщения от пользователя (для логирования или передачи в scanning_folder_for_session_files)
+    :param path: Путь к папке с session-файлами
+    :return: Список имён сессий (без расширения .session)
+    """
+    session_files = await scanning_folder_for_session_files(message=message, path=path)
+    available_sessions = [str(f.stem) for f in session_files]
+    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+    return available_sessions
+
+
 async def checking_accounts_for_validity(message):
     """
     Проверка аккаунтов на валидность
     :param message: (telegram.Message) Объект сообщения, отправленный пользователем.
     :return:
     """
-    # 1. Сканируем папку на наличие session-файлов
-    session_files = await scanning_folder_for_session_files(message=message, path="accounts/parsing_grup")
-    logger.info(f"{session_files}")
-    # Получаем имена сессий (без расширения .session)
-    available_sessions = [str(f.stem) for f in session_files]
-    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+    available_sessions = await get_available_sessions(message)
     # Проверка аккаунтов на валидность из папки parsing
     await connect_client_test(available_sessions=available_sessions, path="accounts/parsing_grup")
 
@@ -110,10 +119,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     """
 
     await checking_accounts_for_validity(message)
-    session_files = await scanning_folder_for_session_files(message=message, path="accounts/parsing_grup")
-    # Получаем имена сессий (без расширения .session)
-    available_sessions = [str(f.stem) for f in session_files]
-    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+    available_sessions = await get_available_sessions(message)
 
     # Подключаемся к текущему аккаунту
     session_path = f'accounts/parsing_grup/{available_sessions[0]}'
