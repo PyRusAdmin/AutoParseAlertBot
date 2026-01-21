@@ -5,6 +5,7 @@ from aiogram import F
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 
+from ai.ai import category_assignment
 from database.database import TelegramGroup, db
 from system.dispatcher import router
 
@@ -12,113 +13,92 @@ from system.dispatcher import router
 @router.message(F.text == "Присвоить категорию")
 async def checking_group_for_ai_db(message: Message):
     """
-    Актуализация базы данных:
-    обновление ID и типа групп/каналов.
+    Присваивает категории группам/каналам с помощью ИИ (Groq + Llama).
 
-    Последовательность действий:
-     - Сканирует папку accounts/parsing для поиска доступных сессий;
-     - Подключается к Telegram API для получения метаданных по username;
-     - Определяет тип сущности (канал, супергруппа и т.д.);
-     - Обновляет записи в базе через прямой UPDATE-запрос;
-     - При FloodWaitError переключается на следующий аккаунт;
-     - Отправляет прогресс и статистику в чат администратора.
+    Последовательность:
+    - Находит все записи с пустой категорией;
+    - Для каждой собирает контекст: название, описание, username;
+    - Отправляет в ИИ;
+    - Сохраняет полученную категорию.
 
-     Особенности:
-     - Доступ только для администраторов;
-     - Автоматическое переключение между аккаунтами при FloodWait;
-     - Используется режим WAL для избежания блокировок БД.
+    Особенности:
+    - Обновляется ТОЛЬКО поле `category`;
+    - Ошибки логируются, обработка продолжается;
+    - Каждые 20 обновлений — прогресс в чат.
 
      :param message: (Message) Входящее сообщение от администратора.
      :return: None
      """
-    await message.answer("✅ Начало актуализации...")
+    await message.answer("🧠 Запуск присвоения категорий с помощью ИИ...")
 
     try:
-        # 3. Убедимся, что БД подключена
+        # Убедимся, что БД подключена
         if db.is_closed():
             db.connect()
 
-        # 4. Получаем записи с username и group_type='group', которые ещё НЕ обновлены
+        # Получаем группы без категории
         groups_to_update = list(TelegramGroup.select().where(
             (TelegramGroup.username.is_null(False)) &
             (TelegramGroup.category == '')
         ))
 
         total_count = len(groups_to_update)
-        logger.info(f"Найдено {total_count} групп для обновления")
+        logger.info(f"Найдено {total_count} групп без категории")
 
         # Отправляем начальное сообщение
-        await message.answer(f"🔄 Начинаю актуализацию {total_count} групп...")
+        await message.answer(f"🔄 Будет обработано: {total_count} групп")
 
         processed = 0
         updated = 0
         errors = 0
-        current_session_index = 0
 
-        # 5. Основной цикл обработки групп
-        while processed < total_count and current_session_index:
-
+        for group in groups_to_update:
             try:
                 await asyncio.sleep(1)
 
-                # Обрабатываем группы с текущим аккаунтом
-                for group in groups_to_update[processed:]:
-                    try:
-                        await asyncio.sleep(2)
+                # Собираем контекст для ИИ
+                context = f"""
+Название: {group.name or 'Без названия'}
+Описание: {group.description or 'Без описания'}
+Username: {group.username or 'Неизвестен'}
+Тип: {group.group_type or 'Неизвестен'}
+                """.strip()
 
-                        # Обновляем запись через UPDATE запрос со всеми доступными данными
-                        TelegramGroup.update(
-                            id=entity.id,
-                            group_hash=str(entity.id),
-                            group_type=new_group_type,
-                            username=actual_username,
-                            description=description,
-                            participants=participants_count,
-                            name=entity.title  # Также обновляем название на актуальное
-                        ).where(
-                            TelegramGroup.group_hash == group.group_hash
-                        ).execute()
+                # Получаем категорию от ИИ
+                category = await category_assignment(context)
+                category = category.strip().strip('".')  # чистим кавычки и лишние символы
 
-                        processed += 1
-                        updated += 1
+                # Обновляем ТОЛЬКО категорию
+                TelegramGroup.update(
+                    category=category
+                ).where(TelegramGroup.id == group.id).execute()
 
-                        logger.info(
-                            f"[{processed}/{total_count}] Обновлено: {group.username} | "
-                            f"ID: {entity.id} | Тип: {new_group_type} | Описание: {description} | Участники: {participants_count} | Аккаунт: {current_account}"
-                        )
+                updated += 1
+                logger.info(f"[{processed + 1}/{total_count}] Категория для {group.username}: {category}")
 
-                        # Каждые 100 обновлений отправляем прогресс
-                        if processed % 100 == 0:
-                            await message.answer(
-                                f"📊 Прогресс: {processed}/{total_count}\n"
-                                f"✅ Обновлено: {updated}\n"
-                                f"❌ Ошибок: {errors}\n"
-                            )
+                # Отправляем прогресс каждые 20
+                if (processed + 1) % 20 == 0:
+                    await message.answer(
+                        f"📊 Прогресс: {processed + 1}/{total_count}\n"
+                        f"✅ Успешно: {updated}\n"
+                        f"❌ Ошибок: {errors}"
+                    )
 
-                        # Пауза для избежания бана от Telegram
-                        await asyncio.sleep(5)
+                processed += 1
+                await asyncio.sleep(1)  # уважаем API Groq
 
-                    except Exception as e:
-                        logger.exception(e)
             except Exception as e:
-                logger.exception(e)
-                current_session_index += 1
+                errors += 1
+                logger.exception(f"Ошибка при обработке {group.username}: {e}")
+                continue
 
-        # Финальная статистика
-        if processed >= total_count:
-            await message.answer(
-                f"✅ Актуализация завершена!\n\n"
-                f"📊 Всего обработано: {processed}/{total_count}\n"
-                f"✅ Успешно обновлено: {updated}\n"
-                f"❌ Ошибок: {errors}\n"
-            )
-        else:
-            await message.answer(
-                f"⚠️ Актуализация остановлена.\n\n"
-                f"📊 Обработано: {processed}/{total_count}\n"
-                f"✅ Успешно обновлено: {updated}\n"
-                f"❌ Ошибок: {errors}\n"
-            )
+        # Финальное сообщение
+        await message.answer(
+            f"✅ Присвоение категорий завершено!\n\n"
+            f"📊 Всего: {processed}/{total_count}\n"
+            f"✅ Успешно: {updated}\n"
+            f"❌ Ошибок: {errors}"
+        )
 
     except Exception as e:
         logger.error(f"Критическая ошибка: {e}")
