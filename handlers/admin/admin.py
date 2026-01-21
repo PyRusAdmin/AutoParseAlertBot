@@ -170,10 +170,15 @@ async def update_db(message: Message):
                         else:
                             new_group_type = 'Обычный чат (группа старого типа)'
 
+                        # === Формируем username с @ ===
+                        actual_username = f"@{entity.username}" if entity.username else ""
+
                         # Обновляем запись через UPDATE запрос со всеми доступными данными
                         TelegramGroup.update(
                             id=entity.id,
+                            group_hash=str(entity.id),
                             group_type=new_group_type,
+                            username=actual_username,
                             description=description,
                             participants=participants_count,
                             name=entity.title  # Также обновляем название на актуальное
