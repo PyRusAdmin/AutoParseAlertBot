@@ -11,7 +11,7 @@ from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 
-from account_manager.auth import connect_client_test
+from account_manager.auth import connect_client_test, CheckingAccountsValidity
 from database.database import TelegramGroup, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router
@@ -90,29 +90,33 @@ async def update_db(message: Message):
     #     await message.answer("❌ Пользователь не найден в базе данных.")
     #     return
 
-    session_files = await scanning_folder_for_session_files(message=message, path=path)
+    # session_files = await scanning_folder_for_session_files(message=message, path=path)
 
     # 2. Сканируем папку на наличие session-файлов
-    sessions_dir = Path('accounts/parsing')
-    session_files = list(sessions_dir.glob('*.session'))
+    # sessions_dir = Path('accounts/parsing')
+    # session_files = list(sessions_dir.glob('*.session'))
 
-    if not session_files:
-        await message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
-        logger.error("Session-файлы не найдены")
-        return
+    # if not session_files:
+    #     await message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
+    #     logger.error("Session-файлы не найдены")
+    #     return
 
     # Получаем имена сессий (без расширения .session)
-    available_sessions = [str(f.stem) for f in session_files]
-    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+    # available_sessions = [str(f.stem) for f in session_files]
+    # logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
     # Проверка аккаунтов на валидность из папки parsing
-    await connect_client_test(available_sessions=available_sessions, path="accounts/parsing")
+    # await connect_client_test(available_sessions=available_sessions, path="accounts/parsing")
+
+    await CheckingAccountsValidity(message=message, path="accounts/parsing").checking_accounts_for_validity()
+    available_sessions = await CheckingAccountsValidity(message=message,
+                                                        path="accounts/parsing").get_available_sessions()
 
     await message.answer("✅ Проверка завершена.")
 
     # Получаем имена сессий (без расширения .session)
-    available_sessions = [str(f.stem) for f in session_files]
-    logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+    # available_sessions = [str(f.stem) for f in session_files]
+    # logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
     await message.answer(
         f"🔍 Найдено аккаунтов: {len(available_sessions)}\n"
