@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from pathlib import Path
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
@@ -9,15 +8,12 @@ from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import TelegramClient
 from telethon.sessions import StringSession
 
-from account_manager.auth import connect_client_test
+from account_manager.auth import CheckingAccountsValidity
 from account_manager.subscription import subscription_telegram
 from keyboards.keyboards import back_keyboard
 from states.states import MyStatesParsing
 from system.dispatcher import api_id, api_hash
 from system.dispatcher import router
-
-
-
 
 
 @router.message(F.text == "Проверка группы на наличие ключевых слов")
