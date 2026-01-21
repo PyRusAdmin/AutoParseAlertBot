@@ -19,17 +19,17 @@ from system.dispatcher import router
 
 class CheckingAccountsValidity:
 
-    def __init__(self, message: Message):
+    def __init__(self, message: Message, path: str):
         self.message = message
+        self.path = path
 
-    async def scanning_folder_for_session_files(self, path):
+    async def scanning_folder_for_session_files(self):
         """
         Сканируем папку на наличие session-файлов
-        :param path:
         :return:
         """
 
-        sessions_dir = Path(path)
+        sessions_dir = Path(self.path)
         session_files = list(sessions_dir.glob('*.session'))
 
         if not session_files:
@@ -38,14 +38,13 @@ class CheckingAccountsValidity:
             return
         return session_files
 
-    async def get_available_sessions(self, path: str = "accounts/parsing_grup"):
+    async def get_available_sessions(self):
         """
         Сканирует указанную папку и возвращает список имён session-файлов без расширения.
 
-        :param path: Путь к папке с session-файлами
         :return: Список имён сессий (без расширения .session)
         """
-        session_files = await self.scanning_folder_for_session_files(path=path)
+        session_files = await self.scanning_folder_for_session_files()
         available_sessions = [str(f.stem) for f in session_files]
         logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
         return available_sessions
@@ -53,12 +52,12 @@ class CheckingAccountsValidity:
     async def checking_accounts_for_validity(self):
         """
         Проверка аккаунтов на валидность
-        :param message: (telegram.Message) Объект сообщения, отправленный пользователем.
+
         :return:
         """
-        available_sessions = await self.get_available_sessions(self.message)
+        available_sessions = await self.get_available_sessions()
         # Проверка аккаунтов на валидность из папки parsing
-        await connect_client_test(available_sessions=available_sessions, path="accounts/parsing_grup")
+        await connect_client_test(available_sessions=available_sessions, path=self.path)
 
 
 @router.message(F.text == "Проверка группы на наличие ключевых слов")
@@ -172,8 +171,9 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     """
     user_id = message.from_user.id  # Получаем ID пользователя
 
-    await CheckingAccountsValidity(message).checking_accounts_for_validity(message)
-    available_sessions = await get_available_sessions(message)
+    await CheckingAccountsValidity(message=message, path="accounts/parsing_grup").checking_accounts_for_validity()
+    available_sessions = await CheckingAccountsValidity(message=message,
+                                                        path="accounts/parsing_grup").get_available_sessions()
     # Подключаемся к текущему аккаунту
     logger.info(f"Подключаемся к сессии: {f'accounts/parsing_grup/{available_sessions[0]}'}")
     client = await create_client_from_session(

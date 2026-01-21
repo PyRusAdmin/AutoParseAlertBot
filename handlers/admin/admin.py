@@ -12,8 +12,7 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 
 from account_manager.auth import connect_client_test
-from database.database import TelegramGroup, db, User
-from handlers.user.checking_group_for_keywords import scanning_folder_for_session_files
+from database.database import TelegramGroup, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router
 
