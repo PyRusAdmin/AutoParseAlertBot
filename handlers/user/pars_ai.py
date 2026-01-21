@@ -8,13 +8,14 @@ from datetime import datetime
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import BufferedInputFile
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import BufferedInputFile, ReplyKeyboardRemove
 from aiogram.types import Message, FSInputFile
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
-from keyboards.user.keyboards import back_keyboard, search_group_ai
+from keyboards.user.keyboards import back_keyboard, search_group_ai, get_categories_keyboard
 from locales.locales import get_text
 from states.states import MyStates
 from system.dispatcher import router
@@ -473,6 +474,101 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
     )
 
 
+class ExportStates(StatesGroup):
+    waiting_for_category = State()
+
+
+@router.message(F.text == "Выбрать категорию, для получения базы")
+async def start_category_export(message: Message, state: FSMContext):
+    """
+    Запускает процесс выбора категории для экспорта.
+    Показывает клавиатуру с категориями и переводит в состояние ожидания выбора.
+    """
+    await message.answer(
+        "📌 Выберите категорию, по которой хотите получить список групп/каналов:",
+        reply_markup=get_categories_keyboard()
+    )
+    await state.set_state(ExportStates.waiting_for_category)
+
+
+@router.message(ExportStates.waiting_for_category)
+async def handle_category_selection(message: Message, state: FSMContext):
+    """
+    Обрабатывает выбор категории и формирует файл со списком групп.
+    """
+    selected_category = message.text.strip()
+
+    # Проверка на кнопку "Назад"
+    if selected_category == "🔙 Назад":
+        await message.answer("❌ Отменено.", reply_markup=ReplyKeyboardRemove())
+        await state.clear()
+        return
+
+    # Список допустимых категорий (для защиты от ручного ввода)
+    valid_categories = {
+        "Инвестиции",
+        "Финансы и личный бюджет",
+        "Криптовалюты и блокчейн",
+        "Бизнес и предпринимательство",
+        "Маркетинг и продвижение",
+        "Технологии и IT",
+        "Образование и саморазвитие",
+        "Работа и карьера",
+        "Недвижимость",
+        "Здоровье и медицина",
+        "Путешествия",
+        "Авто и транспорт",
+        "Шоппинг и скидки",
+        "Развлечения и досуг",
+        "Политика и общество",
+        "Наука и исследования",
+        "Спорт и фитнес",
+        "Кулинария и еда",
+        "Мода и красота",
+        "Хобби и творчество"
+    }
+
+    if selected_category not in valid_categories:
+        await message.answer(
+            "⚠️ Неверная категория. Пожалуйста, выберите из списка.",
+            reply_markup=get_categories_keyboard()
+        )
+        return
+
+    # Ищем группы по категории
+    groups = TelegramGroup.select().where(TelegramGroup.category == selected_category)
+
+    if not groups.exists():
+        await message.answer(
+            f"📭 В категории «{selected_category}» пока нет ни одной группы.",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await state.clear()
+        return
+
+    # Формируем текстовый файл
+    output = io.StringIO()
+    output.write(f"Список групп/каналов по категории: {selected_category}\n")
+    output.write("=" * 50 + "\n\n")
+
+    for group in groups:
+        line = f"{group.username or '—'} | {group.name or 'Без названия'}\n"
+        output.write(line)
+
+    output.seek(0)
+    file_bytes = output.getvalue().encode("utf-8")
+
+    # Отправляем как файл
+    await message.answer_document(
+        document=("groups_by_category.txt", file_bytes),
+        caption=f"✅ Найдено {groups.count()} групп в категории:\n«{selected_category}»",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    logger.info(f"Пользователь {message.from_user.id} запросил экспорт по категории: {selected_category}")
+    await state.clear()
+
+
 @router.message(F.text == "🤖 AI поиск")
 async def ai_search(message: Message, state: FSMContext):
     """
@@ -618,3 +714,6 @@ def register_handlers_pars_ai():
     router.message.register(export_channels, F.text == "📥 Получить всю базу Каналов")
     router.message.register(export_supergroups, F.text == "📥 Получить всю базу Групп (супергрупп)")
     router.message.register(export_legacy_groups, F.text == "📥 Получить всю базу Обычных чатов (группы старого типа)")
+
+    router.message.register(start_category_export, F.text == "Выбрать категорию, для получения базы")
+    router.message.register(handle_category_selection, ExportStates.waiting_for_category)
