@@ -39,27 +39,29 @@ async def main() -> None:
 
     :return: None
     """
+    try:
+        """
+        Панель пользователя
+        """
+        register_greeting_handlers()
+        register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
+        register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
+        register_data_export_handlers()  # Выдача пользователю введенных им данных
+        register_stop_tracking_handler()  # Остановка отслеживания ключевых слов
+        register_handlers_pars_ai()  # Ищет группы и каналы с помощью ИИ
+        register_handlers_post_doc()  # Выдает пользователю документацию к проекту
+        register_connect_account_handler()  # Подключение аккаунта
+        register_handlers_checking_group_for_keywords()  # Проверка группы на наличие ключевых слов
 
-    """
-    Панель пользователя
-    """
-    register_greeting_handlers()
-    register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
-    register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
-    register_data_export_handlers()  # Выдача пользователю введенных им данных
-    register_stop_tracking_handler()  # Остановка отслеживания ключевых слов
-    register_handlers_pars_ai()  # Ищет группы и каналы с помощью ИИ
-    register_handlers_post_doc()  # Выдает пользователю документацию к проекту
-    register_connect_account_handler()  # Подключение аккаунта
-    register_handlers_checking_group_for_keywords()  # Проверка группы на наличие ключевых слов
+        """
+        Панель администратора
+        """
+        register_handlers_admin_panel()
+        register_handlers_log()  # Логирование
 
-    """
-    Панель администратора
-    """
-    register_handlers_admin_panel()
-    register_handlers_log()  # Логирование
-
-    await dp.start_polling(bot)
+        await dp.start_polling(bot)
+    except Exception as e:
+        logger.exception(e)
 
 
 if __name__ == "__main__":

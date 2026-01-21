@@ -43,7 +43,7 @@ async def get_url(message: Message, state: FSMContext):
     Обработчик команды "Получить URL".
     :param message:
     :param state:
-    :return:
+    :return: None
     """
     await state.update_data(url=message.text.strip())  # Сохраняем URL в контекст данных
     await message.answer(
