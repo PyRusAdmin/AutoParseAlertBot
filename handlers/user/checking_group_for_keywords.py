@@ -127,9 +127,10 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     """
     user_id = message.from_user.id  # Получаем ID пользователя
 
-    await CheckingAccountsValidity(message=message, path="accounts/parsing_grup").checking_accounts_for_validity()
-    available_sessions = await CheckingAccountsValidity(message=message,
-                                                        path="accounts/parsing_grup").get_available_sessions()
+    checking_accounts_validity = CheckingAccountsValidity(message=message, path="accounts/parsing_grup")
+    await checking_accounts_validity.checking_accounts_for_validity()
+    available_sessions = await checking_accounts_validity.get_available_sessions()
+
     # Подключаемся к текущему аккаунту
     logger.info(f"Подключаемся к сессии: {f'accounts/parsing_grup/{available_sessions[0]}'}")
     client = await create_client_from_session(

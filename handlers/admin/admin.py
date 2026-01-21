@@ -82,41 +82,11 @@ async def update_db(message: Message):
      :param message: (Message) Входящее сообщение от администратора.
      :return: None
      """
-
-    # user_id = message.from_user.id  # ID текущего пользователя
-    # try:
-    #     user = User.get(User.user_id == user_id)
-    # except User.DoesNotExist:
-    #     await message.answer("❌ Пользователь не найден в базе данных.")
-    #     return
-
-    # session_files = await scanning_folder_for_session_files(message=message, path=path)
-
-    # 2. Сканируем папку на наличие session-файлов
-    # sessions_dir = Path('accounts/parsing')
-    # session_files = list(sessions_dir.glob('*.session'))
-
-    # if not session_files:
-    #     await message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
-    #     logger.error("Session-файлы не найдены")
-    #     return
-
-    # Получаем имена сессий (без расширения .session)
-    # available_sessions = [str(f.stem) for f in session_files]
-    # logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
-
-    # Проверка аккаунтов на валидность из папки parsing
-    # await connect_client_test(available_sessions=available_sessions, path="accounts/parsing")
-
-    await CheckingAccountsValidity(message=message, path="accounts/parsing").checking_accounts_for_validity()
-    available_sessions = await CheckingAccountsValidity(message=message,
-                                                        path="accounts/parsing").get_available_sessions()
+    checking_accounts_validity = CheckingAccountsValidity(message=message, path="accounts/parsing_grup")
+    await checking_accounts_validity.checking_accounts_for_validity()
+    available_sessions = await checking_accounts_validity.get_available_sessions()
 
     await message.answer("✅ Проверка завершена.")
-
-    # Получаем имена сессий (без расширения .session)
-    # available_sessions = [str(f.stem) for f in session_files]
-    # logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
 
     await message.answer(
         f"🔍 Найдено аккаунтов: {len(available_sessions)}\n"
