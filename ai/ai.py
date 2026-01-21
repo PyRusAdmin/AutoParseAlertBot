@@ -13,33 +13,53 @@ from core.proxy_config import setup_proxy
 from system.dispatcher import api_id, api_hash
 
 
-async def category_assignment(user_input):
+async def category_assignment(user_input: str) -> str:
     """
-    Назначает категорию для группы / каналу Telegram из базы данных.
-    :return:
+    Назначает категорию с помощью Groq. Возвращает ТОЛЬКО название категории.
     """
-    setup_proxy()  # Установка прокси
-    client_groq = AsyncGroq(api_key=GROQ_API_KEY)  # Инициализация клиента Groq
+    setup_proxy()
+    client_groq = AsyncGroq(api_key=GROQ_API_KEY)
+
+    prompt = (
+        f"На основе следующих данных о Telegram-группе или канале:\n\n{user_input}\n\n"
+        "Выбери ОДНУ наиболее подходящую категорию из списка ниже. "
+        "Ответь ТОЛЬКО названием категории, без пояснений, кавычек и знаков препинания.\n\n"
+        "Список категорий:\n"
+        "Инвестиции\n"
+        "Финансы и личный бюджет\n"
+        "Криптовалюты и блокчейн\n"
+        "Бизнес и предпринимательство\n"
+        "Маркетинг и продвижение\n"
+        "Технологии и IT\n"
+        "Образование и саморазвитие\n"
+        "Работа и карьера\n"
+        "Недвижимость\n"
+        "Здоровье и медицина\n"
+        "Путешествия\n"
+        "Авто и транспорт\n"
+        "Шоппинг и скидки\n"
+        "Развлечения и досуг\n"
+        "Политика и общество\n"
+        "Наука и исследования\n"
+        "Спорт и фитнес\n"
+        "Кулинария и еда\n"
+        "Мода и красота\n"
+        "Хобби и творчество"
+    )
+
     try:
         chat_completion = await client_groq.chat.completions.create(
             model="meta-llama/llama-4-scout-17b-16e-instruct",
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Причитай данные {user_input} и назначь категорию одну из: Инвестиции, Финансы и личный бюджет, Криптовалюты и блокчейн, Бизнес и предпринимательство, Маркетинг и продвижение, Технологии и IT, Образование и саморазвитие Работа и карьера, Недвижимость, Здоровье и медицина, Путешествия, Авто и транспорт, Шоппинг и скидки, Развлечения и досуг, Политика и общество, Наука и исследования, Спорт и фитнес, Кулинария и еда, Мода и красота, Хобби и творчество."
-                }
-            ],
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,  # снижаем "творчество"
+            max_tokens=20  # достаточно для одного слова/фразы
         )
-        logger.debug(f"Полный ответ от Groq: {chat_completion}")
-        return chat_completion.choices[0].message.content
-    except groq.AuthenticationError:
-        if GROQ_API_KEY:
-            logger.error("Ошибка аутентификации с ключом Groq API.")
-        else:
-            logger.error("API ключ Groq API не установлен.")
+        result = chat_completion.choices[0].message.content.strip()
+        logger.debug(f"Groq вернул категорию: '{result}'")
+        return result
     except Exception as e:
-        logger.exception(e)
-        return ""
+        logger.exception("Ошибка при вызове Groq")
+        return "Не определена"
 
 
 async def get_groq_response(user_input):
