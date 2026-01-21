@@ -12,6 +12,8 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import BufferedInputFile, ReplyKeyboardRemove
 from aiogram.types import Message, FSInputFile
 from loguru import logger  # https://github.com/Delgan/loguru
+from openpyxl import Workbook
+from openpyxl.styles import Font
 
 from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
@@ -535,10 +537,11 @@ async def handle_category_selection(message: Message, state: FSMContext):
         )
         return
 
-    # Ищем группы по категории
+    # Получаем группы из базы
     groups = TelegramGroup.select().where(TelegramGroup.category == selected_category)
+    group_count = groups.count()
 
-    if not groups.exists():
+    if group_count == 0:
         await message.answer(
             f"📭 В категории «{selected_category}» пока нет ни одной группы.",
             reply_markup=ReplyKeyboardRemove()
@@ -546,26 +549,60 @@ async def handle_category_selection(message: Message, state: FSMContext):
         await state.clear()
         return
 
-    # Формируем текстовый файл
-    output = io.StringIO()
-    output.write(f"Список групп/каналов по категории: {selected_category}\n")
-    output.write("=" * 50 + "\n\n")
+    # === Создаём Excel-файл ===
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Группы"
 
+    # Заголовки
+    headers = ["Username", "Название", "Описание", "Тип", "Участники", "Ссылка"]
+    ws.append(headers)
+
+    # Жирный шрифт для заголовков
+    for col in range(1, len(headers) + 1):
+        ws.cell(row=1, column=col).font = Font(bold=True)
+
+    # Данные
     for group in groups:
-        line = f"{group.username or '—'} | {group.name or 'Без названия'}\n"
-        output.write(line)
+        ws.append([
+            group.username or "",
+            group.name or "",
+            group.description or "",
+            group.group_type or "",
+            group.participants or 0,
+            group.link or ""
+        ])
 
+    # Автоподбор ширины колонок (опционально)
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)  # ограничим ширину
+        ws.column_dimensions[column].width = adjusted_width
+
+    # Сохраняем в память
+    output = io.BytesIO()
+    wb.save(output)
     output.seek(0)
-    file_bytes = output.getvalue().encode("utf-8")
 
-    # Отправляем как файл
+    # Отправляем файл
+    file_name = f"groups_{selected_category.replace(' ', '_')}.xlsx"
     await message.answer_document(
-        document=("groups_by_category.txt", file_bytes),
-        caption=f"✅ Найдено {groups.count()} групп в категории:\n«{selected_category}»",
+        document=BufferedInputFile(
+            file=output.getvalue(),
+            filename=file_name
+        ),
+        caption=f"✅ Экспортировано {group_count} групп/каналов по категории:\n«{selected_category}»",
         reply_markup=ReplyKeyboardRemove()
     )
 
-    logger.info(f"Пользователь {message.from_user.id} запросил экспорт по категории: {selected_category}")
+    logger.info(f"Пользователь {message.from_user.id} экспортировал Excel по категории: {selected_category}")
     await state.clear()
 
 
