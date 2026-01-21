@@ -13,6 +13,35 @@ from core.proxy_config import setup_proxy
 from system.dispatcher import api_id, api_hash
 
 
+async def category_assignment(user_input):
+    """
+    Назначает категорию для группы / каналу Telegram из базы данных.
+    :return:
+    """
+    setup_proxy()  # Установка прокси
+    client_groq = AsyncGroq(api_key=GROQ_API_KEY)  # Инициализация клиента Groq
+    try:
+        chat_completion = await client_groq.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Причитай данные {user_input} и назначь категорию одну из: Инвестиции, Финансы и личный бюджет, Криптовалюты и блокчейн, Бизнес и предпринимательство, Маркетинг и продвижение, Технологии и IT, Образование и саморазвитие Работа и карьера, Недвижимость, Здоровье и медицина, Путешествия, Авто и транспорт, Шоппинг и скидки, Развлечения и досуг, Политика и общество, Наука и исследования, Спорт и фитнес, Кулинария и еда, Мода и красота, Хобби и творчество."
+                }
+            ],
+        )
+        logger.debug(f"Полный ответ от Groq: {chat_completion}")
+        return chat_completion.choices[0].message.content
+    except groq.AuthenticationError:
+        if GROQ_API_KEY:
+            logger.error("Ошибка аутентификации с ключом Groq API.")
+        else:
+            logger.error("API ключ Groq API не установлен.")
+    except Exception as e:
+        logger.exception(e)
+        return ""
+
+
 async def get_groq_response(user_input):
     """
     Асинхронно отправляет запрос к модели Llama 4 Scout через Groq API для генерации вариантов названий групп.
@@ -121,3 +150,29 @@ async def search_groups_in_telegram(group_names):
     await client.disconnect()
     logger.info("Телеграм-клиент отключён.")
     return found_groups
+
+
+"""
+Категории для присваивания группам и каналам из базы данных
+
+Инвестиции
+Финансы и личный бюджет
+Криптовалюты и блокчейн
+Бизнес и предпринимательство
+Маркетинг и продвижение
+Технологии и IT
+Образование и саморазвитие
+Работа и карьера
+Недвижимость
+Здоровье и медицина
+Путешествия
+Авто и транспорт
+Шоппинг и скидки
+Развлечения и досуг
+Политика и общество
+Наука и исследования
+Спорт и фитнес
+Кулинария и еда
+Мода и красота
+Хобби и творчество
+"""
