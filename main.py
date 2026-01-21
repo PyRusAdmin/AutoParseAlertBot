@@ -60,6 +60,7 @@ async def main() -> None:
         register_handlers_log()  # Логирование
 
         await dp.start_polling(bot)
+
     except Exception as e:
         logger.exception(e)
 

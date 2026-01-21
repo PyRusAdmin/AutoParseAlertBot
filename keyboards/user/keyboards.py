@@ -2,9 +2,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 
-
-
-
 def get_lang_keyboard():
     """
     Создаёт клавиатуру для выбора языка интерфейса.
