@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-from pathlib import Path
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
@@ -11,7 +10,7 @@ from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 
-from account_manager.auth import connect_client_test, CheckingAccountsValidity
+from account_manager.auth import CheckingAccountsValidity
 from database.database import TelegramGroup, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router

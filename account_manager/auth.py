@@ -100,7 +100,6 @@ class CheckingAccountsValidity:
         Сканируем папку на наличие session-файлов
         :return:
         """
-
         sessions_dir = Path(self.path)
         session_files = list(sessions_dir.glob('*.session'))
 
