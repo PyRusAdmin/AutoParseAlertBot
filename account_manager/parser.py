@@ -12,7 +12,7 @@ from account_manager.auth import connect_client
 from account_manager.session import find_session_file
 from account_manager.subscription import subscription_telegram
 from database.database import create_groups_model, create_keywords_model, create_group_model
-from keyboards.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
+from keyboards.user.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
 from locales.locales import get_text
 
 # 🧠 Простейший трекер сообщений (в памяти)

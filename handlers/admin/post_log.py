@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 from aiogram.types import Message
 
-from keyboards.keyboards import back_keyboard
+from keyboards.user.keyboards import back_keyboard
 from system.dispatcher import router
 
 

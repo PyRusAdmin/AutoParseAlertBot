@@ -7,7 +7,7 @@ from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from database.database import User
-from keyboards.keyboards import back_keyboard
+from keyboards.user.keyboards import back_keyboard
 from locales.locales import get_text
 from system.dispatcher import router
 

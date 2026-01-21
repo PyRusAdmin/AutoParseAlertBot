@@ -5,7 +5,7 @@ from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from database.database import User
-from keyboards.keyboards import menu_launch_tracking_keyboard
+from keyboards.user.keyboards import menu_launch_tracking_keyboard
 from account_manager.parser import stop_tracking
 from system.dispatcher import router
 

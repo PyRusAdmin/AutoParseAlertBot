@@ -3,7 +3,7 @@ import os
 
 from loguru import logger  # https://github.com/Delgan/loguru
 
-from keyboards.keyboards import menu_launch_tracking_keyboard
+from keyboards.user.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 
 

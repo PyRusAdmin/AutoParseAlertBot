@@ -7,7 +7,7 @@ from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import TelegramClient
 
-from keyboards.keyboards import menu_launch_tracking_keyboard
+from keyboards.user.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
 

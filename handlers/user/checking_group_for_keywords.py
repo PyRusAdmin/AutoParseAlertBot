@@ -10,7 +10,7 @@ from telethon.sessions import StringSession
 
 from account_manager.auth import CheckingAccountsValidity
 from account_manager.subscription import subscription_telegram
-from keyboards.keyboards import back_keyboard
+from keyboards.user.keyboards import back_keyboard
 from states.states import MyStatesParsing
 from system.dispatcher import api_id, api_hash
 from system.dispatcher import router

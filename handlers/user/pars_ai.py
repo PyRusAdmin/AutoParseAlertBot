@@ -14,7 +14,7 @@ from loguru import logger  # https://github.com/Delgan/loguru
 
 from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
-from keyboards.keyboards import back_keyboard, search_group_ai
+from keyboards.user.keyboards import back_keyboard, search_group_ai
 from locales.locales import get_text
 from states.states import MyStates
 from system.dispatcher import router
