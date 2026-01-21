@@ -24,7 +24,7 @@ from system.dispatcher import ADMIN_USER_ID, router
 
 
 @router.message(CommandStart())
-async def handle_start_command(message: Message, state: FSMContext) -> None:
+async def handle_start_command(message, state: FSMContext) -> None:
     """
     Обработчик команды /start.
 
@@ -72,7 +72,7 @@ async def handle_start_command(message: Message, state: FSMContext) -> None:
 
 
 @router.message(F.text == "🔙 Назад")
-async def handle_back_to_main_menu(message: Message, state: FSMContext):
+async def handle_back_to_main_menu(message, state: FSMContext):
     """
     Обработчик команды "🔙 Назад".
 
@@ -183,7 +183,7 @@ def get_or_create_user(user_tg):
 
 
 @router.message(F.text.in_(["🇷🇺 Русский", "🇬🇧 English"]))
-async def handle_language_selection(message: Message, state: FSMContext):
+async def handle_language_selection(message, state: FSMContext):
     """
     Обработчик выбора языка пользователем.
 
@@ -217,7 +217,7 @@ async def handle_language_selection(message: Message, state: FSMContext):
 
 
 @router.message(F.text == "⚙ Настройки")
-async def handle_settings_menu(message: Message, state: FSMContext):
+async def handle_settings_menu(message, state: FSMContext):
     """
     Обработчик команды "⚙ Настройки".
 
@@ -243,7 +243,7 @@ async def handle_settings_menu(message: Message, state: FSMContext):
 
 
 @router.message(F.text == "⏯ Запуск отслеживания")
-async def handle_start_tracking(message: Message, state: FSMContext):
+async def handle_start_tracking(message, state: FSMContext):
     """
     Обработчик команды "⏯ Запуск отслеживания".
 
@@ -302,7 +302,7 @@ async def handle_start_tracking(message: Message, state: FSMContext):
 
 
 @router.message(F.text == "🔁 Обновить список")
-async def handle_refresh_groups_list(message: Message, state: FSMContext):
+async def handle_refresh_groups_list(message, state: FSMContext):
     """
     Обработчик команды "🔁 Обновить список".
 
@@ -317,11 +317,10 @@ async def handle_refresh_groups_list(message: Message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, используется для установки состояния.
     :return: None
     """
-    user_tg = message.from_user
-    user = User.get(User.user_id == user_tg.id)
+    user = User.get(User.user_id == message.from_user.id)
 
     logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню 🔁 Обновить список")
+        f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню 🔁 Обновить список")
 
     await message.answer(
         get_text(user.language, "update_list"),
@@ -331,7 +330,7 @@ async def handle_refresh_groups_list(message: Message, state: FSMContext):
 
 
 @router.message(MyStates.waiting_username_group)
-async def handle_group_usernames_input(message: Message, state: FSMContext):
+async def handle_group_usernames_input(message, state: FSMContext):
     """
     Обработчик ввода списка групп/каналов пользователем.
 
