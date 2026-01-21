@@ -5,7 +5,6 @@ from aiogram import F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.tl.types import Message
 
 from account_manager.parser import filter_messages
 from account_manager.session import find_session_file
@@ -44,13 +43,12 @@ async def handle_start_command(message, state: FSMContext) -> None:
     :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояний
-    user_tg = message.from_user
 
-    user = get_or_create_user(user_tg)  # Получаем или создаём пользователя
+    user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
 
     # Проверяем, является ли пользователь администратором
     # from config import ADMIN_USER_ID  # Импортируем ID администраторов
-    is_admin = user_tg.id in ADMIN_USER_ID
+    is_admin = message.from_user.id in ADMIN_USER_ID
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
@@ -60,7 +58,7 @@ async def handle_start_command(message, state: FSMContext) -> None:
         )
     else:
         # Генерируем приветственное сообщение
-        text = generate_welcome_message(user_language=user.language, user_tg_id=user_tg.id)
+        text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
 
         # Выбираем клавиатуру в зависимости от роли
         if is_admin:
@@ -90,13 +88,11 @@ async def handle_back_to_main_menu(message, state: FSMContext):
     :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояний
-    user_tg = message.from_user
 
-    user = get_or_create_user(user_tg)  # Получаем или создаём пользователя
+    user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
 
     # Проверяем, является ли пользователь администратором
-    # from config import ADMIN_USER_ID
-    is_admin = user_tg.id in ADMIN_USER_ID
+    is_admin = message.from_user.id in ADMIN_USER_ID
 
     # Если язык ещё не выбран — просим выбрать
     if user.language == "unset":
@@ -106,7 +102,7 @@ async def handle_back_to_main_menu(message, state: FSMContext):
         )
     else:
         # Генерируем приветственное сообщение
-        text = generate_welcome_message(user_language=user.language, user_tg_id=user_tg.id)
+        text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
 
         # Выбираем клавиатуру в зависимости от роли
         reply_markup = main_admin_keyboard() if is_admin else main_menu_keyboard()
@@ -201,8 +197,7 @@ async def handle_language_selection(message, state: FSMContext):
     :raises Exception: Не ожидается, но возможна ошибка записи в БД.
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
-    user_tg = message.from_user
-    user = User.get(User.user_id == user_tg.id)
+    user = User.get(User.user_id == message.from_user.id)
 
     if message.text == "🇷🇺 Русский":
         user.language = "ru"
@@ -233,8 +228,7 @@ async def handle_settings_menu(message, state: FSMContext):
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
 
-    user_tg = message.from_user
-    user = User.get(User.user_id == user_tg.id)
+    user = User.get(User.user_id == message.from_user.id)
 
     await message.answer(
         get_text(user.language, "settings_message"),
@@ -262,15 +256,13 @@ async def handle_start_tracking(message, state: FSMContext):
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
     try:
-        user_tg = message.from_user  # Получаем данные пользователя из Telegram
-        user_id = user_tg.id  # Получаем ID пользователя
-        user = User.get(User.user_id == user_tg.id)
+        user = User.get(User.user_id == message.from_user.id)
 
         logger.info(
-            f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню запуска парсинга.")
+            f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню запуска парсинга.")
 
         # === Папка, где хранятся сессии ===
-        session_dir = os.path.join("accounts", str(user_id))
+        session_dir = os.path.join("accounts", str(message.from_user.id))
         os.makedirs(session_dir, exist_ok=True)
 
         session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
@@ -293,7 +285,7 @@ async def handle_start_tracking(message, state: FSMContext):
 
         await filter_messages(
             message=message,  # сообщение
-            user_id=user_id,  # ID пользователя
+            user_id=message.from_user.id,  # ID пользователя
             user=user,  # модель пользователя
             session_path=session_path  # путь к сессии
         )
@@ -323,7 +315,7 @@ async def handle_refresh_groups_list(message, state: FSMContext):
         f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню 🔁 Обновить список")
 
     await message.answer(
-        get_text(user.language, "update_list"),
+        text=get_text(user.language, "update_list"),  # текст сообщения
         reply_markup=back_keyboard()  # клавиатура назад
     )
     await state.set_state(MyStates.waiting_username_group)
@@ -348,7 +340,6 @@ async def handle_group_usernames_input(message, state: FSMContext):
     :raises Exception: Перехватывается локально при ошибках добавления (например, нарушение уникальности).
     """
     raw_text = message.text.strip()
-    user_tg = message.from_user
     logger.info(f"Пользователь ввёл имя группы: {raw_text}")
 
     # Разбиваем сообщение по пробелам и переносам строк
@@ -360,12 +351,12 @@ async def handle_group_usernames_input(message, state: FSMContext):
         return
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
-    Groups = create_groups_model(user_id=user_tg.id)  # Создаём таблицу для групп
+    groups = create_groups_model(user_id=message.from_user.id)  # Создаём таблицу для групп
 
     # Проверяем, существует ли таблица (если нет — создаём)
-    if not Groups.table_exists():
-        Groups.create_table()
-        logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
+    if not groups.table_exists():
+        groups.create_table()
+        logger.info(f"Создана новая таблица для пользователя {message.from_user.id}")
 
     added = []
     skipped = []
@@ -374,7 +365,7 @@ async def handle_group_usernames_input(message, state: FSMContext):
     # Добавляем каждую группу по очереди
     for username in usernames:
         try:
-            Groups.create(username_chat_channel=username, user_keyword=None)
+            groups.create(username_chat_channel=username, user_keyword=None)
             added.append(username)
         except Exception as e:
             if "UNIQUE constraint failed" in str(e):
