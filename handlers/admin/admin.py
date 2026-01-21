@@ -13,6 +13,7 @@ from telethon.tl.functions.channels import GetFullChannelRequest
 
 from account_manager.auth import connect_client_test
 from database.database import TelegramGroup, db, User
+from handlers.user.checking_group_for_keywords import scanning_folder_for_session_files
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router
 
@@ -83,13 +84,14 @@ async def update_db(message: Message):
      :return: None
      """
 
-    user_id = message.from_user.id  # ID текущего пользователя
+    # user_id = message.from_user.id  # ID текущего пользователя
+    # try:
+    #     user = User.get(User.user_id == user_id)
+    # except User.DoesNotExist:
+    #     await message.answer("❌ Пользователь не найден в базе данных.")
+    #     return
 
-    try:
-        user = User.get(User.user_id == user_id)
-    except User.DoesNotExist:
-        await message.answer("❌ Пользователь не найден в базе данных.")
-        return
+    session_files = await scanning_folder_for_session_files(message=message, path=path)
 
     # 2. Сканируем папку на наличие session-файлов
     sessions_dir = Path('accounts/parsing')
