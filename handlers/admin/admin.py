@@ -6,7 +6,7 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import FloodWaitError
+from telethon.errors import FloodWaitError, AuthKeyUnregisteredError
 from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -252,6 +252,10 @@ async def update_db(message: Message):
                                 "❌ Все аккаунты исчерпаны. Актуализация остановлена."
                             )
 
+                        break  # Выходим из цикла групп, переключаемся на новый аккаунт
+
+                    except AuthKeyUnregisteredError:
+                        logger.error(f"Не валидный session файл: {current_account}")
                         break  # Выходим из цикла групп, переключаемся на новый аккаунт
 
                     except ValueError as e:
