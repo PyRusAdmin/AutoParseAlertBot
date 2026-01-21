@@ -4,7 +4,6 @@ import asyncio
 from aiogram import F
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import FloodWaitError, AuthKeyUnregisteredError
 
 from database.database import TelegramGroup, db
 from system.dispatcher import router
@@ -57,7 +56,7 @@ async def checking_group_for_ai_db(message: Message):
         current_session_index = 0
 
         # 5. Основной цикл обработки групп
-        while processed < total_count and current_session_index < len(available_sessions):
+        while processed < total_count and current_session_index:
 
             try:
                 await asyncio.sleep(1)
@@ -88,13 +87,12 @@ async def checking_group_for_ai_db(message: Message):
                             f"ID: {entity.id} | Тип: {new_group_type} | Описание: {description} | Участники: {participants_count} | Аккаунт: {current_account}"
                         )
 
-                        # Каждые 10 обновлений отправляем прогресс
-                        if processed % 10 == 0:
+                        # Каждые 100 обновлений отправляем прогресс
+                        if processed % 100 == 0:
                             await message.answer(
                                 f"📊 Прогресс: {processed}/{total_count}\n"
                                 f"✅ Обновлено: {updated}\n"
                                 f"❌ Ошибок: {errors}\n"
-                                f"📱 Аккаунт: {current_account}"
                             )
 
                         # Пауза для избежания бана от Telegram
@@ -104,7 +102,6 @@ async def checking_group_for_ai_db(message: Message):
                         logger.exception(e)
             except Exception as e:
                 logger.exception(e)
-                await message.answer(f"❌ Ошибка аккаунта {current_account}: {e}")
                 current_session_index += 1
 
         # Финальная статистика
@@ -114,7 +111,6 @@ async def checking_group_for_ai_db(message: Message):
                 f"📊 Всего обработано: {processed}/{total_count}\n"
                 f"✅ Успешно обновлено: {updated}\n"
                 f"❌ Ошибок: {errors}\n"
-                f"📱 Использовано аккаунтов: {current_session_index + 1}/{len(available_sessions)}"
             )
         else:
             await message.answer(
@@ -122,7 +118,6 @@ async def checking_group_for_ai_db(message: Message):
                 f"📊 Обработано: {processed}/{total_count}\n"
                 f"✅ Успешно обновлено: {updated}\n"
                 f"❌ Ошибок: {errors}\n"
-                f"📱 Все {len(available_sessions)} аккаунтов исчерпаны"
             )
 
     except Exception as e:
