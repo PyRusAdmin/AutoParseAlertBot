@@ -17,47 +17,7 @@ from system.dispatcher import api_id, api_hash
 from system.dispatcher import router
 
 
-class CheckingAccountsValidity:
 
-    def __init__(self, message: Message, path: str):
-        self.message = message
-        self.path = path
-
-    async def scanning_folder_for_session_files(self):
-        """
-        Сканируем папку на наличие session-файлов
-        :return:
-        """
-
-        sessions_dir = Path(self.path)
-        session_files = list(sessions_dir.glob('*.session'))
-
-        if not session_files:
-            await self.message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
-            logger.error("Session-файлы не найдены")
-            return
-        return session_files
-
-    async def get_available_sessions(self):
-        """
-        Сканирует указанную папку и возвращает список имён session-файлов без расширения.
-
-        :return: Список имён сессий (без расширения .session)
-        """
-        session_files = await self.scanning_folder_for_session_files()
-        available_sessions = [str(f.stem) for f in session_files]
-        logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
-        return available_sessions
-
-    async def checking_accounts_for_validity(self):
-        """
-        Проверка аккаунтов на валидность
-
-        :return:
-        """
-        available_sessions = await self.get_available_sessions()
-        # Проверка аккаунтов на валидность из папки parsing
-        await connect_client_test(available_sessions=available_sessions, path=self.path)
 
 
 @router.message(F.text == "Проверка группы на наличие ключевых слов")

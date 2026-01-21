@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+import asyncio
+import os
+from pathlib import Path
+
+from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import TelegramClient
-import asyncio
+
 from keyboards.keyboards import menu_launch_tracking_keyboard
 from locales.locales import get_text
 from system.dispatcher import api_id, api_hash
-import os
 
 
 # === Подключение клиента Telethon ===
@@ -83,3 +87,46 @@ async def connect_client_test(path, available_sessions):
 
         if client.is_connected():
             await client.disconnect()  # отключаемся, если подключены
+
+
+class CheckingAccountsValidity:
+
+    def __init__(self, message: Message, path: str):
+        self.message = message
+        self.path = path
+
+    async def scanning_folder_for_session_files(self):
+        """
+        Сканируем папку на наличие session-файлов
+        :return:
+        """
+
+        sessions_dir = Path(self.path)
+        session_files = list(sessions_dir.glob('*.session'))
+
+        if not session_files:
+            await self.message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
+            logger.error("Session-файлы не найдены")
+            return
+        return session_files
+
+    async def get_available_sessions(self):
+        """
+        Сканирует указанную папку и возвращает список имён session-файлов без расширения.
+
+        :return: Список имён сессий (без расширения .session)
+        """
+        session_files = await self.scanning_folder_for_session_files()
+        available_sessions = [str(f.stem) for f in session_files]
+        logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
+        return available_sessions
+
+    async def checking_accounts_for_validity(self):
+        """
+        Проверка аккаунтов на валидность
+
+        :return:
+        """
+        available_sessions = await self.get_available_sessions()
+        # Проверка аккаунтов на валидность из папки parsing
+        await connect_client_test(available_sessions=available_sessions, path=self.path)
