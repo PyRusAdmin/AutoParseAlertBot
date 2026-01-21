@@ -30,7 +30,7 @@ def admin_keyboard():
         keyboard=[
             [KeyboardButton(text="Получить лог файл")],
             [KeyboardButton(text="Актуализация базы данных")],
-            [KeyboardButton(text="Присвоить категорию")]
+            [KeyboardButton(text="Присвоить категорию")],
             [KeyboardButton(text="🔙 Назад")]
         ],
         resize_keyboard=True,
