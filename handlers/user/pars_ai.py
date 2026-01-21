@@ -81,7 +81,7 @@ def determine_group_type(group_data):
         return 'link'
 
 
-def save_group_to_db(group_data, category=None):
+def save_group_to_db(group_data):
     """
     Сохраняет или обновляет информацию о группе в централизованной базе данных.
 
@@ -92,7 +92,6 @@ def save_group_to_db(group_data, category=None):
     Функция является частью механизма deduplication и предотвращает дублирование записей.
 
     :param group_data : (dict) Словарь с информацией о группе (название, username, участники и т.д.).
-    :param category : (str, optional) Категория, под которой был выполнен поиск (используется как тег).
     :return TelegramGroup or None: Экземпляр сохранённой модели или None при ошибке.
     :raise Exception: Логируется при ошибках работы с БД (например, нарушение ограничений).
     """
@@ -123,7 +122,7 @@ def save_group_to_db(group_data, category=None):
                 username=group_data.get('username'),
                 description=group_data.get('description'),
                 participants=group_data.get('participants', 0),
-                category=category,
+                category="",
                 group_type=group_type,
                 link=group_data.get('link', ''),
                 date_added=datetime.now()
@@ -553,7 +552,7 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
 
             # Сохраняем результаты в БД
             for group_data in results:
-                saved_group = save_group_to_db(group_data, category=user_input)
+                saved_group = save_group_to_db(group_data)
                 if saved_group:
                     saved_groups.append(saved_group)
 
