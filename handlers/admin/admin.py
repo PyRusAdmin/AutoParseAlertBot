@@ -82,7 +82,7 @@ async def update_db(message: Message):
      :param message: (Message) Входящее сообщение от администратора.
      :return: None
      """
-    checking_accounts_validity = CheckingAccountsValidity(message=message, path="accounts/parsing_grup")
+    checking_accounts_validity = CheckingAccountsValidity(message=message, path="accounts/parsing")
     await checking_accounts_validity.checking_accounts_for_validity()
     available_sessions = await checking_accounts_validity.get_available_sessions()
 
@@ -141,13 +141,19 @@ async def update_db(message: Message):
                 # Обрабатываем группы с текущим аккаунтом
                 for group in groups_to_update[processed:]:
                     try:
-
                         await asyncio.sleep(2)
 
                         # Получаем сущность Telegram по username
                         entity = await client.get_entity(group.username)
 
                         logger.info(entity)
+
+                        if hasattr(entity, 'bot') or not hasattr(entity, 'broadcast'):
+                            logger.warning(
+                                f"Пропускаем username {group.username}: это пользователь, а не канал/группа.")
+                            errors += 1
+                            processed += 1
+                            continue
 
                         # Получаем полную информацию
                         full_entity = await client(GetFullChannelRequest(channel=entity))
