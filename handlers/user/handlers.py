@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from datetime import datetime
 
 from aiogram import F
 from aiogram.filters import CommandStart
@@ -10,7 +11,7 @@ from account_manager.parser import filter_messages
 from account_manager.session import find_session_file
 from database.database import (
     User, create_groups_model, getting_number_records_database, get_session_count,
-    get_target_group_count, get_tracked_channels_count, get_keywords_count
+    get_target_group_count, get_tracked_channels_count, get_keywords_count, TelegramGroup
 )
 from keyboards.admin.keyboards import main_admin_keyboard
 from keyboards.user.keyboards import (
@@ -344,7 +345,6 @@ async def handle_group_usernames_input(message, state: FSMContext):
 
     # Разбиваем сообщение по пробелам и переносам строк
     usernames = [u.strip() for u in raw_text.replace("\n", " ").split() if u.strip()]
-
     if not usernames:
         await message.answer("⚠️ Вы не указали ни одной группы.")
         await state.clear()  # Завершаем текущее состояние машины состояния
@@ -352,38 +352,54 @@ async def handle_group_usernames_input(message, state: FSMContext):
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
     groups = create_groups_model(user_id=message.from_user.id)  # Создаём таблицу для групп
-
     # Проверяем, существует ли таблица (если нет — создаём)
     if not groups.table_exists():
         groups.create_table()
         logger.info(f"Создана новая таблица для пользователя {message.from_user.id}")
 
-    added = []
-    skipped = []
-    errors = []
+    added_count = 0
+    skipped_count = 0
+    errors_count = 0
 
     # Добавляем каждую группу по очереди
     for username in usernames:
         try:
             groups.create(username_chat_channel=username, user_keyword=None)
-            added.append(username)
+            # added.append(username)
+
+            added_count += 1
+            # Добавляем в общую таблицу (если ещё не существует)
+            clean_username = username.lstrip('@')
+            TelegramGroup.get_or_create(
+                group_hash=clean_username,
+                defaults={
+                    "username": clean_username,
+                    "name": "",
+                    "description": "",
+                    "participants": 0,
+                    "category": "",
+                    "group_type": "group",
+                    "link": f"https://t.me/{clean_username}",
+                    "date_added": datetime.now(),
+                    "id": None
+                }
+            )
+
         except Exception as e:
             if "UNIQUE constraint failed" in str(e):
-                skipped.append(username)
+                skipped_count += 1
             else:
-                errors.append((username, str(e)))
+                errors_count += 1
                 logger.error(f"Ошибка при добавлении {username}: {e}")
 
-    # Формируем итоговое сообщение
-    response = []
-    if added:
-        response.append("✅ Добавлены группы:\n" + "\n".join(added))
-    if skipped:
-        response.append("⚠️ Уже были добавлены:\n" + "\n".join(skipped))
-    if errors:
-        response.append("❌ Ошибки при добавлении:\n" + "\n".join(f"{u}: {e}" for u, e in errors))
+    # Формируем краткий отчёт
+    response = (
+        f"✅ Добавлено: {added_count}\n"
+        f"⚠️ Уже есть: {skipped_count}\n"
+        f"❌ Ошибок: {errors_count}"
+    )
+    await message.answer(response)
 
-    await message.answer("\n\n".join(response))
     await state.clear()  # Завершаем текущее состояние машины состояния
 
 
