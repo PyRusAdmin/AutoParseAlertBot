@@ -38,15 +38,14 @@ class CheckingAccountsValidity:
             return
         return session_files
 
-    async def get_available_sessions(self, message, path: str = "accounts/parsing_grup"):
+    async def get_available_sessions(self, path: str = "accounts/parsing_grup"):
         """
         Сканирует указанную папку и возвращает список имён session-файлов без расширения.
 
-        :param message: Объект сообщения от пользователя (для логирования или передачи в scanning_folder_for_session_files)
         :param path: Путь к папке с session-файлами
         :return: Список имён сессий (без расширения .session)
         """
-        session_files = await self.scanning_folder_for_session_files(message=message, path=path)
+        session_files = await self.scanning_folder_for_session_files(path=path)
         available_sessions = [str(f.stem) for f in session_files]
         logger.info(f"Найдено {len(available_sessions)} аккаунтов: {available_sessions}")
         return available_sessions
