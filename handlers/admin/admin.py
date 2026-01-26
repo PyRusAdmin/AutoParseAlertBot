@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import asyncio
 
+import peewee
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import FloodWaitError, AuthKeyUnregisteredError, UsernameInvalidError
+from telethon.errors import FloodWaitError, AuthKeyUnregisteredError, UsernameInvalidError, UsernameNotOccupiedError, \
+    TypeNotFoundError
 from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -152,6 +154,12 @@ async def update_db(message: Message):
                                 f"Пропускаем username {group.username}: это пользователь, а не канал/группа.")
                             errors += 1
                             processed += 1
+
+                            TelegramGroup.update(
+                                group_type="Это пользователь, а не канал/группа."
+                                # ИЛИ, если используете status:Недействительный username
+                                # status='invalid_username'
+                            ).where(TelegramGroup.group_hash == group.group_hash).execute()
                             continue
 
                         # Получаем полную информацию
@@ -205,10 +213,26 @@ async def update_db(message: Message):
 
                         # Пауза для избежания бана от Telegram
                         await asyncio.sleep(5)
+                    except TypeNotFoundError:
+                        logger.warning(
+                            "Не удалось определить тип сущности. Пропускаем... Попробуйте актуализировать Telethon")
 
+                    except peewee.IntegrityError:
+                        logger.warning(
+                            f"Пропускаем дубликат username {group.username} (аккаунт {current_account})"
+                        )
+                        TelegramGroup.update(
+                            group_type="Дублирующийся username"
+                            # ИЛИ, если используете status:Недействительный username
+                            # status='invalid_username'
+                        ).where(TelegramGroup.group_hash == group.group_hash).execute()
+                        errors += 1
+                        processed += 1
+                        continue  # переходим к следующей группе
                     except FloodWaitError as e:
                         wait_time = e.seconds
                         errors += 1
+                        processed += 1  # Пропускаем группу
 
                         logger.warning(
                             f"FloodWait для {group.username} (аккаунт {current_account}): "
@@ -242,19 +266,35 @@ async def update_db(message: Message):
                     except AuthKeyUnregisteredError:
                         logger.error(f"Не валидный session файл: {current_account}")
                         break  # Выходим из цикла групп, переключаемся на новый аккаунт
-
-                    except (UsernameInvalidError, ValueError) as e:
-                        logger.warning(f"Недействительный username: {group.username} — {e}")
+                    except UsernameInvalidError:
+                        logger.warning(f"Недействительный username: {group.username}")
                         # Помечаем как невалидный, чтобы не обрабатывать в будущем
                         TelegramGroup.update(
-                            is_valid_username=False
-                            # ИЛИ, если используете status:
+                            group_type="Недействительный username"
+                            # ИЛИ, если используете status:Недействительный username
                             # status='invalid_username'
                         ).where(TelegramGroup.group_hash == group.group_hash).execute()
                         errors += 1
                         processed += 1
                         continue  # переходим к следующей группе
-
+                    except UsernameNotOccupiedError:
+                        logger.warning(f"Недействительный username: {group.username}")
+                        # Помечаем как невалидный, чтобы не обрабатывать в будущем
+                        TelegramGroup.update(
+                            group_type="Недействительный username"
+                            # ИЛИ, если используете status:Недействительный username
+                            # status='invalid_username'
+                        ).where(TelegramGroup.group_hash == group.group_hash).execute()
+                        errors += 1
+                        processed += 1
+                        continue  # переходим к следующей группе
+                    except ValueError as e:
+                        logger.warning(f"Недействительный username: {group.username} — {e}")
+                        TelegramGroup.update(
+                            group_type="Недействительный username"
+                            # ИЛИ, если используете status:Недействительный username
+                            # status='invalid_username'
+                        ).where(TelegramGroup.group_hash == group.group_hash).execute()
                     except Exception as e:
                         logger.exception(e)
             except Exception as e:
