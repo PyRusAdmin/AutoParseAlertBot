@@ -181,6 +181,7 @@ def connect_keyboard_account():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🔐 Подключить аккаунт")],
+            [KeyboardButton(text="🔐 Подключить свободный аккаунт")],
             [KeyboardButton(text="🔙 Назад")]
         ],
         resize_keyboard=True,
