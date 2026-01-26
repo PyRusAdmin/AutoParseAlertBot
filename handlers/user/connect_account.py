@@ -77,12 +77,14 @@ async def handle_connect_account_free(message: Message, state: FSMContext):
     logger.info(f"Подключаем аккаунт {random_session}")
 
     shutil.move(
-        os.path.join('accounts/free', random_session),
-        os.path.join(f'accounts/{user.user_id}', random_session)
+        os.path.join('accounts/free', f'{random_session}.session'),
+        os.path.join(f'accounts/{user.user_id}', f'{random_session}.session')
     )
 
-    text = get_text(user.language, "connect_account")
-    await message.answer(text, reply_markup=back_keyboard())
+    await message.answer(
+        text="✅ Аккаунт успешно подключен",
+        reply_markup=back_keyboard()
+    )
 
 
 @router.message(F.document)
