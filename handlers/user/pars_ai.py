@@ -754,7 +754,7 @@ def register_handlers_pars_ai():
     router.message.register(export_all_groups, F.text == "📥 Вся база")
     router.message.register(export_channels, F.text == "📥 База каналов")
     router.message.register(export_supergroups, F.text == "📥 База групп")
-    router.message.register(export_legacy_groups, F.text == "📥 Получить всю базу Обычных чатов (группы старого типа)")
+    # router.message.register(export_legacy_groups, F.text == "📥 Получить всю базу Обычных чатов (группы старого типа)")
 
     router.message.register(start_category_export, F.text == "Выбрать категорию, для получения базы")
     router.message.register(handle_category_selection, ExportStates.waiting_for_category)
