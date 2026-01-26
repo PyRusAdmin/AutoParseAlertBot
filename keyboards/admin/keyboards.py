@@ -11,7 +11,6 @@ def main_admin_keyboard():
         keyboard=[
             [KeyboardButton(text="⏯ Запуск отслеживания")],
             [KeyboardButton(text="Проверка группы на наличие ключевых слов")],
-            # [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
             [KeyboardButton(text="🤖 AI поиск"), KeyboardButton(text="📥 Получить базу")],
             [KeyboardButton(text="📘 Инструкция по использованию")],
             [KeyboardButton(text="⚙ Настройки")],
