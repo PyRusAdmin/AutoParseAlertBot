@@ -5,7 +5,7 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import FloodWaitError, AuthKeyUnregisteredError
+from telethon.errors import FloodWaitError, AuthKeyUnregisteredError, UsernameInvalidError
 from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -243,8 +243,17 @@ async def update_db(message: Message):
                         logger.error(f"Не валидный session файл: {current_account}")
                         break  # Выходим из цикла групп, переключаемся на новый аккаунт
 
-                    except ValueError as e:
-                        logger.warning(f"Не правильный username: {group.username}")
+                    except (UsernameInvalidError, ValueError) as e:
+                        logger.warning(f"Недействительный username: {group.username} — {e}")
+                        # Помечаем как невалидный, чтобы не обрабатывать в будущем
+                        TelegramGroup.update(
+                            is_valid_username=False
+                            # ИЛИ, если используете status:
+                            # status='invalid_username'
+                        ).where(TelegramGroup.group_hash == group.group_hash).execute()
+                        errors += 1
+                        processed += 1
+                        continue  # переходим к следующей группе
 
                     except Exception as e:
                         logger.exception(e)
