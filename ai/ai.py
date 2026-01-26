@@ -49,7 +49,7 @@ async def category_assignment(user_input: str) -> str:
 
     try:
         chat_completion = await client_groq.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="meta-llama/llama-guard-4-12b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,  # снижаем "творчество"
             max_tokens=20  # достаточно для одного слова/фразы
