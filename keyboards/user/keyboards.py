@@ -17,9 +17,7 @@ def search_group_ai():
         keyboard=[
             [KeyboardButton(text="📥 Вся база")],
             [KeyboardButton(text="📥 База каналов"), KeyboardButton(text="📥 База групп")],
-
             [KeyboardButton(text="Выбрать категорию")],
-
             [KeyboardButton(text="🔙 Назад")],
         ],
         resize_keyboard=True,
@@ -105,9 +103,9 @@ def main_menu_keyboard():
         keyboard=[
             [KeyboardButton(text="⏯ Запуск отслеживания")],
             [KeyboardButton(text="Проверка группы на наличие ключевых слов")],
-            [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
-            [KeyboardButton(text="🤖 AI поиск")],
-            [KeyboardButton(text="📥 Получить базу")],
+            # [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
+            [KeyboardButton(text="🤖 AI поиск"), KeyboardButton(text="📥 Получить базу")],
+            # [KeyboardButton(text="📥 Получить базу")],
             [KeyboardButton(text="📘 Инструкция по использованию")],
             [KeyboardButton(text="⚙ Настройки")]
         ],
@@ -170,6 +168,7 @@ def settings_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🔁 Обновить список"), KeyboardButton(text="🔍 Ввод ключевого слова")],
+            [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
             [KeyboardButton(text="🔐 Подключить аккаунт"), KeyboardButton(text="📤 Подключить группу для сообщений")],
             [KeyboardButton(text="🌐 Сменить язык")],
             [KeyboardButton(text="🔙 Назад")]
