@@ -4,7 +4,8 @@ from datetime import datetime
 
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
-db = SqliteDatabase('bot.db', timeout=30, pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'})
+db = SqliteDatabase('data/bot.db', timeout=30,
+                    pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'})
 
 
 class BaseModel(Model):

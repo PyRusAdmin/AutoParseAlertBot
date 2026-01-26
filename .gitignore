@@ -1,9 +1,9 @@
 /.env
 /.idea/
 /accounts/
-/user_data/config.ini
+/data/config.ini
 /.gigaide/
-/bot.db
+/data/bot.db
 /logs/
 # Python
 __pycache__/

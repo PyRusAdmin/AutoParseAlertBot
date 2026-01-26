@@ -12,7 +12,7 @@ def read_config_file():
     :return: Объект ConfigParser, содержащий данные из файла конфигурации.
     """
     config = configparser.ConfigParser()
-    config.read('user_data/config.ini', encoding='utf-8')
+    config.read('data/config.ini', encoding='utf-8')
     return config
 
 
