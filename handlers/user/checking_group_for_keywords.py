@@ -134,7 +134,9 @@ async def parse_group_for_keywords(url, keyword, message: Message):
     # Подключаемся к текущему аккаунту
     logger.info(f"Подключаемся к сессии: {f'accounts/parsing_grup/{available_sessions[0]}'}")
     client = await create_client_from_session(
-        f'accounts/parsing_grup/{available_sessions[0]}', api_id, api_hash
+        session_path=f'accounts/parsing_grup/{available_sessions[0]}',
+        api_id=api_id,
+        api_hash=api_hash
     )
     await subscription_telegram(client, url)
 
