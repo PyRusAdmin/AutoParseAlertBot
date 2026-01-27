@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from datetime import datetime
-
+import re
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
 db = SqliteDatabase('data/bot.db', timeout=30,
@@ -41,9 +41,8 @@ def create_groups_model(user_id):
     """
     Динамически создаёт модель Peewee для хранения чатов конкретного пользователя.
 
-    Модель используется для отслеживания списка Telegram-групп и каналов,
-    добавленных пользователем для мониторинга. Создаётся отдельная таблица
-    для каждого пользователя по шаблону 'groups_<user_id>'.
+    Модель используется для отслеживания списка Telegram-групп и каналов, добавленных пользователем для мониторинга.
+    Создаётся отдельная таблица для каждого пользователя по шаблону 'groups_<user_id>'.
 
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
     :return peewee.Model: Класс модели Peewee с полем `username_chat_channel`.
@@ -54,7 +53,17 @@ def create_groups_model(user_id):
     """
 
     class Groups(BaseModel):
-        username_chat_channel = CharField(unique=True)  # Поле для хранения имени канала
+        id = IntegerField(null=True)
+        group_id = CharField(unique=True)
+        group_hash = CharField(unique=True, index=True)
+        name = CharField()
+        username = CharField(null=True, unique=True)  # ← ДОБАВЛЕНО unique=True
+        description = TextField(null=True)
+        participants = IntegerField(default=0)
+        category = CharField(null=True)
+        group_type = CharField()
+        link = CharField()
+        date_added = DateTimeField(default=datetime.now)
 
         class Meta:
             table_name = f"{user_id}_groups"  # Имя таблицы
@@ -66,9 +75,8 @@ def create_keywords_model(user_id):
     """
     Динамически создаёт модель Peewee для хранения ключевых слов конкретного пользователя.
 
-    Модель используется для отслеживания слов или фраз, по которым пользователь
-    хочет фильтровать сообщения в группах. Создаётся отдельная таблица
-    для каждого пользователя по шаблону 'keywords_<user_id>'.
+    Модель используется для отслеживания слов или фраз, по которым пользователь хочет фильтровать сообщения в группах.
+    Создаётся отдельная таблица для каждого пользователя по шаблону 'keywords_<user_id>'.
 
     :param user_id: (int) Уникальный идентификатор пользователя Telegram.
     :return peewee.Model: Класс модели Peewee с полями `id` и `user_keyword`.
@@ -140,6 +148,8 @@ class TelegramGroup(BaseModel):
     Meta:
         table_name (str): Имя таблицы в базе данных — 'telegram_groups'.
     """
+    id = IntegerField(null=True)  # Новое поле: Telegram entity ID
+
     group_hash = CharField(unique=True, index=True)  # ID группы или хеш username
     name = CharField()  # Название группы
     username = CharField(null=True)  # @username если есть
@@ -149,8 +159,6 @@ class TelegramGroup(BaseModel):
     group_type = CharField()  # 'group', 'channel', 'link'
     link = CharField()  # Ссылка на группу
     date_added = DateTimeField(default=datetime.now)  # Дата добавления
-
-    id = IntegerField(null=True)  # Новое поле: Telegram entity ID
 
     class Meta:
         table_name = 'telegram_groups'
