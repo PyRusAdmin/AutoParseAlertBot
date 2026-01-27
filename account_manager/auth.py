@@ -89,6 +89,19 @@ async def connect_client_test(path, available_sessions):
             await client.disconnect()  # отключаемся, если подключены
 
 
+async def checking_accounts(message, path):
+    """
+    Проверка аккаунтов на валидность
+    :param message: (Message) Входящее сообщение от администратора.
+    :param path: (str) Путь к папке с сессиями.
+    :return: (list) Список доступных сессий.
+    """
+    checking_accounts_validity = CheckingAccountsValidity(message, path)
+    await checking_accounts_validity.checking_accounts_for_validity()
+    available_sessions = await checking_accounts_validity.get_available_sessions()
+    return available_sessions
+
+
 class CheckingAccountsValidity:
 
     def __init__(self, message: Message, path: str):

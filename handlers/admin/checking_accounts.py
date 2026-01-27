@@ -13,6 +13,12 @@ async def checking_accounts(message: Message, state: FSMContext):
     """Проверка аккаунтов на валидность"""
     try:
         await state.clear()  # Сбрасываем текущее состояние FSM
+
+
+
+
+
+
     except Exception as e:
         logger.exception(e)
 

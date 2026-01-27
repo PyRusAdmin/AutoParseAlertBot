@@ -61,6 +61,9 @@ async def admin_panel(message: Message, state: FSMContext):
         logger.exception(e)
 
 
+
+
+
 @router.message(F.text == "Актуализация базы данных")
 async def update_db(message: Message):
     """
@@ -83,9 +86,8 @@ async def update_db(message: Message):
      :param message: (Message) Входящее сообщение от администратора.
      :return: None
      """
-    checking_accounts_validity = CheckingAccountsValidity(message=message, path="accounts/parsing")
-    await checking_accounts_validity.checking_accounts_for_validity()
-    available_sessions = await checking_accounts_validity.get_available_sessions()
+    available_sessions = await checking_accounts(message=message,
+                                                 path="accounts/parsing")  # Проверка аккаунтов на валидность
 
     await message.answer("✅ Проверка завершена.")
 
