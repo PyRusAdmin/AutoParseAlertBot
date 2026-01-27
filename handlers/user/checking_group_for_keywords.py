@@ -210,6 +210,8 @@ async def parse_group_for_keywords(url, keyword, message: Message):
                   f"Проверено сообщений: {count}\n"
                   f"Совпадений с '{keyword}': {matched_count}")
         )
+    except ValueError:
+        logger.warning("❌ Не удалось найти группу или канал. Возможно не подходящий гео аккаунта.")
     except Exception as e:
         logger.exception(f"❌ Ошибка при парсинге группы: {e}")
         await message.answer("❌ Произошла ошибка при парсинге группы. Проверьте ссылку и доступ к чату.")
