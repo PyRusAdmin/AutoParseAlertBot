@@ -13,7 +13,7 @@ from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 
-from account_manager.auth import CheckingAccountsValidity
+from account_manager.auth import CheckingAccountsValidity, checking_accounts
 from database.database import TelegramGroup, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router
@@ -61,9 +61,6 @@ async def admin_panel(message: Message, state: FSMContext):
         logger.exception(e)
 
 
-
-
-
 @router.message(F.text == "Актуализация базы данных")
 async def update_db(message: Message):
     """
@@ -86,8 +83,10 @@ async def update_db(message: Message):
      :param message: (Message) Входящее сообщение от администратора.
      :return: None
      """
-    available_sessions = await checking_accounts(message=message,
-                                                 path="accounts/parsing")  # Проверка аккаунтов на валидность
+    available_sessions = await checking_accounts(  # Проверка аккаунтов на валидность
+        message=message,  # Отправка сообщений в чат
+        path="accounts/parsing"  # Путь к папке с сессиями
+    )
 
     await message.answer("✅ Проверка завершена.")
 
