@@ -6,6 +6,7 @@ import sys
 from loguru import logger  # https://github.com/Delgan/loguru
 
 from handlers.admin.admin import register_handlers_admin_panel
+from handlers.admin.checking_accounts import register_checking_accounts
 from handlers.admin.checking_group_for_ai import register_handlers_checking_group_for_ai
 from handlers.admin.post_log import register_handlers_log
 from handlers.user.checking_group_for_keywords import register_handlers_checking_group_for_keywords
@@ -19,7 +20,7 @@ from handlers.user.post_doc import register_handlers_post_doc
 from handlers.user.stop_tracking import register_stop_tracking_handler
 from system.dispatcher import dp, bot
 
-logger.add("logs/log.log", rotation="1 MB", enqueue=True)  # Логирование бота
+logger.add("logs/log.log", rotation="1 MB", compression="zip", enqueue=True)  # Логирование бота
 
 
 async def main() -> None:
@@ -44,7 +45,7 @@ async def main() -> None:
         """
         Панель пользователя
         """
-        register_greeting_handlers()
+        register_greeting_handlers()  # Регистрация приветственного меню и основных команд
         register_entering_keyword_handler()  # Регистрация обработчика для ввода и записи в БД ключевых слов
         register_entering_group_handler()  # Регистрация обработчика для ввода и записи в БД групп (техническая группа)
         register_data_export_handlers()  # Выдача пользователю введенных им данных
@@ -57,9 +58,10 @@ async def main() -> None:
         """
         Панель администратора
         """
-        register_handlers_admin_panel()
+        register_handlers_admin_panel()  # Панель администратора
         register_handlers_log()  # Логирование
         register_handlers_checking_group_for_ai()  # Присвоение категории группам / каналам
+        register_checking_accounts()  # Проверка аккаунтов
 
         await dp.start_polling(bot)
 

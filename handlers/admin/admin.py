@@ -6,8 +6,9 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
-from telethon.errors import FloodWaitError, AuthKeyUnregisteredError, UsernameInvalidError, UsernameNotOccupiedError, \
-    TypeNotFoundError
+from telethon.errors import (
+    FloodWaitError, AuthKeyUnregisteredError, UsernameInvalidError, UsernameNotOccupiedError, TypeNotFoundError
+)
 from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -46,14 +47,13 @@ async def admin_panel(message: Message, state: FSMContext):
     try:
         await state.clear()  # Сбрасываем текущее состояние FSM
 
-        text = (
-            "👋 <b>Добро пожаловать в панель администратора!</b>\n\n"
-            "Вот что вы можете сделать:\n\n"
-            "📁 <b>Получить лог-файл</b> — просмотреть журнал ошибок и событий бота за последнее время. Полезно для диагностики.\n\n"
-            "🔄 <b>Актуализация базы данных</b> — обновить информацию о группах и каналах: проверить их текущий тип (группа/канал) и получить актуальные ID.\n\n"
-        )
         await message.answer(
-            text=text,
+            text=(
+                "👋 <b>Добро пожаловать в панель администратора!</b>\n\n"
+                "Вот что вы можете сделать:\n\n"
+                "📁 <b>Получить лог-файл</b> — просмотреть журнал ошибок и событий бота за последнее время. Полезно для диагностики.\n\n"
+                "🔄 <b>Актуализация базы данных</b> — обновить информацию о группах и каналах: проверить их текущий тип (группа/канал) и получить актуальные ID.\n\n"
+            ),
             parse_mode="HTML",
             reply_markup=admin_keyboard(),
         )
