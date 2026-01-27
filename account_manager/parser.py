@@ -40,6 +40,7 @@ async def join_target_group(client, user_id, message):
     :raises Exception: Логируется при любых других ошибках.
     """
 
+    GroupModel = create_group_model(user_id=user_id)
 
     logger.info(f"🔍 Проверяю целевую группу... {GroupModel}")
 
@@ -200,26 +201,66 @@ async def join_required_channels(client, user_id, message):
 
     # Получаем все username из базы данных
     Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
-    Groups.create_table()
+    # Groups.create_table()
 
-    channels = [group.username_chat_channel for group in Groups.select()]
+    # ✅ Проверка количества записей
+    total_count = Groups.select().count()
+    logger.info(f"📊 Всего каналов для подписки: {total_count}")
 
-    for channel in channels:
+    if total_count == 0:
+        await message.answer("📭 У вас нет добавленных каналов для отслеживания.")
+        return
+
+    # channels = [group.username for group in Groups.select()]
+
+    # Ограничиваем до 500 записей
+    MAX_CHANNELS = 500
+    if total_count > MAX_CHANNELS:
+        await message.answer(
+            f"⚠️ Обнаружено {total_count} каналов. "
+            f"По техническим ограничениям Telegram будет выполнена подписка только на первые {MAX_CHANNELS}."
+        )
+        # Загружаем только первые 500
+        channels = [
+            group.username for group in Groups
+            .select(Groups.username)
+            .where(Groups.username.is_null(False))
+            .limit(MAX_CHANNELS)
+        ]
+    else:
+        # Загружаем все
+        channels = [
+            group.username for group in Groups
+            .select(Groups.username)
+            .where(Groups.username.is_null(False))
+        ]
+
+    base_delay = 5  # начальная задержка в секундах
+
+    for i, channel in enumerate(channels, start=1):
         try:
             logger.info(f"🔗 Пробую подписаться на {channel}")
 
             await client(JoinChannelRequest(channel))
             logger.success(f"✅ Подписка на {channel} выполнена")
 
+            # Рассчитываем текущую задержку: 5, 10, 15, ...
+            current_delay = base_delay * i
+
             await message.answer(
-                f"✅ Подписка на {channel} выполнена",
-                reply_markup=menu_launch_tracking_keyboard()  # клавиатура выбора языка
+                f"✅ Подписка на {channel} выполнена.\n"
+                f"⏳ Следующая попытка через {current_delay} секунд (шаг {i}/{len(channels)}).",
+                reply_markup=menu_launch_tracking_keyboard()
             )
 
-            logger.warning("⚠️ Ожидание 5 секунд для подписки на следующую группу")
-            await asyncio.sleep(5)
+            logger.warning(f"⚠️ Ожидание {current_delay} секунд перед следующей подпиской...")
+            await asyncio.sleep(current_delay)
+
         except UserAlreadyParticipantError:
             logger.info(f"ℹ️ Уже подписан на {channel}")
+            # Даже если уже подписан — всё равно ждём, чтобы не вызывать подозрений
+            current_delay = base_delay * i
+            await asyncio.sleep(current_delay)
         except FloodWaitError as e:
             if e.seconds:
                 logger.warning(
@@ -231,11 +272,10 @@ async def join_required_channels(client, user_id, message):
                 except InviteRequestSentError:
                     logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
         except ValueError:
-            logger.error(f"❌ Не удалось подписаться на {channel} (невалидная ссылка)")
-            # Удаляем невалидную запись из базы
-            deleted = Groups.delete().where(Groups.username_chat_channel == channel).execute()
+            logger.error(f"❌ Невалидная ссылка: {channel}")
+            deleted = Groups.delete().where(Groups.username == channel).execute()
             if deleted:
-                logger.info(f"🗑️ Канал {channel} удалён из базы данных пользователя {user_id}")
+                logger.info(f"🗑️ Канал {channel} удалён из базы.")
         except InviteRequestSentError:
             logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
         except Exception as e:
@@ -291,7 +331,7 @@ async def get_user_channels_or_notify(user_id: int, user, message, client):
     if not Groups.table_exists():
         Groups.create_table()
 
-    channels = [group.username_chat_channel for group in Groups.select()]
+    channels = [group.username for group in Groups.select()]
 
     if not channels:
         logger.warning("⚠️ Список каналов пуст. Добавьте группы в базу данных.")
