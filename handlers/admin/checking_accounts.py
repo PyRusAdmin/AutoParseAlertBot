@@ -18,7 +18,7 @@ async def checking_accounts_handler(message: Message, state: FSMContext):
         path_accounts = [
             "accounts/parsing",  # Путь к папке с сессиями
             "accounts/ai",  # Путь к папке с сессиями
-            "accounts/free"  # Путь к папке с сессиями
+            "accounts/free",  # Путь к папке с сессиями
             "accounts/parsing_grup"  # Путь к папке с сессиями
         ]
 
@@ -27,10 +27,15 @@ async def checking_accounts_handler(message: Message, state: FSMContext):
 
             available_sessions = await checking_accounts(  # Проверка аккаунтов на валидность
                 message=message,  # Отправка сообщений в чат
-                path="accounts/parsing"  # Путь к папке с сессиями
+                path=path  # Путь к папке с сессиями
             )
+            if not available_sessions:
+                await message.answer(
+                    f"🔍 Найдено аккаунтов: {len(available_sessions)} в папке {path}\n"
+                    f"📱 Аккаунты: {', '.join([s.split('/')[-1] for s in available_sessions])}"
+                )
             await message.answer(
-                f"🔍 Найдено аккаунтов: {len(available_sessions)}\n"
+                f"🔍 Найдено аккаунтов: {len(available_sessions)} в папке {path}\n"
                 f"📱 Аккаунты: {', '.join([s.split('/')[-1] for s in available_sessions])}"
             )
 
@@ -40,4 +45,4 @@ async def checking_accounts_handler(message: Message, state: FSMContext):
 
 
 def register_checking_accounts():
-    router.register.message(checking_accounts_handler)
+    router.message.register(checking_accounts_handler)

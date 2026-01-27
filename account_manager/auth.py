@@ -111,15 +111,18 @@ class CheckingAccountsValidity:
     async def scanning_folder_for_session_files(self):
         """
         Сканируем папку на наличие session-файлов
-        :return:
+        :return: Список Path объектов с .session файлами или пустой список, если не найдены.
         """
         sessions_dir = Path(self.path)
         session_files = list(sessions_dir.glob('*.session'))
 
         if not session_files:
             await self.message.answer("❌ Не найдено ни одного session-файла в папке accounts/parsing")
-            logger.error("Session-файлы не найдены")
-            return
+            # logger.error("Session-файлы не найдены")
+            logger.warning(f"В папке {sessions_dir} не найдено ни одного .session файла.")
+            return []
+
+        logger.info(f"Найдено {len(session_files)} session-файлов.")
         return session_files
 
     async def get_available_sessions(self):
