@@ -41,6 +41,7 @@ async def main() -> None:
 
     :return: None
     """
+
     try:
         """
         Панель пользователя

@@ -57,7 +57,7 @@ def create_groups_model(user_id):
         username_chat_channel = CharField(unique=True)  # Поле для хранения имени канала
 
         class Meta:
-            table_name = f"groups_{user_id}"  # Имя таблицы
+            table_name = f"{user_id}_groups"  # Имя таблицы
 
     return Groups  # Возвращаем класс модели
 
@@ -85,7 +85,7 @@ def create_keywords_model(user_id):
         user_keyword = CharField(unique=True)  # Поле для хранения ключевого слова
 
         class Meta:
-            table_name = f"keywords_{user_id}"  # Имя таблицы
+            table_name = f"{user_id}_keywords"  # Имя таблицы
 
     return Keywords  # Возвращаем класс модели
 
@@ -113,7 +113,7 @@ def create_group_model(user_id):
         user_group = CharField(unique=True)  # Поле для хранения технической группы
 
         class Meta:
-            table_name = f"group_{user_id}"  # Имя таблицы
+            table_name = f"{user_id}_group"  # Имя таблицы
 
     return Group  # Возвращаем класс модели
 
