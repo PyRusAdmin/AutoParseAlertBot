@@ -8,7 +8,6 @@ from account_manager.auth import checking_accounts
 from system.dispatcher import router
 
 
-@logger.catch
 @router.message(F.text == "Проверка аккаунтов")
 async def checking_accounts_handler(message: Message, state: FSMContext):
     """Проверка аккаунтов на валидность"""
@@ -29,20 +28,18 @@ async def checking_accounts_handler(message: Message, state: FSMContext):
                 message=message,  # Отправка сообщений в чат
                 path=path  # Путь к папке с сессиями
             )
-            if not available_sessions:
-                await message.answer(
-                    f"🔍 Найдено аккаунтов: {len(available_sessions)} в папке {path}\n"
-                    f"📱 Аккаунты: {', '.join([s.split('/')[-1] for s in available_sessions])}"
-                )
             await message.answer(
                 f"🔍 Найдено аккаунтов: {len(available_sessions)} в папке {path}\n"
                 f"📱 Аккаунты: {', '.join([s.split('/')[-1] for s in available_sessions])}"
             )
-
+        await message.answer(
+            "✅ Проверка аккаунтов завершена"
+        )
 
     except Exception as e:
         logger.exception(e)
 
 
 def register_checking_accounts():
+    """Регистрация обработчика для проверки аккаунтов на валидность"""
     router.message.register(checking_accounts_handler)
