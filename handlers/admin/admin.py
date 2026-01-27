@@ -13,7 +13,7 @@ from telethon.sessions import StringSession
 from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 
-from account_manager.auth import CheckingAccountsValidity, checking_accounts
+from account_manager.auth import checking_accounts
 from database.database import TelegramGroup, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router

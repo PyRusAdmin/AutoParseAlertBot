@@ -39,7 +39,7 @@ async def join_target_group(client, user_id, message):
     :raises InviteRequestSentError: Если требуется подтверждение приглашения.
     :raises Exception: Логируется при любых других ошибках.
     """
-    GroupModel = create_group_model(user_id=user_id)
+
 
     logger.info(f"🔍 Проверяю целевую группу... {GroupModel}")
 

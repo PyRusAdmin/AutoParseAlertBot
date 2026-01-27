@@ -28,13 +28,12 @@ async def handle_stop_tracking(message: Message, state: FSMContext):
     :raise Exception: Передаётся в `stop_tracking`, где обрабатывается.
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
-    user_tg = message.from_user
-    user = User.get(User.user_id == user_tg.id)
+    user = User.get(User.user_id == message.from_user.id)
 
     logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} нажал кнопку остановки отслеживания")
+        f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} нажал кнопку остановки отслеживания")
 
-    await stop_tracking(user_id=user_tg.id, message=message, user=user)
+    await stop_tracking(user_id=message.from_user.id, message=message, user=user)
 
     await message.answer(
         text="Отслеживание отменено",
