@@ -136,69 +136,6 @@ def save_group_to_db(group_data):
         return None
 
 
-def create_csv_file(groups):
-    """
-    Создаёт байтовый CSV-файл с данными о найденных группах для отправки пользователю.
-
-    Использует точку с запятой как разделитель для совместимости с Excel и добавляет BOM
-    для корректного отображения кириллицы. Все поля экранированы.
-
-    Файл содержит колонки: ID (Hash), Название, Username, Описание, Участников,
-    Категория, Тип, Ссылка, Дата добавления.
-    Username приводится к формату '@username'.
-
-    :param groups : (list[TelegramGroup]) Список экземпляров модели TelegramGroup.
-    :return bytes: Содержимое CSV-файла в кодировке UTF-8 с BOM.
-    """
-    output = io.StringIO()
-
-    # Создаём CSV writer с разделителем точка с запятой для лучшей совместимости с Excel
-    writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_MINIMAL)
-
-    # Заголовки
-    writer.writerow([
-        'ID (Hash)',
-        'Название',
-        'Username',
-        'Описание',
-        'Участников',
-        'Категория',
-        'Тип',
-        'Ссылка',
-        'Дата добавления'
-    ])
-
-    # Данные
-    for group in groups:
-        # Очищаем username от лишних символов
-        username = group.username or ''
-        if username:
-            # Убираем все @ в начале и оставляем только один
-            username = username.lstrip('@')
-            username = f"@{username}"
-
-        writer.writerow([
-            group.group_hash,
-            group.name,
-            username,
-            group.description or '',
-            group.participants,
-            group.category or '',
-            group.group_type,
-            group.link,
-            group.date_added.strftime('%Y-%m-%d %H:%M:%S')
-        ])
-
-    # Получаем содержимое и кодируем в UTF-8 с BOM для корректного отображения в Excel
-    csv_content = output.getvalue()
-    output.close()
-
-    # Добавляем BOM для UTF-8
-    csv_bytes = '\ufeff'.encode('utf-8') + csv_content.encode('utf-8')
-
-    return csv_bytes
-
-
 def format_summary_message(groups_count):
     """
     Форматирует HTML-сообщение с краткой сводкой о результатах поиска.
@@ -213,7 +150,7 @@ def format_summary_message(groups_count):
 
     message = f"✅ <b>Поиск завершён!</b>\n\n"
     message += f"📊 Найдено и сохранено: <b>{groups_count}</b> групп/каналов\n"
-    message += f"📁 Результаты отправлены в CSV файле"
+    message += f"📁 Результаты отправлены в Excel-файле"
     return message
 
 
@@ -609,21 +546,27 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
         # Отправляем результаты пользователю
         if saved_groups:
             # Создаём CSV файл
-            csv_bytes = create_csv_file(saved_groups)
+            # csv_bytes = create_csv_file(saved_groups)
             # Генерируем имя файла с датой
-            filename = f"telegram_groups_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            # filename = f"telegram_groups_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
             # Создаём файл для отправки
-            csv_file = BufferedInputFile(csv_bytes, filename=filename)
+            # csv_file = BufferedInputFile(csv_bytes, filename=filename)
             # Отправляем краткую сводку
+
+            # Создаём Excel-файл
+            excel_bytes = create_excel_file(saved_groups)
+            filename = f"telegram_groups_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            excel_file = BufferedInputFile(excel_bytes, filename=filename)
+
             summary = format_summary_message(len(saved_groups))
             await message.answer(summary, parse_mode="HTML")
             # Отправляем CSV файл
             await message.answer_document(
-                document=csv_file,
+                document=excel_file,
                 caption=f"📄 Результаты поиска по запросу: <b>{user_input}</b>",
                 parse_mode="HTML"
             )
-            logger.info(f"Отправлено {len(saved_groups)} групп пользователю {telegram_user.id} в CSV файле")
+            logger.info(f"Отправлено {len(saved_groups)} групп пользователю {telegram_user.id} в Excel файле")
         else:
             await message.answer(
                 "❌ К сожалению, по вашему запросу ничего не найдено. Попробуйте другие ключевые слова.",
