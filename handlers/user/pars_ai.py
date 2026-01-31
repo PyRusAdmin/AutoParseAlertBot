@@ -545,13 +545,6 @@ async def handle_enter_keyword(message: Message, state: FSMContext):
 
         # Отправляем результаты пользователю
         if saved_groups:
-            # Создаём CSV файл
-            # csv_bytes = create_csv_file(saved_groups)
-            # Генерируем имя файла с датой
-            # filename = f"telegram_groups_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            # Создаём файл для отправки
-            # csv_file = BufferedInputFile(csv_bytes, filename=filename)
-            # Отправляем краткую сводку
 
             # Создаём Excel-файл
             excel_bytes = create_excel_file(saved_groups)
