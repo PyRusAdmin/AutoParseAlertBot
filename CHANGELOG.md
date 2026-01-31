@@ -46,3 +46,27 @@ You can test it via the link: https://t.me/AutoParseAlertBot
 * Implemented message forwarding feature for keyword-triggered messages to a designated technical group.
 
 You can test the latest features via the link: https://t.me/AutoParseAlertBot
+
+31.01.2026
+
+**Русский язык**
+
+* Версия: 0.0.9
+* Дата выхода: 31 января 2026 года
+
+- Добавлена миграция с CSV на XLSX
+- Добавлен выбор категории для получения базы данных
+- В панели администратора добавлена актуализация базы групп и каналов
+- Улучшено логирование проекта
+
+**English version**
+
+* Version: 0.0.6
+* Release date: January 11, 2026
+* Added database export modes by chat type: all groups/channels, channels only, supergroups only, basic groups only.
+* Improved function naming in pars_ai.py for better code readability and maintainability.
+* Updated locale strings in locales.py with current release date.
+* Added admin panel with database update functionality (refreshing group/channel IDs and types).
+* Implemented message forwarding feature for keyword-triggered messages to a designated technical group.
+
+You can test the latest features via the link: https://t.me/AutoParseAlertBot
