@@ -418,56 +418,64 @@ async def export_supergroups(message: Message, state: FSMContext):
     """Выдаёт CSV-файл со всей базой данных групп и каналов."""
     await state.clear()  # Завершаем текущее состояние машины состояния
     # Путь к временному CSV-файлу
-    csv_file_path = "telegram_supergroups_export.csv"
-
+    # csv_file_path = "telegram_supergroups_export.csv"
     try:
         # Получаем только СУПЕРГРУППЫ
         groups = TelegramGroup.select().where(
             TelegramGroup.group_type == 'Группа (супергруппа)'
         )
-
-        count = groups.count()
-        if count == 0:
-            await message.answer("📭 В базе данных нет супергрупп.")
+        # count = groups.count()
+        # if count == 0:
+        #     await message.answer("📭 В базе данных нет супергрупп.")
+        #     return
+        if not groups:
+            await message.answer("📭 База данных пуста.")
             return
 
-        # Записываем данные в CSV
-        with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            # Заголовки
-            writer.writerow([
-                "Название", "Юзернейм", "Описание", "Участники",
-                "Категория", "Тип", "Ссылка", "Дата добавления"
-            ])
-            # Данные
-            for group in groups:
-                writer.writerow([
-                    group.name,
-                    group.username or "",
-                    group.description or "",
-                    group.participants,
-                    group.category or "",
-                    group.group_type,
-                    group.link,
-                    group.date_added.strftime("%Y-%m-%d %H:%M:%S")
-                ])
-
-        # Отправляем файл
-        document = FSInputFile(csv_file_path, filename="База_супергрупп.csv")
+        excel_bytes = create_excel_file(groups)
+        document = BufferedInputFile(excel_bytes, filename="База_групп.xlsx")
         await message.answer_document(
             document=document,
-            caption=f"👥 База данных Telegram-супергрупп.\n\n"
-                    f"📊 Всего супергрупп: {count}"
+            caption=f"📦 Вся база данных Telegram-групп и каналов.\n\n📊 Всего записей: {len(groups)}"
         )
+
+        # Записываем данные в CSV
+        # with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
+        #     writer = csv.writer(f)
+        # Заголовки
+        # writer.writerow([
+        #     "Название", "Юзернейм", "Описание", "Участники",
+        #     "Категория", "Тип", "Ссылка", "Дата добавления"
+        # ])
+        # Данные
+        # for group in groups:
+        #     writer.writerow([
+        #         group.name,
+        #         group.username or "",
+        #         group.description or "",
+        #         group.participants,
+        #         group.category or "",
+        #         group.group_type,
+        #         group.link,
+        #         group.date_added.strftime("%Y-%m-%d %H:%M:%S")
+        #     ])
+
+        # Отправляем файл
+        # document = FSInputFile(csv_file_path, filename="База_супергрупп.csv")
+        # await message.answer_document(
+        #     document=document,
+        #     caption=f"👥 База данных Telegram-супергрупп.\n\n"
+        #             f"📊 Всего супергрупп: {count}"
+        # )
 
     except Exception as e:
         await message.answer("❌ Произошла ошибка при создании файла.")
-        print(f"Error generating CSV: {e}")
+        logger.exception(e)
 
-    finally:
-        # Удаляем временный файл после отправки
-        if os.path.exists(csv_file_path):
-            os.remove(csv_file_path)
+    # finally:
+    # Удаляем временный файл после отправки
+    # if os.path.exists(csv_file_path):
+    #     os.remove(csv_file_path)
 
 
 # @router.message(F.text == "📥 Получить всю базу Обычных чатов (группы старого типа)")
