@@ -235,7 +235,7 @@ async def join_required_channels(client, user_id, message):
             .where(Groups.username.is_null(False))
         ]
 
-    base_delay = 5  # начальная задержка в секундах
+    base_delay = 1  # начальная задержка в секундах
 
     for i, channel in enumerate(channels, start=1):
         try:

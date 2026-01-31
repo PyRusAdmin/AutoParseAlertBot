@@ -43,31 +43,35 @@ async def handle_start_command(message, state: FSMContext) -> None:
     :param state: (FSMContext) Контекст машины состояний, сбрасывается при старте.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояний
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояний
 
-    user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
+        user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
 
-    # Проверяем, является ли пользователь администратором
-    # from config import ADMIN_USER_ID  # Импортируем ID администраторов
-    is_admin = message.from_user.id in ADMIN_USER_ID
+        # Проверяем, является ли пользователь администратором
+        # from config import ADMIN_USER_ID  # Импортируем ID администраторов
+        is_admin = message.from_user.id in ADMIN_USER_ID
 
-    # Если язык ещё не выбран — просим выбрать
-    if user.language == "unset":
-        await message.answer(
-            "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
-            reply_markup=get_lang_keyboard()
-        )
-    else:
-        # Генерируем приветственное сообщение
-        text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
-
-        # Выбираем клавиатуру в зависимости от роли
-        if is_admin:
-            reply_markup = main_admin_keyboard()
+        # Если язык ещё не выбран — просим выбрать
+        if user.language == "unset":
+            await message.answer(
+                "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
+                reply_markup=get_lang_keyboard()
+            )
         else:
-            reply_markup = main_menu_keyboard()
+            # Генерируем приветственное сообщение
+            text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
 
-        await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+            # Выбираем клавиатуру в зависимости от роли
+            if is_admin:
+                reply_markup = main_admin_keyboard()
+            else:
+                reply_markup = main_menu_keyboard()
+
+            await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+
+    except Exception as e:
+        logger.exception(e)
 
 
 @router.message(F.text == "🔙 Назад")
