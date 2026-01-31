@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import csv
+# import csv
 import hashlib
 import io
 import os
@@ -219,59 +219,130 @@ def format_summary_message(groups_count):
     return message
 
 
+def create_excel_file(groups):
+    """
+    Создаёт байтовый Excel-файл (.xlsx) с данными о найденных группах для отправки пользователю.
+
+    Содержит колонки: ID (Hash), Название, Username, Описание, Участников,
+    Категория, Тип, Ссылка, Дата добавления.
+    Username приводится к формату '@username'.
+
+    :param groups: (list[TelegramGroup]) Список экземпляров модели TelegramGroup.
+    :return: bytes — содержимое .xlsx файла в памяти.
+    """
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Результаты поиска"
+
+    # Заголовки
+    headers = [
+        'ID (Hash)',
+        'Название',
+        'Username',
+        'Описание',
+        'Участников',
+        'Категория',
+        'Тип',
+        'Ссылка',
+        'Дата добавления'
+    ]
+    ws.append(headers)
+
+    # Жирный шрифт для заголовков
+    for col in range(1, len(headers) + 1):
+        ws.cell(row=1, column=col).font = Font(bold=True)
+
+    # Данные
+    for group in groups:
+        username = group.username or ''
+        if username:
+            username = f"@{username.lstrip('@')}"
+
+        ws.append([
+            group.group_hash,
+            group.name,
+            username,
+            group.description or '',
+            group.participants,
+            group.category or '',
+            group.group_type,
+            group.link,
+            group.date_added.strftime('%Y-%m-%d %H:%M:%S')
+        ])
+
+    # Автоподбор ширины (опционально)
+    for column_cells in ws.columns:
+        length = max(len(str(cell.value)) for cell in column_cells) + 2
+        ws.column_dimensions[column_cells[0].column_letter].width = min(length, 50)
+
+    # Сохраняем в BytesIO
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
 @router.message(F.text == "📥 Вся база")
 async def export_all_groups(message: Message, state: FSMContext):
     """Выдаёт CSV-файл со всей базой данных групп и каналов."""
     await state.clear()  # Завершаем текущее состояние машины состояния
     # Путь к временному CSV-файлу
-    csv_file_path = "telegram_groups_export.csv"
-
+    # csv_file_path = "telegram_groups_export.csv"
     try:
         # Получаем все записи из базы
         groups = TelegramGroup.select()
-
-        count = groups.count()
-        if count == 0:
+        # count = groups.count()
+        # if count == 0:
+        #     await message.answer("📭 База данных пуста.")
+        #     return
+        if not groups:
             await message.answer("📭 База данных пуста.")
             return
 
-        # Записываем данные в CSV
-        with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            # Заголовки
-            writer.writerow([
-                "Название", "Юзернейм", "Описание", "Участники",
-                "Категория", "Тип", "Ссылка", "Дата добавления"
-            ])
-            # Данные
-            for group in groups:
-                writer.writerow([
-                    group.name,
-                    group.username or "",
-                    group.description or "",
-                    group.participants,
-                    group.category or "",
-                    group.group_type,
-                    group.link,
-                    group.date_added.strftime("%Y-%m-%d %H:%M:%S")
-                ])
-
-        # Отправляем файл пользователю
-        document = FSInputFile(csv_file_path, filename="База_всех_групп.csv")
+        excel_bytes = create_excel_file(groups)
+        document = BufferedInputFile(excel_bytes, filename="Вся_база.xlsx")
         await message.answer_document(
             document=document,
-            caption=f"📦 Вся база данных Telegram-групп и каналов.\n\n"
-                    f"📊 Всего записей: {count}"
+            caption=f"📦 Вся база данных Telegram-групп и каналов.\n\n📊 Всего записей: {len(groups)}"
         )
+
+        # Записываем данные в CSV
+        # with open(csv_file_path, mode="w", encoding="utf-8", newline="") as f:
+        #     writer = csv.writer(f)
+        #     # Заголовки
+        #     writer.writerow([
+        #         "Название", "Юзернейм", "Описание", "Участники",
+        #         "Категория", "Тип", "Ссылка", "Дата добавления"
+        #     ])
+        #     # Данные
+        #     for group in groups:
+        #         writer.writerow([
+        #             group.name,
+        #             group.username or "",
+        #             group.description or "",
+        #             group.participants,
+        #             group.category or "",
+        #             group.group_type,
+        #             group.link,
+        #             group.date_added.strftime("%Y-%m-%d %H:%M:%S")
+        #         ])
+        #
+        # # Отправляем файл пользователю
+        # document = FSInputFile(csv_file_path, filename="База_всех_групп.csv")
+        # await message.answer_document(
+        #     document=document,
+        #     caption=f"📦 Вся база данных Telegram-групп и каналов.\n\n"
+        #             f"📊 Всего записей: {count}"
+        # )
 
     except Exception as e:
         await message.answer("❌ Произошла ошибка при создании файла.")
         print(f"Error generating CSV: {e}")
 
-    finally:
-        # Удаляем временный файл после отправки
-        if os.path.exists(csv_file_path):
-            os.remove(csv_file_path)
+    # finally:
+    #     # Удаляем временный файл после отправки
+    #     if os.path.exists(csv_file_path):
+    #         os.remove(csv_file_path)
 
 
 @router.message(F.text == "📥 База каналов")
