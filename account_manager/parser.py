@@ -18,6 +18,10 @@ from locales.locales import get_text
 # 🧠 Простейший трекер сообщений (в памяти)
 forwarded_messages = set()
 
+# 🛑 Словарь активных клиентов и флагов остановки
+active_clients = {}  # {user_id: client}
+stop_flags = {}  # {user_id: asyncio.Event}
+
 
 async def join_target_group(client, user_id, message):
     """
@@ -178,7 +182,7 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
             logger.exception(f"❌ Ошибка при отправке сообщения с контекстом: {e}")
 
 
-async def join_required_channels(client, user_id, message):
+async def join_required_channels(client, user_id, message, stop_event):
     """
     Подписывает клиента на все отслеживаемые каналы и группы пользователя.
 
@@ -238,6 +242,12 @@ async def join_required_channels(client, user_id, message):
     base_delay = 1  # начальная задержка в секундах
 
     for i, channel in enumerate(channels, start=1):
+        # ✅ Проверяем флаг остановки перед каждой подпиской
+        if stop_event.is_set():
+            logger.info("🛑 Получен сигнал остановки. Прерываю подписку на каналы.")
+            await message.answer("🛑 Подписка на каналы остановлена.")
+            return
+
         try:
             logger.info(f"🔗 Пробую подписаться на {channel}")
 
@@ -252,20 +262,46 @@ async def join_required_channels(client, user_id, message):
                 f"⏳ Следующая попытка через {current_delay} секунд (шаг {i}/{len(channels)}).",
                 reply_markup=menu_launch_tracking_keyboard()
             )
-
             logger.warning(f"⚠️ Ожидание {current_delay} секунд перед следующей подпиской...")
             await asyncio.sleep(current_delay)
+
+            # ✅ Используем wait_for с таймаутом вместо sleep для возможности прерывания
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=current_delay)
+                # Если wait вернулся до таймаута, значит установлен флаг остановки
+                logger.info("🛑 Получен сигнал остановки во время ожидания.")
+                await message.answer("🛑 Подписка на каналы остановлена.")
+                return
+            except asyncio.TimeoutError:
+                # Таймаут - это нормально, продолжаем
+                pass
 
         except UserAlreadyParticipantError:
             logger.info(f"ℹ️ Уже подписан на {channel}")
             # Даже если уже подписан — всё равно ждём, чтобы не вызывать подозрений
             current_delay = base_delay * i
             await asyncio.sleep(current_delay)
+
+            try:
+                await asyncio.wait_for(stop_event.wait(), timeout=current_delay)
+                logger.info("🛑 Получен сигнал остановки во время ожидания.")
+                await message.answer("🛑 Подписка на каналы остановлена.")
+                return
+            except asyncio.TimeoutError:
+                pass
+
         except FloodWaitError as e:
             if e.seconds:
                 logger.warning(
                     f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
                 await asyncio.sleep(e.seconds)
+                try:
+                    await asyncio.wait_for(stop_event.wait(), timeout=e.seconds)
+                    logger.info("🛑 Получен сигнал остановки во время FloodWait.")
+                    await message.answer("🛑 Подписка на каналы остановлена.")
+                    return
+                except asyncio.TimeoutError:
+                    pass
                 try:
                     await client(JoinChannelRequest(channel))
                     logger.success(f"✅ Подписка на {channel} выполнена")
@@ -371,6 +407,11 @@ async def filter_messages(message, user_id, user, session_path):
     logger.info(f"🚀 Запуск бота для user_id={user_id}...")
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
+
+    # ✅ Создаём флаг остановки для этого пользователя
+    stop_event = asyncio.Event()
+    stop_flags[user_id] = stop_event
+
     try:
 
         # Проверка на наличие подключенного аккаунта у пользователя для избежания ошибки
@@ -381,6 +422,9 @@ async def filter_messages(message, user_id, user, session_path):
             message=message
         )  # <-- ✅ подключаемся к клиенту Telethon
 
+        # ✅ Сохраняем активный клиент
+        active_clients[user_id] = client
+
         # === Подключаемся к целевой группе для пересылки ===
         target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id, user=user)
 
@@ -389,7 +433,15 @@ async def filter_messages(message, user_id, user, session_path):
             return
 
         # === Подключаемся к обязательным каналам ===
-        await join_required_channels(client=client, user_id=user_id, message=message)
+        await join_required_channels(client=client, user_id=user_id, message=message, stop_event=stop_event)
+
+        # ✅ Проверяем, не была ли установлена остановка во время подписки
+        if stop_event.is_set():
+            logger.info("🛑 Остановка до начала прослушивания сообщений.")
+            await message.answer("🛑 Отслеживание остановлено.")
+            return
+
+
 
         # === Загружаем список каналов из базы ===
         channels = await get_user_channels_or_notify(user_id=user_id, user=user, message=message, client=client)
@@ -416,26 +468,46 @@ async def filter_messages(message, user_id, user, session_path):
             text="👂 Бот слушает новые сообщения...",
             reply_markup=menu_launch_tracking_keyboard()
         )
-        await client.run_until_disconnected()
+
+        # ✅ Запускаем прослушивание с проверкой флага остановки
+        while not stop_event.is_set():
+            try:
+                # Используем wait_for с небольшим таймаутом для возможности проверки флага
+                await asyncio.wait_for(stop_event.wait(), timeout=1.0)
+                break  # Флаг установлен, выходим
+            except asyncio.TimeoutError:
+                # Таймаут - продолжаем работу
+                pass
+
+        logger.info("🛑 Прослушивание остановлено по запросу пользователя.")
+        await message.answer("🛑 Отслеживание сообщений остановлено.")
+
+        # await client.run_until_disconnected()
     except Exception as e:
         logger.exception(f"❌ Критическая ошибка в filter_messages: {e}")
     finally:
-        # Гарантированное отключение клиента в любом случае
-        if client.is_connected():
-            await client.disconnect()
-            logger.info("🛑 Клиент отключён.")
+        # ✅ Очищаем ресурсы
+        if user_id in active_clients:
+            client = active_clients.pop(user_id)
+            if client.is_connected():
+                await client.disconnect()
+                logger.info(f"🛑 Клиент для user_id={user_id} отключён.")
+
+        if user_id in stop_flags:
+            stop_flags.pop(user_id)
+            logger.info(f"🗑️ Флаг остановки для user_id={user_id} удалён.")
 
 
 async def stop_tracking(user_id, message, user):
     """
     Останавливает процесс отслеживания сообщений для пользователя.
 
-    Находит сессию пользователя в папке 'accounts/', инициализирует клиент Telethon и отключает его, что приводит к
-    остановке `client.run_until_disconnected()` в функции `filter_messages`.
+    Устанавливает флаг остановки для активной сессии пользователя, что приводит к
+    завершению цикла прослушивания в функции `filter_messages`.
 
-    - Функция не проверяет, активно ли отслеживание — всегда пытается отключить сессию.
-    - Использует тот же механизм подключения, что и `filter_messages`, для доступа к сессии.
-    - После вызова `client.disconnect()` управление возвращается в `filter_messages`.
+    - Не создаёт новое подключение к сессии (избегает блокировки SQLite).
+    - Использует глобальный словарь `stop_flags` для управления состоянием.
+    - Безопасно обрабатывает случаи, когда отслеживание уже остановлено.
 
     :param user_id: (int) Идентификатор пользователя Telegram.
     :param message: (Message) Объект сообщения aiogram для отправки подтверждения.
@@ -444,17 +516,23 @@ async def stop_tracking(user_id, message, user):
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
 
-    # === Папка, где хранятся сессии ===
-    session_dir = os.path.join("accounts", user_id)
-    os.makedirs(session_dir, exist_ok=True)
+    logger.info(f"🛑 Запрос на остановку отслеживания для user_id={user_id}")
 
-    session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
+    # ✅ Проверяем, есть ли активное отслеживание для этого пользователя
+    if user_id not in stop_flags:
+        logger.warning(f"⚠️ Отслеживание для user_id={user_id} не активно или уже остановлено.")
+        await message.answer(
+            "⚠️ Отслеживание не запущено или уже остановлено.",
+            reply_markup=menu_launch_tracking_keyboard()
+        )
+        return
 
-    logger.info(f"📂 Найден файл сессии: {session_path}")
-    # Telethon ожидает session_name без расширения
+    # ✅ Устанавливаем флаг остановки
+    stop_event = stop_flags[user_id]
+    stop_event.set()
 
-    client = await connect_client(session_path.replace(".session", ""), user,
-                                  message)  # <-- ✅ подключаемся к клиенту Telethon
-
-    logger.info("🛑 Остановка отслеживания сообщений...")
-    await client.disconnect()
+    logger.info(f"✅ Флаг остановки установлен для user_id={user_id}")
+    await message.answer(
+        "🛑 Команда остановки отправлена. Отслеживание будет остановлено в течение нескольких секунд.",
+        reply_markup=menu_launch_tracking_keyboard()
+    )
