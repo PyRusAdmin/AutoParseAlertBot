@@ -17,7 +17,7 @@ from telethon.tl.types import Chat
 from account_manager.auth import connect_client
 # from account_manager.session import find_session_file
 from account_manager.subscription import subscription_telegram
-from database.database import create_groups_model, create_keywords_model, create_group_model
+from database.database import create_groups_model, create_keywords_model, create_group_model, TelegramGroup
 from keyboards.user.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
 from locales.locales import get_text
 
@@ -207,14 +207,17 @@ def determine_telegram_chat_type(entity):
 
 async def get_grup_accaunt(client, message):
     """
-    Формирует список групп и каналов без дублирования записей.
+    Собирает и обновляет данные о группах и каналах из аккаунта пользователя.
 
-    Метод собирает информацию о группах и каналах, включая их ID, название, описание, ссылку, количество участников
-    и время последнего парсинга. Данные сохраняются в базу данных.
+    Проходит по всем диалогам, фильтрует супергруппы и каналы, получает полную информацию
+    (участники, описание, ссылка), определяет тип чата и сохраняет/обновляет запись в базе данных.
 
-    :param client: Экземпляр клиента Telegram
-    :param message:
-    :return:
+    Пропускает личные чаты и обычные группы без username.
+    Добавлена защита от ошибок и ограничений Telegram API.
+
+    :param client: (TelegramClient) Активный клиент Telethon.
+    :param message: (Message) Объект сообщения для логирования и контекста.
+    :return: None
     """
     try:
         async for dialog in client.iter_dialogs():
@@ -241,8 +244,10 @@ async def get_grup_accaunt(client, message):
                 # participants_count = chat.participants_count
                 participants_count = full_entity.full_chat.participants_count or 0
 
-                username = getattr(entity, 'username', None)
-                link = f"https://t.me/{username}" if username else None
+                # username = getattr(entity, 'username', None)
+                actual_username = f"@{entity.username}" if entity.username else ""
+
+                link = f"https://t.me/{entity.username}" if entity.username else None
                 title = entity.title or "Без названия"
                 # about = getattr(chat, 'about', '')
                 description = full_entity.full_chat.about or ""
@@ -251,6 +256,20 @@ async def get_grup_accaunt(client, message):
 
                 logger.info(
                     f"👥 {participants_count} | 📝 {title} | Тип: {new_group_type} | 🔗 {link} | 💬 {description}")
+
+                # Обновляем запись через UPDATE запрос со всеми доступными данными
+                TelegramGroup.update(
+                    id=entity.id,
+                    group_hash=str(entity.id),
+                    group_type=new_group_type,
+                    username=actual_username,
+                    description=description,
+                    participants=participants_count,
+                    name=entity.title  # Также обновляем название на актуальное
+                ).where(
+                    TelegramGroup.group_hash == str(entity.id)
+                ).execute()
+                logger.debug(f"🔄 Обновлена группа: {title}")
 
                 await asyncio.sleep(0.5)
             except TypeError as te:
