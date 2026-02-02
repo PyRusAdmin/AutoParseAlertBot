@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
+
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 
-from database.database import create_group_model, create_groups_model
-from keyboards.user.keyboards import back_keyboard, main_menu_keyboard
+from account_manager.auth import connect_client
+from account_manager.session import find_session_file
+from account_manager.unsubscribe import unsubscribe
+from database.database import create_groups_model, User
+from keyboards.user.keyboards import back_keyboard, main_menu_keyboard, connect_keyboard_account
 from states.states import MyStates
 from system.dispatcher import router
 
@@ -60,6 +65,31 @@ async def del_user_in_db(message: Message, state: FSMContext) -> None:
         )
         logger.warning(f"Попытка удалить несуществующую группу @{username_to_search} "
                        f"пользователем {message.from_user.id}")
+
+    user = User.get(User.user_id == message.from_user.id)
+
+    # === Папка, где хранятся сессии ===
+    session_dir = os.path.join("accounts", str(message.from_user.id))
+    os.makedirs(session_dir, exist_ok=True)
+
+    session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
+
+    logger.info(session_path)
+    if session_path is None:
+        logger.warning("Нет подключенного аккаунта")
+
+        await message.answer(
+            text="Нет подключенного аккаунта. Подключите аккаунт.",
+            reply_markup=connect_keyboard_account()
+        )
+        return  # Правильный способ прервать выполнение обработчика
+
+    client = await connect_client(
+        session_name=session_path.replace(".session", ""),
+        user=user,
+        message=message
+    )  # <-- ✅ подключаемся к клиенту Telethon
+    await unsubscribe(client, username_to_search, message)
 
 
 def register_handlers_delete():
