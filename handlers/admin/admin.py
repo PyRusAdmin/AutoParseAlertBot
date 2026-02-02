@@ -14,6 +14,7 @@ from telethon.sync import TelegramClient
 from telethon.tl.functions.channels import GetFullChannelRequest
 
 from account_manager.auth import checking_accounts
+from account_manager.parser import determine_telegram_chat_type
 from database.database import TelegramGroup, db
 from keyboards.admin.keyboards import admin_keyboard
 from system.dispatcher import api_id, api_hash, router
@@ -171,13 +172,7 @@ async def update_db(message: Message):
                         participants_count = full_entity.full_chat.participants_count or 0
                         logger.info(f"Описание: {description}")
 
-                        # Определяем тип сущности
-                        if entity.megagroup:
-                            new_group_type = 'Группа (супергруппа)'
-                        elif entity.broadcast:
-                            new_group_type = 'Канал'
-                        else:
-                            new_group_type = 'Обычный чат (группа старого типа)'
+                        new_group_type = determine_telegram_chat_type(entity)  # Определяем тип сущности
 
                         # === Формируем username с @ ===
                         actual_username = f"@{entity.username}" if entity.username else ""

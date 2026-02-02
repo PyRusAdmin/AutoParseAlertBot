@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
-import asyncio
 # import os
-from telethon import functions
+# from telethon import functions
+import asyncio
+
+from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
-from telethon.errors import UserAlreadyParticipantError, FloodWaitError, InviteRequestSentError
+from telethon.errors import (
+    FloodWaitError
+)
+from telethon.errors import UserAlreadyParticipantError, InviteRequestSentError
+from telethon.tl.functions.channels import GetFullChannelRequest
 from telethon.tl.functions.channels import JoinChannelRequest
-from telethon.tl.types import Message, Chat
+from telethon.tl.types import Chat
 
 from account_manager.auth import connect_client
 # from account_manager.session import find_session_file
@@ -179,6 +185,26 @@ async def process_message(client, message: Message, chat_id: int, user_id, targe
             logger.exception(f"❌ Ошибка при отправке сообщения с контекстом: {e}")
 
 
+def determine_telegram_chat_type(entity):
+    """
+    Определяет тип чата в Telegram по сущности.
+
+    Поддерживаемые типы:
+    - 'Группа (супергруппа)' — если это мегагруппа
+    - 'Канал' — если это канал (broadcast)
+    - 'Обычный чат (группа старого типа)' — обычные группы без username
+
+    :param entity: (Channel, Chat) Объект сущности из Telethon.
+    :return: str Тип чата как строка.
+    """
+    if entity.megagroup:
+        return 'Группа (супергруппа)'
+    elif entity.broadcast:
+        return 'Канал'
+    else:
+        return 'Обычный чат (группа старого типа)'
+
+
 async def get_grup_accaunt(client, message):
     """
     Формирует список групп и каналов без дублирования записей.
@@ -194,36 +220,35 @@ async def get_grup_accaunt(client, message):
         async for dialog in client.iter_dialogs():
             try:
                 entity = await client.get_entity(dialog.id)
+
                 # Пропускаем личные чаты
                 if isinstance(entity, Chat):
                     logger.debug(f"💬 Пропущен личный чат: {dialog.id}")
                     continue
+
                 # Проверяем, является ли супергруппой или каналом
                 if not getattr(entity, 'megagroup', False) and not getattr(entity, 'broadcast', False):
                     continue
-                full_channel_info = await client(functions.channels.GetFullChannelRequest(channel=entity))
+
+                # Получаем полную информацию
+                full_entity = await client(GetFullChannelRequest(channel=entity))
                 chat = full_channel_info.full_chat
+
                 if not hasattr(chat, 'participants_count'):
                     logger.warning(f"⚠️ participants_count отсутствует для {dialog.id}")
                     continue
+
                 participants_count = chat.participants_count
                 username = getattr(entity, 'username', None)
                 link = f"https://t.me/{username}" if username else None
                 title = entity.title or "Без названия"
                 about = getattr(chat, 'about', '')
 
-                logger.info(f"👥 {participants_count} | 📝 {title} | 🔗 {link} | 💬 {about[:50]}..." if about else "")
+                new_group_type = determine_telegram_chat_type(entity)
 
-                # Логируем информацию
-                # await self.app_logger.log_and_display(
-                #     f"{dialog.id}, {title}, {link or 'без ссылки'}, {participants_count}")
-                # save_group_channel_info(
-                #     dialog=dialog,
-                #     title=title,
-                #     about=about,
-                #     link=link,
-                #     participants_count=participants_count
-                # )
+                logger.info(
+                    f"👥 {participants_count} | 📝 {title} | Тип: {new_group_type} | 🔗 {link} | 💬 {about[:50]}..." if about else "")
+
             except TypeError as te:
                 logger.warning(f"❌ TypeError при обработке диалога {dialog.id}: {te}")
                 continue
@@ -258,7 +283,6 @@ async def join_required_channels(client, user_id, message, stop_event):
     # Получаем все username из базы данных
     Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
     # Groups.create_table()
-
 
     await get_grup_accaunt(client, message)
 
