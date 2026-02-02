@@ -232,23 +232,27 @@ async def get_grup_accaunt(client, message):
 
                 # Получаем полную информацию
                 full_entity = await client(GetFullChannelRequest(channel=entity))
-                chat = full_channel_info.full_chat
+                # chat = full_channel_info.full_chat
 
-                if not hasattr(chat, 'participants_count'):
-                    logger.warning(f"⚠️ participants_count отсутствует для {dialog.id}")
-                    continue
+                # Извлекаем данные из полной сущности
+                # if not hasattr(chat, 'participants_count'):
+                #     logger.warning(f"⚠️ participants_count отсутствует для {dialog.id}")
+                #     continue
+                # participants_count = chat.participants_count
+                participants_count = full_entity.full_chat.participants_count or 0
 
-                participants_count = chat.participants_count
                 username = getattr(entity, 'username', None)
                 link = f"https://t.me/{username}" if username else None
                 title = entity.title or "Без названия"
-                about = getattr(chat, 'about', '')
+                # about = getattr(chat, 'about', '')
+                description = full_entity.full_chat.about or ""
 
                 new_group_type = determine_telegram_chat_type(entity)
 
                 logger.info(
-                    f"👥 {participants_count} | 📝 {title} | Тип: {new_group_type} | 🔗 {link} | 💬 {about[:50]}..." if about else "")
+                    f"👥 {participants_count} | 📝 {title} | Тип: {new_group_type} | 🔗 {link} | 💬 {description}")
 
+                await asyncio.sleep(0.5)
             except TypeError as te:
                 logger.warning(f"❌ TypeError при обработке диалога {dialog.id}: {te}")
                 continue
