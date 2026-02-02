@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import os
+# import os
 
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
@@ -9,7 +9,7 @@ from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.types import Message
 
 from account_manager.auth import connect_client
-from account_manager.session import find_session_file
+# from account_manager.session import find_session_file
 from account_manager.subscription import subscription_telegram
 from database.database import create_groups_model, create_keywords_model, create_group_model
 from keyboards.user.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
