@@ -21,7 +21,9 @@ async def delete_group_from_database(message: Message, state: FSMContext):
 
 @router.message(MyStates.del_username_groups)
 async def del_user_in_db(message: Message, state: FSMContext) -> None:
-    """Удаляем пользователя"""
+    """
+    Удаляем пользователя
+    """
     group_username = message.text.strip()
     logger.info(f"Пользователь ввёл ссылку: {group_username}")
     await state.clear()  # Завершаем текущее состояние машины состояния
