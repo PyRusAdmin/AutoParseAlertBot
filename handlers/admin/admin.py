@@ -180,7 +180,7 @@ async def update_db(message: Message):
                         # Обновляем запись через UPDATE запрос со всеми доступными данными
                         TelegramGroup.update(
                             id=entity.id,
-                            group_hash=str(entity.id),
+                            group_hash=entity.access_hash,
                             group_type=new_group_type,
                             username=actual_username,
                             description=description,

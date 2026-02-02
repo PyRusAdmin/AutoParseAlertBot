@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
-# import os
-# from telethon import functions
 import asyncio
+from datetime import datetime
 
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
 from telethon.errors import (
-    FloodWaitError
+    FloodWaitError, UserAlreadyParticipantError, InviteRequestSentError
 )
-from telethon.errors import UserAlreadyParticipantError, InviteRequestSentError
-from telethon.tl.functions.channels import GetFullChannelRequest
-from telethon.tl.functions.channels import JoinChannelRequest
+from telethon.tl.functions.channels import GetFullChannelRequest, JoinChannelRequest
 from telethon.tl.types import Chat
 
 from account_manager.auth import connect_client
-# from account_manager.session import find_session_file
 from account_manager.subscription import subscription_telegram
 from database.database import create_groups_model, create_keywords_model, create_group_model, TelegramGroup
 from keyboards.user.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
@@ -219,6 +215,8 @@ async def get_grup_accaunt(client, message):
     :param message: (Message) Объект сообщения для логирования и контекста.
     :return: None
     """
+    subscribed_usernames = set()
+
     try:
         async for dialog in client.iter_dialogs():
             try:
@@ -233,45 +231,46 @@ async def get_grup_accaunt(client, message):
                 if not getattr(entity, 'megagroup', False) and not getattr(entity, 'broadcast', False):
                     continue
 
+                if entity.username:
+                    subscribed_usernames.add(f"@{entity.username.lower()}")
+
                 # Получаем полную информацию
                 full_entity = await client(GetFullChannelRequest(channel=entity))
-                # chat = full_channel_info.full_chat
 
-                # Извлекаем данные из полной сущности
-                # if not hasattr(chat, 'participants_count'):
-                #     logger.warning(f"⚠️ participants_count отсутствует для {dialog.id}")
-                #     continue
-                # participants_count = chat.participants_count
                 participants_count = full_entity.full_chat.participants_count or 0
-
-                # username = getattr(entity, 'username', None)
                 actual_username = f"@{entity.username}" if entity.username else ""
-
                 link = f"https://t.me/{entity.username}" if entity.username else None
                 title = entity.title or "Без названия"
-                # about = getattr(chat, 'about', '')
                 description = full_entity.full_chat.about or ""
-
                 new_group_type = determine_telegram_chat_type(entity)
 
                 logger.info(
                     f"👥 {participants_count} | 📝 {title} | Тип: {new_group_type} | 🔗 {link} | 💬 {description}")
 
-                # Обновляем запись через UPDATE запрос со всеми доступными данными
-                TelegramGroup.update(
-                    id=entity.id,
-                    group_hash=str(entity.id),
-                    group_type=new_group_type,
+                TelegramGroup.insert(
+                    group_hash=entity.access_hash,
+                    name=title,
                     username=actual_username,
                     description=description,
                     participants=participants_count,
-                    name=entity.title  # Также обновляем название на актуальное
-                ).where(
-                    TelegramGroup.group_hash == str(entity.id)
+                    group_type=new_group_type,
+                    link=link or "",
+                    date_added=datetime.now()
+                ).on_conflict(
+                    conflict_target=[TelegramGroup.group_hash],
+                    update={
+                        TelegramGroup.name: title,
+                        TelegramGroup.username: actual_username,
+                        TelegramGroup.description: description,
+                        TelegramGroup.participants: participants_count,
+                        TelegramGroup.group_type: new_group_type,
+                        TelegramGroup.link: link or "",
+                    }
                 ).execute()
+
                 logger.debug(f"🔄 Обновлена группа: {title}")
 
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
             except TypeError as te:
                 logger.warning(f"❌ TypeError при обработке диалога {dialog.id}: {te}")
                 continue
@@ -280,6 +279,21 @@ async def get_grup_accaunt(client, message):
                 continue
     except Exception as error:
         logger.exception(f"🔥 Критическая ошибка в forming_a_list_of_groups: {error}")
+
+    return subscribed_usernames
+
+
+async def wait_with_stop(stop_event, timeout, message, reason=""):
+    """
+    Ожидание с возможностью прерывания.
+    """
+    try:
+        await asyncio.wait_for(stop_event.wait(), timeout=timeout)
+        logger.info(f"🛑 Получен сигнал остановки {reason}")
+        await message.answer("🛑 Подписка на каналы остановлена.")
+        return True
+    except asyncio.TimeoutError:
+        return False
 
 
 async def join_required_channels(client, user_id, message, stop_event):
@@ -305,9 +319,30 @@ async def join_required_channels(client, user_id, message, stop_event):
 
     # Получаем все username из базы данных
     Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
-    # Groups.create_table()
 
-    await get_grup_accaunt(client, message)
+    # Получаем список каналов, где аккаунт уже состоит
+    already_subscribed = await get_grup_accaunt(client, message)
+
+    # Получаем каналы из БД
+    db_channels = {
+        group.username.lower()
+        for group in Groups
+        .select(Groups.username)
+        .where(Groups.username.is_null(False))
+    }
+
+    # 🔥 Главное: берём только новые
+    channels_to_join = list(db_channels - already_subscribed)
+
+    logger.info(
+        f"📊 Всего в БД: {len(db_channels)} | "
+        f"Уже подписан: {len(already_subscribed)} | "
+        f"Нужно подписаться: {len(channels_to_join)}"
+    )
+
+    if not channels_to_join:
+        await message.answer("✅ Вы уже подписаны на все каналы.")
+        return
 
     # ✅ Проверка количества записей
     total_count = Groups.select().count()
@@ -317,107 +352,155 @@ async def join_required_channels(client, user_id, message, stop_event):
         await message.answer("📭 У вас нет добавленных каналов для отслеживания.")
         return
 
-    # channels = [group.username for group in Groups.select()]
-
     # Ограничиваем до 500 записей
     MAX_CHANNELS = 500
-    if total_count > MAX_CHANNELS:
+
+    channels = channels_to_join[:MAX_CHANNELS]
+    if len(channels_to_join) > MAX_CHANNELS:
         await message.answer(
-            f"⚠️ Обнаружено {total_count} каналов. "
-            f"По техническим ограничениям Telegram будет выполнена подписка только на первые {MAX_CHANNELS}."
+            f"⚠️ Найдено {len(channels_to_join)} каналов. "
+            f"Подписка будет выполнена только на первые {MAX_CHANNELS}."
         )
-        # Загружаем только первые 500
-        channels = [
-            group.username for group in Groups
-            .select(Groups.username)
-            .where(Groups.username.is_null(False))
-            .limit(MAX_CHANNELS)
-        ]
-    else:
-        # Загружаем все
-        channels = [
-            group.username for group in Groups
-            .select(Groups.username)
-            .where(Groups.username.is_null(False))
-        ]
 
-    base_delay = 1  # начальная задержка в секундах
+    base_delay = 2
+    success_count = 0
 
-    for i, channel in enumerate(channels, start=1):
-        # ✅ Проверяем флаг остановки перед каждой подпиской
+    for channel in channels:
         if stop_event.is_set():
-            logger.info("🛑 Получен сигнал остановки. Прерываю подписку на каналы.")
             await message.answer("🛑 Подписка на каналы остановлена.")
             return
 
         try:
-            logger.info(f"🔗 Пробую подписаться на {channel}")
-
+            logger.info(f"🔗 Подписка на {channel}")
             await client(JoinChannelRequest(channel))
-            logger.success(f"✅ Подписка на {channel} выполнена")
+            success_count += 1
 
-            # Рассчитываем текущую задержку: 5, 10, 15, ...
-            current_delay = base_delay * i
+            current_delay = base_delay * success_count
 
             await message.answer(
-                f"✅ Подписка на {channel} выполнена.\n"
-                f"⏳ Следующая попытка через {current_delay} секунд (шаг {i}/{len(channels)}).",
-                reply_markup=menu_launch_tracking_keyboard()
+                f"✅ Подписка на {channel} выполнена\n"
+                f"⏳ Следующая попытка через {current_delay} сек."
             )
-            logger.warning(f"⚠️ Ожидание {current_delay} секунд перед следующей подпиской...")
-            await asyncio.sleep(current_delay)
 
-            # ✅ Используем wait_for с таймаутом вместо sleep для возможности прерывания
-            try:
-                await asyncio.wait_for(stop_event.wait(), timeout=current_delay)
-                # Если wait вернулся до таймаута, значит установлен флаг остановки
-                logger.info("🛑 Получен сигнал остановки во время ожидания.")
-                await message.answer("🛑 Подписка на каналы остановлена.")
+            if await wait_with_stop(stop_event, current_delay, message, "во время ожидания"):
                 return
-            except asyncio.TimeoutError:
-                # Таймаут - это нормально, продолжаем
-                pass
 
         except UserAlreadyParticipantError:
             logger.info(f"ℹ️ Уже подписан на {channel}")
-            # Даже если уже подписан — всё равно ждём, чтобы не вызывать подозрений
-            current_delay = base_delay * i
-            await asyncio.sleep(current_delay)
-
-            try:
-                await asyncio.wait_for(stop_event.wait(), timeout=current_delay)
-                logger.info("🛑 Получен сигнал остановки во время ожидания.")
-                await message.answer("🛑 Подписка на каналы остановлена.")
-                return
-            except asyncio.TimeoutError:
-                pass
 
         except FloodWaitError as e:
-            if e.seconds:
-                logger.warning(
-                    f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
-                await asyncio.sleep(e.seconds)
-                try:
-                    await asyncio.wait_for(stop_event.wait(), timeout=e.seconds)
-                    logger.info("🛑 Получен сигнал остановки во время FloodWait.")
-                    await message.answer("🛑 Подписка на каналы остановлена.")
-                    return
-                except asyncio.TimeoutError:
-                    pass
-                try:
-                    await client(JoinChannelRequest(channel))
-                    logger.success(f"✅ Подписка на {channel} выполнена")
-                except InviteRequestSentError:
-                    logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
-        except ValueError:
-            logger.error(f"❌ Невалидная ссылка: {channel}")
-            deleted = Groups.delete().where(Groups.username == channel).execute()
-            if deleted:
-                logger.info(f"🗑️ Канал {channel} удалён из базы.")
+            logger.warning(f"⚠️ FloodWait {e.seconds} сек.")
+            if await wait_with_stop(stop_event, e.seconds, message, "FloodWait"):
+                return
+            await client(JoinChannelRequest(channel))
+
         except InviteRequestSentError:
-            logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
+            logger.warning(f"✉️ Приглашение уже отправлено: {channel}")
+
+        except ValueError:
+            logger.error(f"❌ Невалидный username: {channel}")
+            Groups.delete().where(Groups.username == channel).execute()
+
         except Exception as e:
-            logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
+            logger.exception(f"❌ Ошибка при подписке на {channel}: {e}")
+
+    # if total_count > MAX_CHANNELS:
+    #     await message.answer(
+    #         f"⚠️ Обнаружено {total_count} каналов. "
+    #         f"По техническим ограничениям Telegram будет выполнена подписка только на первые {MAX_CHANNELS}."
+    #     )
+    #     # Загружаем только первые 500
+    #     channels = [
+    #         group.username for group in Groups
+    #         .select(Groups.username)
+    #         .where(Groups.username.is_null(False))
+    #         .limit(MAX_CHANNELS)
+    #     ]
+    # else:
+    #     # Загружаем все
+    #     channels = [
+    #         group.username for group in Groups
+    #         .select(Groups.username)
+    #         .where(Groups.username.is_null(False))
+    #     ]
+    #
+    # base_delay = 1  # начальная задержка в секундах
+    #
+    # for i, channel in enumerate(channels, start=1):
+    #     # ✅ Проверяем флаг остановки перед каждой подпиской
+    #     if stop_event.is_set():
+    #         logger.info("🛑 Получен сигнал остановки. Прерываю подписку на каналы.")
+    #         await message.answer("🛑 Подписка на каналы остановлена.")
+    #         return
+    #
+    #     try:
+    #         logger.info(f"🔗 Пробую подписаться на {channel}")
+    #
+    #         await client(JoinChannelRequest(channel))
+    #         logger.success(f"✅ Подписка на {channel} выполнена")
+    #
+    #         # Рассчитываем текущую задержку: 5, 10, 15, ...
+    #         current_delay = base_delay * i
+    #
+    #         await message.answer(
+    #             f"✅ Подписка на {channel} выполнена.\n"
+    #             f"⏳ Следующая попытка через {current_delay} секунд (шаг {i}/{len(channels)}).",
+    #             reply_markup=menu_launch_tracking_keyboard()
+    #         )
+    #         logger.warning(f"⚠️ Ожидание {current_delay} секунд перед следующей подпиской...")
+    #         await asyncio.sleep(current_delay)
+    #
+    #         # ✅ Используем wait_for с таймаутом вместо sleep для возможности прерывания
+    #         try:
+    #             await asyncio.wait_for(stop_event.wait(), timeout=current_delay)
+    #             # Если wait вернулся до таймаута, значит установлен флаг остановки
+    #             logger.info("🛑 Получен сигнал остановки во время ожидания.")
+    #             await message.answer("🛑 Подписка на каналы остановлена.")
+    #             return
+    #         except asyncio.TimeoutError:
+    #             # Таймаут - это нормально, продолжаем
+    #             pass
+    #
+    #     except UserAlreadyParticipantError:
+    #         logger.info(f"ℹ️ Уже подписан на {channel}")
+    #         # Даже если уже подписан — всё равно ждём, чтобы не вызывать подозрений
+    #         current_delay = base_delay * i
+    #         await asyncio.sleep(current_delay)
+    #
+    #         try:
+    #             await asyncio.wait_for(stop_event.wait(), timeout=current_delay)
+    #             logger.info("🛑 Получен сигнал остановки во время ожидания.")
+    #             await message.answer("🛑 Подписка на каналы остановлена.")
+    #             return
+    #         except asyncio.TimeoutError:
+    #             pass
+    #
+    #     except FloodWaitError as e:
+    #         if e.seconds:
+    #             logger.warning(
+    #                 f"⚠️ Превышено ограничение на количество запросов в секунду. Ожидание {e.seconds} секунд...")
+    #             await asyncio.sleep(e.seconds)
+    #             try:
+    #                 await asyncio.wait_for(stop_event.wait(), timeout=e.seconds)
+    #                 logger.info("🛑 Получен сигнал остановки во время FloodWait.")
+    #                 await message.answer("🛑 Подписка на каналы остановлена.")
+    #                 return
+    #             except asyncio.TimeoutError:
+    #                 pass
+    #             try:
+    #                 await client(JoinChannelRequest(channel))
+    #                 logger.success(f"✅ Подписка на {channel} выполнена")
+    #             except InviteRequestSentError:
+    #                 logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
+    #     except ValueError:
+    #         logger.error(f"❌ Невалидная ссылка: {channel}")
+    #         deleted = Groups.delete().where(Groups.username == channel).execute()
+    #         if deleted:
+    #             logger.info(f"🗑️ Канал {channel} удалён из базы.")
+    #     except InviteRequestSentError:
+    #         logger.error(f"❌ Невозможно подписаться на {channel} (приглашение уже отправлено)")
+    #     except Exception as e:
+    #         logger.exception(f"❌ Не удалось подписаться на {channel}: {e}")
 
 
 async def ensure_joined_target_group(client, message, user_id: int):
