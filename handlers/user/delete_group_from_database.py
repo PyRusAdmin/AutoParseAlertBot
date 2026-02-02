@@ -91,6 +91,8 @@ async def del_user_in_db(message: Message, state: FSMContext) -> None:
     )  # <-- ✅ подключаемся к клиенту Telethon
     await unsubscribe(client, username_to_search, message)
 
+    client.disconnect()
+
 
 def register_handlers_delete():
     router.message.register(delete_group_from_database)
