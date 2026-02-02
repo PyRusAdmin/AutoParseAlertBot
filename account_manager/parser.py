@@ -212,7 +212,7 @@ async def get_grup_accaunt(client, message):
                 title = entity.title or "Без названия"
                 about = getattr(chat, 'about', '')
 
-                logger.info(participants_count, username, link, title, about)
+                logger.info(f"👥 {participants_count} | 📝 {title} | 🔗 {link} | 💬 {about[:50]}..." if about else "")
 
                 # Логируем информацию
                 # await self.app_logger.log_and_display(
