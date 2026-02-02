@@ -15,6 +15,8 @@ class MyStates(StatesGroup):
 
     entering_keyword_ai_search = State()  # Ожидание ввода темы/ключевого слова для AI-поиска групп и каналов
 
+    del_username_groups = State()
+
 
 class MyStatesParsing(StatesGroup):
     get_url = State()  # Ожидание ввода URL для парсинга

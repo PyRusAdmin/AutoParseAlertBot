@@ -166,6 +166,7 @@ def settings_keyboard():
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🔁 Обновить список"), KeyboardButton(text="🔍 Ввод ключевого слова")],
+            [KeyboardButton(text="Удалить группу из отслеживания")],
             [KeyboardButton(text="🔍 Список ключевых слов"), KeyboardButton(text="🌐 Ссылки для отслеживания")],
             [KeyboardButton(text="🔐 Подключить аккаунт"), KeyboardButton(text="📤 Подключить группу для сообщений")],
             [KeyboardButton(text="🌐 Сменить язык")],

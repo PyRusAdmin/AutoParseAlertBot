@@ -27,11 +27,10 @@ async def handle_connect_message_group(message: Message, state: FSMContext):
     :return: None
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
-    user_tg = message.from_user
-    user = User.get(User.user_id == user_tg.id)
+    user = User.get(User.user_id == message.from_user.id)
 
     logger.info(
-        f"Пользователь {user_tg.id} {user_tg.username} {user_tg.first_name} {user_tg.last_name} перешел в меню 📤 Подключить группу для сообщений")
+        f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню 📤 Подключить группу для сообщений")
 
     await message.answer(
         get_text(user.language, "enter_group"),
@@ -61,13 +60,12 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
     """
 
     group_username = message.text.strip()
-    user_tg = message.from_user
     logger.info(f"Пользователь ввёл ссылку: {group_username}")
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
-    GroupModel = create_group_model(user_id=user_tg.id)  # Создаём таблицу для групп / ключевых слов
+    GroupModel = create_group_model(user_id=message.from_user.id)  # Создаём таблицу для групп / ключевых слов
     GroupModel.create_table(safe=True)
-    logger.info(f"Создана новая таблица для пользователя {user_tg.id}")
+    logger.info(f"Создана новая таблица для пользователя {message.from_user.id}")
     # Добавляем запись в таблицу
     try:
         # Удаляем старую запись, если есть
@@ -75,7 +73,7 @@ async def handle_group_username_submission(message: Message, state: FSMContext):
         # Вставляем новую
         GroupModel.create(user_group=group_username)
         await message.answer(f"✅ Группа {group_username} добавлена для отправки сообщений.")
-        logger.info(f"username {group_username} добавлено пользователем {user_tg.id}")
+        logger.info(f"username {group_username} добавлено пользователем {message.from_user.id}")
     except Exception as e:
         if "UNIQUE constraint failed" in str(e):
             await message.answer("⚠️ Эта группа уже добавлена.")
