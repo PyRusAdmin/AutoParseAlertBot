@@ -424,14 +424,14 @@ async def filter_messages(message, user_id, user, session_path):
     :return: None
     :raises Exception: Логируется при ошибках инициализации или подключения.
     """
-    user_id = str(user_id)  # <-- ✅ преобразуем в строку
-    logger.info(f"🚀 Запуск бота для user_id={user_id}...")
+    # user_id = str(user_id)  # <-- ✅ преобразуем в строку
+    logger.info(f"🚀 Запуск бота для user_id={str(user_id)}...")
     logger.info(f"📂 Найден файл сессии: {session_path}")
     # Telethon ожидает session_name без расширения
 
     # ✅ Создаём флаг остановки для этого пользователя
     stop_event = asyncio.Event()
-    stop_flags[user_id] = stop_event
+    stop_flags[str(user_id)] = stop_event
 
     try:
 
@@ -444,17 +444,17 @@ async def filter_messages(message, user_id, user, session_path):
         )  # <-- ✅ подключаемся к клиенту Telethon
 
         # ✅ Сохраняем активный клиент
-        active_clients[user_id] = client
+        active_clients[str(user_id)] = client
 
         # === Подключаемся к целевой группе для пересылки ===
-        target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=user_id)
+        target_group_id = await ensure_joined_target_group(client=client, message=message, user_id=int(user_id))
 
         # Если не удалось подключиться к целевой группе — выходим
         if not target_group_id:
             return
 
         # === Подключаемся к обязательным каналам ===
-        await join_required_channels(client=client, user_id=user_id, message=message, stop_event=stop_event)
+        await join_required_channels(client=client, user_id=str(user_id), message=message)
 
         # ✅ Проверяем, не была ли установлена остановка во время подписки
         if stop_event.is_set():
@@ -463,7 +463,7 @@ async def filter_messages(message, user_id, user, session_path):
             return
 
         # === Загружаем список каналов из базы ===
-        channels = await get_user_channels_or_notify(user_id=user_id, user=user, message=message, client=client)
+        channels = await get_user_channels_or_notify(user_id=int(user_id), user=user, message=message, client=client)
 
         # Если каналов нет — выходим
         if not channels:
@@ -478,7 +478,7 @@ async def filter_messages(message, user_id, user, session_path):
                 client=client,  # <-- ✅ передаем клиент для пересылки
                 message=event.message,  # <-- ✅ передаем сообщение для пересылки
                 chat_id=event.chat_id,  # <-- ✅ передаем chat_id для пересылки
-                user_id=user_id,  # <-- ✅ передаем user_id для пересылки
+                user_id=str(user_id),  # <-- ✅ передаем user_id для пересылки
                 target_group_id=target_group_id  # <-- ✅ передаем target_group_id для пересылки
             )
 
@@ -507,17 +507,17 @@ async def filter_messages(message, user_id, user, session_path):
     finally:
         # ✅ Очищаем ресурсы
         if user_id in active_clients:
-            client = active_clients.pop(user_id)
+            client = active_clients.pop(str(user_id))
             if client.is_connected():
                 await client.disconnect()
-                logger.info(f"🛑 Клиент для user_id={user_id} отключён.")
+                logger.info(f"🛑 Клиент для user_id={str(user_id)} отключён.")
 
         if user_id in stop_flags:
-            stop_flags.pop(user_id)
-            logger.info(f"🗑️ Флаг остановки для user_id={user_id} удалён.")
+            stop_flags.pop(str(user_id))
+            logger.info(f"🗑️ Флаг остановки для user_id={str(user_id)} удалён.")
 
 
-async def stop_tracking(user_id, message, user):
+async def stop_tracking(user_id, message):
     """
     Останавливает процесс отслеживания сообщений для пользователя.
 
@@ -530,7 +530,6 @@ async def stop_tracking(user_id, message, user):
 
     :param user_id: (int) Идентификатор пользователя Telegram.
     :param message: (Message) Объект сообщения aiogram для отправки подтверждения.
-    :param user: (User) Модель пользователя (не используется напрямую, но может быть нужно для будущих уведомлений).
     :return: None
     """
     user_id = str(user_id)  # <-- ✅ преобразуем в строку
