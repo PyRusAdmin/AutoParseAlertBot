@@ -317,13 +317,10 @@ async def join_required_channels(client, user_id, message, stop_event):
     :raises ValueError: Если username невалиден (обрабатывается с удалением из БД).
     :raises Exception: Логируется при любых других ошибках.
     """
-
     # Получаем все username из базы данных
     Groups = create_groups_model(user_id=user_id)  # Создаём таблицу для групп
-
     # Получаем список каналов, где аккаунт уже состоит
     already_subscribed = await get_grup_accaunt(client, message)
-
     # Получаем каналы из БД
     db_channels = {
         group.username.lower()
@@ -331,43 +328,37 @@ async def join_required_channels(client, user_id, message, stop_event):
         .select(Groups.username)
         .where(Groups.username.is_null(False))
     }
-
     # 🔥 Главное: берём только новые
     channels_to_join = list(db_channels - already_subscribed)
-
     logger.info(
         f"📊 Всего в БД: {len(db_channels)} | "
         f"Уже подписан: {len(already_subscribed)} | "
         f"Нужно подписаться: {len(channels_to_join)}"
     )
-
     if not channels_to_join:
         await message.answer("✅ Вы уже подписаны на все каналы.")
         return
-
     # ✅ Проверка количества записей
     total_count = Groups.select().count()
     logger.info(f"📊 Всего каналов для подписки: {total_count}")
-
     if total_count == 0:
         await message.answer("📭 У вас нет добавленных каналов для отслеживания.")
         return
-
     # Ограничиваем до 500 записей
-    MAX_CHANNELS = 500
-    channels = channels_to_join[:MAX_CHANNELS]
-    if len(channels_to_join) > MAX_CHANNELS:
+    # MAX_CHANNELS = 500
+    channels = channels_to_join[:500]
+    if len(channels_to_join) > 500:
         await message.answer(
             f"⚠️ Найдено {len(channels_to_join)} каналов. "
-            f"Подписка будет выполнена только на первые {MAX_CHANNELS}."
+            f"Подписка будет выполнена только на первые {500}."
         )
     # base_delay = 2
     # success_count = 0
     for channel in channels:
         random_delay = random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        if stop_event.is_set():
-            await message.answer("🛑 Подписка на каналы остановлена.")
-            return
+        # if stop_event.is_set():
+        #     await message.answer("🛑 Подписка на каналы остановлена.")
+        #     return
         try:
             logger.info(f"🔗 Подписка на {channel}")
             await client(JoinChannelRequest(channel))
@@ -378,10 +369,8 @@ async def join_required_channels(client, user_id, message, stop_event):
                 f"⏳ Следующая попытка через {random_delay} сек."
             )
             await asyncio.sleep(random_delay)
-
-            if await wait_with_stop(stop_event, random_delay, message, "во время ожидания"):
-                return
-
+            # if await wait_with_stop(stop_event, random_delay, message, "во время ожидания"):
+            #     return
         except ChannelPrivateError:
             logger.warning(f"⚠️ Канал {channel} приватный")
         except UserAlreadyParticipantError:
