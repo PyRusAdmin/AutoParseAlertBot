@@ -13,6 +13,41 @@ class BaseModel(Model):
         database = db
 
 
+def get_user_channel_usernames(user_id: int):
+    """
+    Возвращает множество username каналов/групп пользователя из БД (в нижнем регистре).
+
+    :param user_id: Telegram user_id
+    :return: db_channels, total_count
+    """
+    Groups = create_groups_model(user_id=user_id)
+    total_count = Groups.select().count()
+    db_channels = {
+        group.username.lower()
+        for group in (
+            Groups
+            .select(Groups.username)
+            .where(Groups.username.is_null(False))
+        )
+    }
+    return db_channels, total_count
+
+
+def delete_group_by_username(user_id: int, channel: str):
+    """
+    Удаляет группу или канал пользователя из БД по username.
+
+    Используется для очистки базы данных от невалидных или недоступных
+    Telegram-групп/каналов (например, если канал удалён или бот потерял доступ).
+
+    :param user_id: (int) Telegram user_id, для которого создана таблица групп
+    :param channel: (str) Username группы/канала без '@'
+    :return: (int) Количество удалённых записей
+    """
+    Groups = create_groups_model(user_id)
+    Groups.delete().where(Groups.username == channel).execute()
+
+
 class User(BaseModel):
     """
     Модель для хранения основных данных пользователя Telegram.

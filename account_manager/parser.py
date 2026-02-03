@@ -13,7 +13,8 @@ from telethon.tl.types import Chat
 
 from account_manager.auth import connect_client
 from account_manager.subscription import subscription_telegram
-from database.database import create_groups_model, create_keywords_model, create_group_model, TelegramGroup
+from database.database import create_groups_model, create_keywords_model, create_group_model, TelegramGroup, \
+    get_user_channel_usernames, delete_group_by_username
 from keyboards.user.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
 from locales.locales import get_text
 
@@ -283,65 +284,16 @@ async def get_grup_accaunt(client, message):
     return subscribed_usernames
 
 
-async def wait_with_stop(stop_event, timeout, message, reason=""):
+async def join_required_channels(client, user_id, message):
     """
-    Ожидание с возможностью прерывания.
-    """
-    try:
-        await asyncio.wait_for(stop_event.wait(), timeout=timeout)
-        logger.info(f"🛑 Получен сигнал остановки {reason}")
-        await message.answer("🛑 Подписка на каналы остановлена.")
-        return True
-    except asyncio.TimeoutError:
-        return False
-
-
-def get_user_channel_usernames(user_id: int):
-    """
-    Возвращает множество username каналов/групп пользователя из БД (в нижнем регистре).
-
-    :param user_id: Telegram user_id
-    :return: db_channels, total_count
-    """
-    Groups = create_groups_model(user_id=user_id)
-    total_count = Groups.select().count()
-    db_channels = {
-        group.username.lower()
-        for group in (
-            Groups
-            .select(Groups.username)
-            .where(Groups.username.is_null(False))
-        )
-    }
-    return db_channels, total_count
-
-
-def delete_group_by_username(user_id: int, channel: str):
-    """
-    Удаляет группу или канал пользователя из БД по username.
-
-    Используется для очистки базы данных от невалидных или недоступных
-    Telegram-групп/каналов (например, если канал удалён или бот потерял доступ).
-
-    :param user_id: (int) Telegram user_id, для которого создана таблица групп
-    :param channel: (str) Username группы/канала без '@'
-    :return: (int) Количество удалённых записей
-    """
-    Groups = create_groups_model(user_id)
-    Groups.delete().where(Groups.username == channel).execute()
-
-
-async def join_required_channels(client, user_id, message, stop_event):
-    """
-    Подписывает клиента на все отслеживаемые каналы и группы пользователя.
+    Подписывает аккаунт Telegram на все отслеживаемые каналы и группы пользователя из базы данных.
 
     Получает список username из персональной таблицы пользователя и пытается присоединиться к каждому. При успехе
     уведомляет пользователя. Невалидные ссылки удаляются из базы данных.
 
-    - Между подписками добавляется задержка в 5 секунд для избежания Flood.
+    - Между подписками добавляется задержка в диапазоне от 1 до 10 секунд для избежания Flood.
     - Использует модель `create_groups_model` для доступа к данным.
 
-    :param stop_event: (asyncio.Event) Событие для остановки процесса подписки.
     :param client: (TelegramClient) Активный клиент для выполнения запросов.
     :param user_id: (int) Идентификатор пользователя, чьи каналы нужно подключить.
     :param message: (Message) Объект сообщения aiogram для отправки уведомлений.
@@ -389,8 +341,7 @@ async def join_required_channels(client, user_id, message, stop_event):
             logger.info(f"ℹ️ Уже подписан на {channel}")
         except FloodWaitError as e:
             logger.warning(f"⚠️ FloodWait {e.seconds} сек.")
-            if await wait_with_stop(stop_event, e.seconds, message, "FloodWait"):
-                return
+            await asyncio.sleep(e.seconds)
             await client(JoinChannelRequest(channel))
         except InviteRequestSentError:
             logger.warning(f"✉️ Приглашение уже отправлено: {channel}")
