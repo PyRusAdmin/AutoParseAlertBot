@@ -298,11 +298,6 @@ async def join_required_channels(client, user_id, message):
     :param user_id: (int) Идентификатор пользователя, чьи каналы нужно подключить.
     :param message: (Message) Объект сообщения aiogram для отправки уведомлений.
     :return: None
-    :raises UserAlreadyParticipantError: Если клиент уже участник (обрабатывается).
-    :raises FloodWaitError: Если достигнут лимит запросов (обрабатывается с задержкой).
-    :raises InviteRequestSentError: Если требуется подтверждение приглашения.
-    :raises ValueError: Если username невалиден (обрабатывается с удалением из БД).
-    :raises Exception: Логируется при любых других ошибках.
     """
     db_channels, total_count = get_user_channel_usernames(user_id=user_id)  # Получаем все username из базы данных
     already_subscribed = await get_grup_accaunt(client, message)  # Получаем список каналов, где аккаунт уже состоит
