@@ -6,7 +6,7 @@ from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
 from telethon.errors import (
-    FloodWaitError, UserAlreadyParticipantError, InviteRequestSentError
+    FloodWaitError, UserAlreadyParticipantError, InviteRequestSentError, ChannelPrivateError
 )
 from telethon.tl.functions.channels import GetFullChannelRequest, JoinChannelRequest
 from telethon.tl.types import Chat
@@ -385,22 +385,20 @@ async def join_required_channels(client, user_id, message, stop_event):
             if await wait_with_stop(stop_event, current_delay, message, "во время ожидания"):
                 return
 
+        except ChannelPrivateError:
+            logger.warning(f"⚠️ Канал {channel} приватный")
         except UserAlreadyParticipantError:
             logger.info(f"ℹ️ Уже подписан на {channel}")
-
         except FloodWaitError as e:
             logger.warning(f"⚠️ FloodWait {e.seconds} сек.")
             if await wait_with_stop(stop_event, e.seconds, message, "FloodWait"):
                 return
             await client(JoinChannelRequest(channel))
-
         except InviteRequestSentError:
             logger.warning(f"✉️ Приглашение уже отправлено: {channel}")
-
         except ValueError:
             logger.error(f"❌ Невалидный username: {channel}")
             Groups.delete().where(Groups.username == channel).execute()
-
         except Exception as e:
             logger.exception(f"❌ Ошибка при подписке на {channel}: {e}")
 
