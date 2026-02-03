@@ -354,24 +354,26 @@ async def join_required_channels(client, user_id, message, stop_event):
     """
     db_channels, total_count = get_user_channel_usernames(user_id=user_id)  # Получаем все username из базы данных
     already_subscribed = await get_grup_accaunt(client, message)  # Получаем список каналов, где аккаунт уже состоит
+
     # 🔥 Главное: берём только новые
-    channels_to_join = list(db_channels - already_subscribed)
     logger.info(
         f"📊 Всего в БД: {len(db_channels)} | "
         f"Уже подписан: {len(already_subscribed)} | "
-        f"Нужно подписаться: {len(channels_to_join)}"
+        f"Нужно подписаться: {len(list(db_channels - already_subscribed))}"
     )
+
     logger.info(f"📊 Всего каналов для подписки: {total_count}")
     if total_count == 0:
         await message.answer("📭 У вас нет добавленных каналов для отслеживания.")
         return
-    channels = channels_to_join[:500]  # Ограничиваем до 500 записей
-    if len(channels_to_join) > 500:
+
+    if len(list(db_channels - already_subscribed)) > 500:
         await message.answer(
-            f"⚠️ Найдено {len(channels_to_join)} каналов. "
+            f"⚠️ Найдено {len(list(db_channels - already_subscribed))} каналов. "
             f"Подписка будет выполнена только на первые {500}."
         )
-    for channel in channels:
+
+    for channel in list(db_channels - already_subscribed)[:500]:  # Ограничиваем до 500 записей
         random_delay = random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         try:
             logger.info(f"🔗 Подписка на {channel}")
