@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 from datetime import datetime
-
+import random
 from aiogram.types import Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from telethon import events
@@ -306,6 +306,7 @@ async def join_required_channels(client, user_id, message, stop_event):
     - Между подписками добавляется задержка в 5 секунд для избежания Flood.
     - Использует модель `create_groups_model` для доступа к данным.
 
+    :param stop_event: (asyncio.Event) Событие для остановки процесса подписки.
     :param client: (TelegramClient) Активный клиент для выполнения запросов.
     :param user_id: (int) Идентификатор пользователя, чьи каналы нужно подключить.
     :param message: (Message) Объект сообщения aiogram для отправки уведомлений.
@@ -354,35 +355,31 @@ async def join_required_channels(client, user_id, message, stop_event):
 
     # Ограничиваем до 500 записей
     MAX_CHANNELS = 500
-
     channels = channels_to_join[:MAX_CHANNELS]
     if len(channels_to_join) > MAX_CHANNELS:
         await message.answer(
             f"⚠️ Найдено {len(channels_to_join)} каналов. "
             f"Подписка будет выполнена только на первые {MAX_CHANNELS}."
         )
-
-    base_delay = 2
-    success_count = 0
-
+    # base_delay = 2
+    # success_count = 0
     for channel in channels:
+        random_delay = random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         if stop_event.is_set():
             await message.answer("🛑 Подписка на каналы остановлена.")
             return
-
         try:
             logger.info(f"🔗 Подписка на {channel}")
             await client(JoinChannelRequest(channel))
-            success_count += 1
-
-            current_delay = base_delay * success_count
-
+            # success_count += 1
+            # current_delay = base_delay * success_count
             await message.answer(
                 f"✅ Подписка на {channel} выполнена\n"
-                f"⏳ Следующая попытка через {current_delay} сек."
+                f"⏳ Следующая попытка через {random_delay} сек."
             )
+            await asyncio.sleep(random_delay)
 
-            if await wait_with_stop(stop_event, current_delay, message, "во время ожидания"):
+            if await wait_with_stop(stop_event, random_delay, message, "во время ожидания"):
                 return
 
         except ChannelPrivateError:
