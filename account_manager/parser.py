@@ -307,14 +307,7 @@ async def join_required_channels(client, user_id, message):
     db_channels, total_count = get_user_channel_usernames(user_id=user_id)  # Получаем все username из базы данных
     already_subscribed = await get_grup_accaunt(client, message)  # Получаем список каналов, где аккаунт уже состоит
 
-    # 🔥 Главное: берём только новые
-    logger.info(
-        f"📊 Всего в БД: {len(db_channels)} | "
-        f"Уже подписан: {len(already_subscribed)} | "
-        f"Нужно подписаться: {len(list(db_channels - already_subscribed))}"
-    )
-
-    logger.info(f"📊 Всего каналов для подписки: {total_count}")
+    logger.info(f"📊 Всего каналов для подписки: {total_count}, уже подписан на: {len(already_subscribed)}")
     if total_count == 0:
         await message.answer("📭 У вас нет добавленных каналов для отслеживания.")
         return
@@ -328,7 +321,7 @@ async def join_required_channels(client, user_id, message):
     for channel in list(db_channels - already_subscribed)[:500]:  # Ограничиваем до 500 записей
         random_delay = random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         try:
-            logger.info(f"🔗 Подписка на {channel}")
+            logger.warning(f"🔗 Подписка на {channel}")
             await client(JoinChannelRequest(channel))
             await message.answer(
                 f"✅ Подписка на {channel} выполнена\n"
@@ -336,15 +329,15 @@ async def join_required_channels(client, user_id, message):
             )
             await asyncio.sleep(random_delay)
         except ChannelPrivateError:
-            logger.warning(f"⚠️ Канал {channel} приватный")
+            logger.error(f"⚠️ Канал {channel} приватный")
         except UserAlreadyParticipantError:
-            logger.info(f"ℹ️ Уже подписан на {channel}")
+            logger.error(f"ℹ️ Уже подписан на {channel}")
         except FloodWaitError as e:
-            logger.warning(f"⚠️ FloodWait {e.seconds} сек.")
+            logger.error(f"⚠️ FloodWait {e.seconds} сек.")
             await asyncio.sleep(e.seconds)
             await client(JoinChannelRequest(channel))
         except InviteRequestSentError:
-            logger.warning(f"✉️ Приглашение уже отправлено: {channel}")
+            logger.error(f"✉️ Приглашение уже отправлено: {channel}")
         except ValueError:
             logger.error(f"❌ Невалидный username: {channel}")
             delete_group_by_username(user_id, channel)  # Удаляем невалидный канал / группу
