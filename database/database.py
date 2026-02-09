@@ -5,7 +5,9 @@ from datetime import datetime
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
 db = SqliteDatabase('data/bot.db', timeout=30,
-                    pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'})
+                    pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'},
+                    autocommit=True  # ✅ Важно!
+                    )
 
 
 class BaseModel(Model):
@@ -192,7 +194,7 @@ class TelegramGroup(BaseModel):
     participants = IntegerField(default=0)  # Количество участников
     category = CharField(null=True)  # Категория (определяется AI)
     group_type = CharField()  # 'group', 'channel', 'link'
-    language = CharField() # ru/en язык группы / канала
+    language = CharField(null=True, default='')  # ru/en язык группы / канала
     link = CharField()  # Ссылка на группу
     date_added = DateTimeField(default=datetime.now)  # Дата добавления
 
