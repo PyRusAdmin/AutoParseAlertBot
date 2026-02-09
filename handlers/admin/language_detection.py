@@ -161,7 +161,7 @@ async def language_detection(message):
     loop = asyncio.get_event_loop()
 
     try:
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=50) as executor:
             futures = [
                 loop.run_in_executor(executor, ai_llama, group_data)
                 for group_data in groups_to_process
