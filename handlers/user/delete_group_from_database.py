@@ -90,7 +90,7 @@ async def del_user_in_db(message: Message, state: FSMContext) -> None:
         message=message
     )  # <-- ✅ подключаемся к клиенту Telethon
     await unsubscribe(client, username_to_search, message)
-    
+
     client.disconnect()
 
 

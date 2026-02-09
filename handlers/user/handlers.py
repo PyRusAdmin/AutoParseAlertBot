@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 from aiogram import F
+from aiogram.exceptions import TelegramForbiddenError
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
@@ -69,6 +70,9 @@ async def handle_start_command(message, state: FSMContext) -> None:
                 reply_markup = main_menu_keyboard()
 
             await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+
+    except TelegramForbiddenError:
+        logger.error(f"Пользователь {message.from_user.id, message.from_user.username} заблокировал бота")
 
     except Exception as e:
         logger.exception(e)

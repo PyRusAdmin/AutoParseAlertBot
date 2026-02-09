@@ -192,6 +192,7 @@ class TelegramGroup(BaseModel):
     participants = IntegerField(default=0)  # Количество участников
     category = CharField(null=True)  # Категория (определяется AI)
     group_type = CharField()  # 'group', 'channel', 'link'
+    language = CharField() # ru/en язык группы / канала
     link = CharField()  # Ссылка на группу
     date_added = DateTimeField(default=datetime.now)  # Дата добавления
 
