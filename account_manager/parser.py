@@ -13,8 +13,10 @@ from telethon.tl.types import Chat
 
 from account_manager.auth import connect_client
 from account_manager.subscription import subscription_telegram
-from database.database import create_groups_model, create_keywords_model, create_group_model, TelegramGroup, \
-    get_user_channel_usernames, delete_group_by_username
+from database.database import (
+    create_groups_model, create_keywords_model, create_group_model, TelegramGroup, get_user_channel_usernames,
+    delete_group_by_username
+)
 from keyboards.user.keyboards import menu_launch_tracking_keyboard, connect_grup_keyboard_tech
 from locales.locales import get_text
 

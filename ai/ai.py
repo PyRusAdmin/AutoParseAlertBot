@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 
 import groq
 from groq import AsyncGroq
-from loguru import logger  # https://github.com/Delgan/loguru
+from loguru import logger
+from openai import OpenAI
 from telethon.errors import FloodWaitError, UsernameNotOccupiedError
 from telethon.sync import TelegramClient, functions
 from telethon.tl.types import Channel
@@ -11,6 +13,77 @@ from telethon.tl.types import Channel
 from core.config import GROQ_API_KEY
 from core.proxy_config import setup_proxy
 from system.dispatcher import api_id, api_hash
+
+
+def ai_llama(group_data: dict) -> dict:
+    """
+    Определение языка для одной группы через AI.
+    Выполняется в отдельном процессе.
+    """
+    api_key = os.getenv("POLZA_AI_API_KEY")
+
+    if not api_key:
+        raise ValueError("POLZA_AI_API_KEY не найден в .env")
+
+    try:
+        client = OpenAI(
+            base_url="https://api.polza.ai/api/v1",
+            api_key=api_key,
+        )
+
+        # ✅ ИСПРАВЛЕНО: формируем user_input из данных
+        data_parts = []
+        if group_data.get('name'):
+            data_parts.append(f"Название: {group_data['name']}")
+        if group_data.get('username'):
+            data_parts.append(f"Username: @{group_data['username']}")
+        if group_data.get('description'):
+            data_parts.append(f"Описание: {group_data['description']}")
+
+        user_input = "\n".join(data_parts) if data_parts else "Нет данных"
+
+        # ✅ ИСПРАВЛЕНО: используем f-string для подстановки
+        prompt = (
+            f"На основе полученных данных определи язык сообщества\n\n{user_input}\n\n"
+            "Ответ нужен в виде наиболее подходящего языка, например ru, en, uk, de, fr, es, pt и так далее"
+        )
+
+        completion = client.chat.completions.create(
+            model="meta-llama/llama-3-8b-instruct",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=10
+        )
+
+        detected_lang = completion.choices[0].message.content.strip().lower()
+
+        logger.debug(
+            f"✅ PID {os.getpid()}: "
+            f"'{group_data.get('name', 'N/A')}' -> {detected_lang}"
+        )
+
+        # ✅ ИСПРАВЛЕНО: возвращаем правильный формат с group_hash и success
+        return {
+            "group_hash": group_data["group_hash"],  # Было group_id!
+            "name": group_data.get("name"),
+            "language": detected_lang,
+            "success": True  # Было не указано!
+        }
+
+    except Exception as e:
+        logger.error(
+            f"❌ PID {os.getpid()}: "
+            f"Ошибка для группы '{group_data.get('name', 'N/A')}': {e}"
+        )
+
+        # ✅ ИСПРАВЛЕНО: возвращаем ошибку с правильным форматом
+        return {
+            "group_hash": group_data["group_hash"],
+            "name": group_data.get("name"),
+            "language": None,
+            "success": False,
+            "error": str(e)
+        }
 
 
 async def category_assignment(user_input: str) -> str:
