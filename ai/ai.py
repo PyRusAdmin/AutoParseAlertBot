@@ -153,7 +153,7 @@ async def search_groups_in_telegram(group_names):
             # Обрабатываем результаты
             for chat in search_results.chats:
                 logger.info(chat)
-                telegram_id = chat.telegram_id
+                telegram_id = chat.id
                 group_hash = chat.access_hash
                 name = chat.title or ''
                 username = f"@{chat.username}"

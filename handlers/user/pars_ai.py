@@ -94,7 +94,7 @@ def save_group_to_db(group_data):
     :raise Exception: Логируется при ошибках работы с БД (например, нарушение ограничений).
     """
     try:
-        telegram_id = group_data.get('id')
+        telegram_id = group_data.get('telegram_id')
         group_hash = group_data.get('group_hash')
         name = group_data.get('name')
         username = group_data.get('username')
