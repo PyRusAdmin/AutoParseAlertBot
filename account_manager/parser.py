@@ -82,7 +82,7 @@ async def join_target_group(client, user_id, message):
         await subscription_telegram(client, target_username)  # Подписываемся на группу
         # Получаем ID группы
         entity = await client.get_entity(target_username)
-        return entity.id
+        return entity.telegram_id
 
     except Exception as e:
         logger.exception(f"❌ Не удалось присоединиться к целевой группе {target_username}: {e}")
@@ -223,11 +223,11 @@ async def get_grup_accaunt(client, message):
     try:
         async for dialog in client.iter_dialogs():
             try:
-                entity = await client.get_entity(dialog.id)
+                entity = await client.get_entity(dialog.telegram_id)
 
                 # Пропускаем личные чаты
                 if isinstance(entity, Chat):
-                    logger.debug(f"💬 Пропущен личный чат: {dialog.id}")
+                    logger.debug(f"💬 Пропущен личный чат: {dialog.telegram_id}")
                     continue
 
                 # Проверяем, является ли супергруппой или каналом
@@ -275,10 +275,10 @@ async def get_grup_accaunt(client, message):
 
                 await asyncio.sleep(1)
             except TypeError as te:
-                logger.warning(f"❌ TypeError при обработке диалога {dialog.id}: {te}")
+                logger.warning(f"❌ TypeError при обработке диалога {dialog.telegram_id}: {te}")
                 continue
             except Exception as e:
-                logger.exception(f"⚠️ Ошибка при обработке диалога {dialog.id}: {e}")
+                logger.exception(f"⚠️ Ошибка при обработке диалога {dialog.telegram_id}: {e}")
                 continue
     except Exception as error:
         logger.exception(f"🔥 Критическая ошибка в forming_a_list_of_groups: {error}")

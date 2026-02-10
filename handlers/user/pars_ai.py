@@ -94,7 +94,7 @@ def save_group_to_db(group_data):
     :raise Exception: Логируется при ошибках работы с БД (например, нарушение ограничений).
     """
     try:
-        id = group_data.get('id')
+        telegram_id = group_data.get('id')
         group_hash = group_data.get('group_hash')
         name = group_data.get('name')
         username = group_data.get('username')
@@ -128,7 +128,7 @@ def save_group_to_db(group_data):
         else:
             # Создаём новую запись
             new_group = TelegramGroup.create(
-                id=id,
+                telegram_id=telegram_id,
                 group_hash=group_hash,
                 name=name,
                 username=username,
@@ -144,7 +144,7 @@ def save_group_to_db(group_data):
             return new_group
 
     except Exception as e:
-        logger.error(f"Ошибка при сохранении группы: {e}")
+        logger.exception(f"Ошибка при сохранении группы: {e}")
         return None
 
 

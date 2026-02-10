@@ -159,7 +159,7 @@ async def parse_group_for_keywords(url, keyword, message: Message):
                     logger.info(f"✅ Найдено сообщение с ключевым словом: '{keyword}' — {text.strip()}")
 
                     # ИСПРАВЛЕНО: используем msg.id вместо message.id
-                    logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={msg.id}")
+                    logger.info(f"📌 Найдено совпадение. Пересылаю сообщение ID={msg.telegram_id}")
 
                     # Получаем дату сообщения
                     msg_date = msg.date.strftime("%d.%m.%Y %H:%M:%S") if msg.date else "Неизвестно"
@@ -183,9 +183,9 @@ async def parse_group_for_keywords(url, keyword, message: Message):
                             if str(chat_id).startswith("-100"):
                                 # Удаляем префикс -100 и получаем чистый ID
                                 clean_chat_id = str(chat_id)[4:]
-                                message_link = f"https://t.me/c/{clean_chat_id}/{msg.id}"
+                                message_link = f"https://t.me/c/{clean_chat_id}/{msg.telegram_id}"
                             elif hasattr(chat_entity, 'username') and chat_entity.username:
-                                message_link = f"https://t.me/{chat_entity.username}/{msg.id}"
+                                message_link = f"https://t.me/{chat_entity.username}/{msg.telegram_id}"
                         except Exception as e:
                             logger.warning(f"Не удалось создать ссылку на сообщение: {e}")
 

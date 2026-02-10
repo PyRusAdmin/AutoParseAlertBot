@@ -185,7 +185,7 @@ class TelegramGroup(BaseModel):
     Meta:
         table_name (str): Имя таблицы в базе данных — 'telegram_groups'.
     """
-    id = IntegerField(null=True)  # Новое поле: Telegram entity ID
+    telegram_id = IntegerField(null=True, index=True)  # Новое поле: Telegram entity ID
     group_hash = CharField(unique=True, index=True)  # ID группы или хеш username
     name = CharField()  # Название группы
     username = CharField(null=True)  # @username если есть
