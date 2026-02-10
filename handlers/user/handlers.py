@@ -96,27 +96,25 @@ async def handle_back_to_main_menu(message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояний
-
-    user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
-
-    # Проверяем, является ли пользователь администратором
-    is_admin = message.from_user.telegram_id in ADMIN_USER_ID
-
-    # Если язык ещё не выбран — просим выбрать
-    if user.language == "unset":
-        await message.answer(
-            "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
-            reply_markup=get_lang_keyboard()
-        )
-    else:
-        # Генерируем приветственное сообщение
-        text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.telegram_id)
-
-        # Выбираем клавиатуру в зависимости от роли
-        reply_markup = main_admin_keyboard() if is_admin else main_menu_keyboard()
-
-        await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояний
+        user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
+        # Проверяем, является ли пользователь администратором
+        is_admin = message.from_user.id in ADMIN_USER_ID
+        # Если язык ещё не выбран — просим выбрать
+        if user.language == "unset":
+            await message.answer(
+                "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
+                reply_markup=get_lang_keyboard()
+            )
+        else:
+            # Генерируем приветственное сообщение
+            text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
+            # Выбираем клавиатуру в зависимости от роли
+            reply_markup = main_admin_keyboard() if is_admin else main_menu_keyboard()
+            await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+    except Exception as e:
+        logger.exception(e)
 
 
 def generate_welcome_message(user_language: str, user_tg_id: int) -> str:
@@ -235,14 +233,17 @@ async def handle_settings_menu(message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, не используется напрямую.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояния
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояния
 
-    user = User.get(User.user_id == message.from_user.telegram_id)
+        user = User.get(User.user_id == message.from_user.id)
 
-    await message.answer(
-        get_text(user.language, "settings_message"),
-        reply_markup=settings_keyboard()  # клавиатура выбора языка
-    )
+        await message.answer(
+            get_text(user.language, "settings_message"),
+            reply_markup=settings_keyboard()  # клавиатура выбора языка
+        )
+    except Exception as e:
+        logger.exception(e)
 
 
 @router.message(F.text == "⏯ Запуск отслеживания")
@@ -265,13 +266,13 @@ async def handle_start_tracking(message, state: FSMContext):
     """
     await state.clear()  # Завершаем текущее состояние машины состояния
     try:
-        user = User.get(User.user_id == message.from_user.telegram_id)
+        user = User.get(User.user_id == message.from_user.id)
 
         logger.info(
-            f"Пользователь {message.from_user.telegram_id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню запуска парсинга.")
+            f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню запуска парсинга.")
 
         # === Папка, где хранятся сессии ===
-        session_dir = os.path.join("accounts", str(message.from_user.telegram_id))
+        session_dir = os.path.join("accounts", str(message.from_user.id))
         os.makedirs(session_dir, exist_ok=True)
 
         session_path = await find_session_file(session_dir, user, message)  # <-- ✅ ищем файл сессии
@@ -294,7 +295,7 @@ async def handle_start_tracking(message, state: FSMContext):
 
         await filter_messages(
             message=message,  # сообщение
-            user_id=message.from_user.telegram_id,  # ID пользователя
+            user_id=message.from_user.id,  # ID пользователя
             user=user,  # модель пользователя
             session_path=session_path  # путь к сессии
         )
@@ -318,10 +319,10 @@ async def handle_refresh_groups_list(message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, используется для установки состояния.
     :return: None
     """
-    user = User.get(User.user_id == message.from_user.telegram_id)
+    user = User.get(User.user_id == message.from_user.id)
 
     logger.info(
-        f"Пользователь {message.from_user.telegram_id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню 🔁 Обновить список")
+        f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} перешел в меню 🔁 Обновить список")
 
     await message.answer(
         text=get_text(user.language, "update_list"),  # текст сообщения
@@ -359,11 +360,11 @@ async def handle_group_usernames_input(message, state: FSMContext):
         return
 
     # Создаём модель с таблицей, уникальной для конкретного пользователя
-    groups = create_groups_model(user_id=message.from_user.telegram_id)  # Создаём таблицу для групп
+    groups = create_groups_model(user_id=message.from_user.id)  # Создаём таблицу для групп
     # Проверяем, существует ли таблица (если нет — создаём)
     if not groups.table_exists():
         groups.create_table()
-        logger.info(f"Создана новая таблица для пользователя {message.from_user.telegram_id}")
+        logger.info(f"Создана новая таблица для пользователя {message.from_user.id}")
 
     added_count = 0
     skipped_count = 0
