@@ -95,7 +95,17 @@ def save_group_to_db(group_data):
     :raise Exception: Логируется при ошибках работы с БД (например, нарушение ограничений).
     """
     try:
+        id = group_data.get('id')
         group_hash = group_data.get('group_hash')
+        name = group_data.get('name')
+        username = group_data.get('username')
+        description = group_data.get('description')
+        participants = group_data.get('participants')
+        category = group_data.get('category')
+        group_type = group_data.get('group_type')
+        language = group_data.get('language')
+        link = group_data.get('link')
+        date_added = datetime.now()
         # group_hash = generate_group_hash(
         #     username=group_data.get('username'),
         #     name=group_data.get('name'),
@@ -107,23 +117,29 @@ def save_group_to_db(group_data):
 
         if existing:
             # Обновляем данные
-            existing.participants = group_data.get('participants', 0)
-            existing.description = group_data.get('description')
+            existing.name = name
+            existing.username = username
+            existing.description = description
+            existing.participants = participants
+            existing.link = link
+            existing.date_added = date_added
             existing.save()
             logger.info(f"Обновлена группа: {group_data['name']}")
             return existing
         else:
             # Создаём новую запись
             new_group = TelegramGroup.create(
+                id=id,
                 group_hash=group_hash,
-                name=group_data.get('name', 'Без названия'),
-                username=group_data.get('username'),
-                description=group_data.get('description'),
-                participants=group_data.get('participants', 0),
-                category="",
+                name=name,
+                username=username,
+                description=description,
+                participants=participants,
+                category=category,
                 group_type=group_type,
-                link=group_data.get('link', ''),
-                date_added=datetime.now()
+                language=language,
+                link=link,
+                date_added=date_added
             )
             logger.info(f"Добавлена новая группа: {group_data['name']}")
             return new_group
