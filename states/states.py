@@ -21,3 +21,7 @@ class MyStates(StatesGroup):
 class MyStatesParsing(StatesGroup):
     get_url = State()  # Ожидание ввода URL для парсинга
     get_keyword = State()  # Ожидание ввода ключевого слова для поиска
+
+
+class ExportStates(StatesGroup):
+    waiting_for_category = State()

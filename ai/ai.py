@@ -149,10 +149,18 @@ async def search_groups_in_telegram(group_names):
 
         try:
             # ✅ Используем SearchRequest для поиска по названию
-            search_results = await client(functions.contacts.SearchRequest(q=name, limit=10))
+            search_results = await client(functions.contacts.SearchRequest(q=name, limit=15))
 
             # Обрабатываем результаты
             for chat in search_results.chats:
+
+
+                logger.info(chat)
+                group_hash = chat.access_hash
+                logger.info(group_hash)
+                username = chat.username
+                logger.info(username)
+
                 if isinstance(chat, Channel) and chat.title:
                     found_groups.append({
                         'name': chat.title,

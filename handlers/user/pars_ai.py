@@ -6,9 +6,7 @@ from datetime import datetime
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import BufferedInputFile, ReplyKeyboardRemove
-from aiogram.types import Message
+from aiogram.types import BufferedInputFile, ReplyKeyboardRemove, Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -17,7 +15,7 @@ from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
 from keyboards.user.keyboards import back_keyboard, search_group_ai, get_categories_keyboard
 from locales.locales import get_text
-from states.states import MyStates
+from states.states import MyStates, ExportStates
 from system.dispatcher import router
 
 
@@ -37,49 +35,49 @@ def clean_group_name(name):
     return cleaned
 
 
-def generate_group_hash(username=None, name=None, link=None):
-    """
-    Генерирует MD5-хеш для уникальной идентификации группы в базе данных.
+# def generate_group_hash(username=None, name=None, link=None):
+#     """
+#     Генерирует MD5-хеш для уникальной идентификации группы в базе данных.
+#
+#     Использует один из трёх параметров: username, link или name (в порядке приоритета)
+#     для создания хеша, который служит первичным ключом в таблице `TelegramGroup`.
+#
+#     Приоритет: username > link > name. Используется первый непустой параметр.
+#
+#     :param username : (str, optional) Юзернейм группы (например, "@python_chat").
+#     :param name : (str, optional) Название группы.
+#     :param link : (str, optional) Прямая ссылка на группу (например, "https://t.me/python_chat").
+#     :return str: 32-символьная hex-строка MD5-хеша.
+#     """
+#     if username:
+#         return hashlib.md5(username.encode()).hexdigest()
+#     elif link:
+#         return hashlib.md5(link.encode()).hexdigest()
+#     else:
+#         return hashlib.md5(name.encode()).hexdigest()
 
-    Использует один из трёх параметров: username, link или name (в порядке приоритета)
-    для создания хеша, который служит первичным ключом в таблице `TelegramGroup`.
 
-    Приоритет: username > link > name. Используется первый непустой параметр.
-
-    :param username : (str, optional) Юзернейм группы (например, "@python_chat").
-    :param name : (str, optional) Название группы.
-    :param link : (str, optional) Прямая ссылка на группу (например, "https://t.me/python_chat").
-    :return str: 32-символьная hex-строка MD5-хеша.
-    """
-    if username:
-        return hashlib.md5(username.encode()).hexdigest()
-    elif link:
-        return hashlib.md5(link.encode()).hexdigest()
-    else:
-        return hashlib.md5(name.encode()).hexdigest()
-
-
-def determine_group_type(group_data):
-    """
-    Определяет тип Telegram-чата на основе его данных.
-
-    Анализирует словарь с информацией о группе и возвращает строку с типом.
-
-    Используется при сохранении группы в базу данных.
-
-    - 'channel': если есть флаг is_channel.
-    - 'group': если есть username (предполагает, что это группа).
-    - 'link': во всех остальных случаях.
-
-    :param group_data : (dict) Словарь с данными о группе, полученный из поиска.
-    :return str: Тип чата — 'channel', 'group' или 'link'.
-    """
-    if 'is_channel' in group_data and group_data['is_channel']:
-        return 'channel'
-    elif 'username' in group_data and group_data['username']:
-        return 'group'
-    else:
-        return 'link'
+# def determine_group_type(group_data):
+#     """
+#     Определяет тип Telegram-чата на основе его данных.
+#
+#     Анализирует словарь с информацией о группе и возвращает строку с типом.
+#
+#     Используется при сохранении группы в базу данных.
+#
+#     - 'channel': если есть флаг is_channel.
+#     - 'group': если есть username (предполагает, что это группа).
+#     - 'link': во всех остальных случаях.
+#
+#     :param group_data : (dict) Словарь с данными о группе, полученный из поиска.
+#     :return str: Тип чата — 'channel', 'group' или 'link'.
+#     """
+#     if 'is_channel' in group_data and group_data['is_channel']:
+#         return 'channel'
+#     elif 'username' in group_data and group_data['username']:
+#         return 'group'
+#     else:
+#         return 'link'
 
 
 def save_group_to_db(group_data):
@@ -325,10 +323,6 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
         reply_markup=search_group_ai(),
         parse_mode="HTML"
     )
-
-
-class ExportStates(StatesGroup):
-    waiting_for_category = State()
 
 
 @router.message(F.text == "Выбрать категорию")
