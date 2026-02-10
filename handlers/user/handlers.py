@@ -203,19 +203,22 @@ async def handle_language_selection(message, state: FSMContext):
     :return: None
     :raises Exception: Не ожидается, но возможна ошибка записи в БД.
     """
-    await state.clear()  # Завершаем текущее состояние машины состояния
-    user = User.get(User.user_id == message.from_user.telegram_id)
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояния
+        user = User.get(User.user_id == message.from_user.id)
 
-    if message.text == "🇷🇺 Русский":
-        user.language = "ru"
-        confirmation_text = get_text("ru", "lang_selected")
-    elif message.text == "🇬🇧 English":
-        user.language = "en"
-        confirmation_text = get_text("en", "lang_selected")
+        if message.text == "🇷🇺 Русский":
+            user.language = "ru"
+            confirmation_text = get_text("ru", "lang_selected")
+        elif message.text == "🇬🇧 English":
+            user.language = "en"
+            confirmation_text = get_text("en", "lang_selected")
 
-    user.save()
+        user.save()
 
-    await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
+        await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
+    except Exception as e:
+        logger.exception(e)
 
 
 @router.message(F.text == "⚙ Настройки")

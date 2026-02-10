@@ -140,6 +140,7 @@ def create_excel_file(groups):
         'Участников',
         'Категория',
         'Тип',
+        'Язык',
         'Ссылка',
         'Дата добавления'
     ]
@@ -163,6 +164,7 @@ def create_excel_file(groups):
             group.participants,
             group.category or '',
             group.group_type,
+            group.language,
             group.link,
             group.date_added.strftime('%Y-%m-%d %H:%M:%S')
         ])
