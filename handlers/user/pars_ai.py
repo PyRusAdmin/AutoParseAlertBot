@@ -34,51 +34,6 @@ def clean_group_name(name):
     return cleaned
 
 
-# def generate_group_hash(username=None, name=None, link=None):
-#     """
-#     Генерирует MD5-хеш для уникальной идентификации группы в базе данных.
-#
-#     Использует один из трёх параметров: username, link или name (в порядке приоритета)
-#     для создания хеша, который служит первичным ключом в таблице `TelegramGroup`.
-#
-#     Приоритет: username > link > name. Используется первый непустой параметр.
-#
-#     :param username : (str, optional) Юзернейм группы (например, "@python_chat").
-#     :param name : (str, optional) Название группы.
-#     :param link : (str, optional) Прямая ссылка на группу (например, "https://t.me/python_chat").
-#     :return str: 32-символьная hex-строка MD5-хеша.
-#     """
-#     if username:
-#         return hashlib.md5(username.encode()).hexdigest()
-#     elif link:
-#         return hashlib.md5(link.encode()).hexdigest()
-#     else:
-#         return hashlib.md5(name.encode()).hexdigest()
-
-
-# def determine_group_type(group_data):
-#     """
-#     Определяет тип Telegram-чата на основе его данных.
-#
-#     Анализирует словарь с информацией о группе и возвращает строку с типом.
-#
-#     Используется при сохранении группы в базу данных.
-#
-#     - 'channel': если есть флаг is_channel.
-#     - 'group': если есть username (предполагает, что это группа).
-#     - 'link': во всех остальных случаях.
-#
-#     :param group_data : (dict) Словарь с данными о группе, полученный из поиска.
-#     :return str: Тип чата — 'channel', 'group' или 'link'.
-#     """
-#     if 'is_channel' in group_data and group_data['is_channel']:
-#         return 'channel'
-#     elif 'username' in group_data and group_data['username']:
-#         return 'group'
-#     else:
-#         return 'link'
-
-
 def save_group_to_db(group_data):
     """
     Сохраняет или обновляет информацию о группе в централизованной базе данных.
@@ -110,6 +65,7 @@ def save_group_to_db(group_data):
 
         if existing:
             # Обновляем данные
+            existing.telegram_id = telegram_id
             existing.name = name
             existing.username = username
             existing.description = description

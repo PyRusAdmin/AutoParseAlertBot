@@ -239,7 +239,6 @@ async def get_grup_accaunt(client, message):
 
                 # Получаем полную информацию
                 full_entity = await client(GetFullChannelRequest(channel=entity))
-
                 participants_count = full_entity.full_chat.participants_count or 0
                 actual_username = f"@{entity.username}" if entity.username else ""
                 link = f"https://t.me/{entity.username}" if entity.username else None
