@@ -91,22 +91,22 @@ def ai_llama(group_data: dict) -> dict:
 
 
 async def get_groups_without_language() -> list[dict]:
-    """Получить группы без языка"""
+    """Получить ВСЕ группы, но отфильтровать те, где язык не определён"""
 
     def _get_groups():
         if db.is_closed():
             db.connect(reuse_if_open=True)
 
-        groups = TelegramGroup.select().where(
-            (TelegramGroup.language.is_null()) | (TelegramGroup.language == '')
-        )
+        # Берём ВСЕ записи
+        groups = TelegramGroup.select()
 
+        # Фильтруем только те, где language пустой
         return [{
             "group_hash": group.group_hash,
             "name": group.name,
             "username": group.username,
             "description": group.description,
-        } for group in groups]
+        } for group in groups if not group.language or group.language.strip() == '']
 
     try:
         groups_data = await sync_to_async(_get_groups)()
