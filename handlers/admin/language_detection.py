@@ -31,11 +31,12 @@ def ai_llama(group_data: dict) -> dict:
         user_input = "\n".join(data_parts) if data_parts else "Нет данных"
 
         prompt = (
-            "Определи язык Telegram-сообщества.\n"
-            "Ответь ТОЛЬКО кодом языка в формате ISO 639-1.\n"
-            "Допустимые ответы: ru, en, uk, de, fr, es, pt.\n"
-            "Если определить нельзя — ответь unknown.\n\n"
-            f"{user_input}"
+            "Определи основной язык текста или описания сообщества.\n"
+            "Ответь СТРОГО одним словом — кодом языка в формате ISO 639-1 (двухбуквенный код).\n"
+            "Примеры корректных ответов: ru, en, es, zh, ar, hi, ja, ko, fr, de, pt, it, nl, sv, pl, tr, vi, th, id, fa, he, uk, cs, el, ro, hu, fi, da, no, sk, bg, hr, sr, sl, et, lv, lt, mk, sq, mt, cy, eu, gl, ga, is, ms, sw, tl, ur, bn, ta, te, mr, gu, kn, ml, si, km, lo, my, am, hy, ka, az, uz, kk, ky, tg, tk, mn, ps, ku, sd, ne, si, lo, km, my, dz, bo, ug, yi, ha, yo, ig, zu, xh, st, tn, ts, ve, nr, ss, ch, rw, rn, mg, ln, kg, sw, tn.\n"
+            "Если язык невозможно определить однозначно или текст содержит смесь языков без доминирующего — ответь: unknown.\n"
+            "НЕ добавляй никаких пояснений, пунктуации, пробелов или дополнительного текста. Только код языка или 'unknown'.\n\n"
+            f"Текст для анализа:\n{user_input}"
         )
 
         completion = client.chat.completions.create(
@@ -52,7 +53,21 @@ def ai_llama(group_data: dict) -> dict:
             .split()[0]
         )
 
-        if detected_lang not in {"ru", "en", "uk", "de", "fr", "es", "pt"}:
+        ISO_639_1_CODES = {
+            "aa", "ab", "ae", "af", "ak", "am", "an", "ar", "as", "av", "ay", "az", "ba", "be", "bg", "bh", "bi",
+            "bm", "bn", "bo", "br", "bs", "ca", "ce", "ch", "co", "cr", "cs", "cu", "cv", "cy", "da", "de", "dv",
+            "dz", "ee", "el", "en", "eo", "es", "et", "eu", "fa", "ff", "fi", "fj", "fo", "fr", "fy", "ga", "gd",
+            "gl", "gn", "gu", "gv", "ha", "he", "hi", "ho", "hr", "ht", "hu", "hy", "hz", "ia", "id", "ie", "ig",
+            "ii", "ik", "io", "is", "it", "iu", "ja", "jv", "ka", "kg", "ki", "kj", "kk", "kl", "km", "kn", "ko",
+            "kr", "ks", "ku", "kv", "kw", "ky", "la", "lb", "lg", "li", "ln", "lo", "lt", "lu", "lv", "mg", "mh",
+            "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "na", "nb", "nd", "ne", "ng", "nl", "nn", "no", "nr",
+            "nv", "ny", "oc", "oj", "om", "or", "os", "pa", "pi", "pl", "ps", "pt", "qu", "rm", "rn", "ro", "ru",
+            "rw", "sa", "sc", "sd", "se", "sg", "si", "sk", "sl", "sm", "sn", "so", "sq", "sr", "ss", "st", "su",
+            "sv", "sw", "ta", "te", "tg", "th", "ti", "tk", "tl", "tn", "to", "tr", "ts", "tt", "tw", "ty", "ug",
+            "uk", "ur", "uz", "ve", "vi", "vo", "wa", "wo", "xh", "yi", "yo", "za", "zh", "zu"
+        }
+
+        if detected_lang not in ISO_639_1_CODES:
             detected_lang = "unknown"
 
         logger.debug(f"✅ AI определил: '{group_data.get('name')}' -> {detected_lang}")
