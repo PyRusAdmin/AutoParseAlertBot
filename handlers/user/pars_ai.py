@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import hashlib
 import io
 import re
 from datetime import datetime
