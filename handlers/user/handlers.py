@@ -51,7 +51,7 @@ async def handle_start_command(message, state: FSMContext) -> None:
 
         # Проверяем, является ли пользователь администратором
         # from config import ADMIN_USER_ID  # Импортируем ID администраторов
-        is_admin = message.from_user.telegram_id in ADMIN_USER_ID
+        is_admin = message.from_user.id in ADMIN_USER_ID
 
         # Если язык ещё не выбран — просим выбрать
         if user.language == "unset":
@@ -61,7 +61,7 @@ async def handle_start_command(message, state: FSMContext) -> None:
             )
         else:
             # Генерируем приветственное сообщение
-            text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.telegram_id)
+            text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
 
             # Выбираем клавиатуру в зависимости от роли
             if is_admin:
