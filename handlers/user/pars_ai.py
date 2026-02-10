@@ -105,12 +105,6 @@ def save_group_to_db(group_data):
         language = group_data.get('language')
         link = group_data.get('link')
         date_added = datetime.now()
-        # group_hash = generate_group_hash(
-        #     username=group_data.get('username'),
-        #     name=group_data.get('name'),
-        #     link=group_data.get('link')
-        # )
-        # group_type = determine_group_type(group_data)
         # Проверяем, существует ли уже такая группа
         existing = TelegramGroup.get_or_none(TelegramGroup.group_hash == group_hash)
 
