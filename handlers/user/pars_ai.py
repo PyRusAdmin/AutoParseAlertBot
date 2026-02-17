@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-import hashlib
 import io
 import re
 from datetime import datetime
 
 from aiogram import F
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import BufferedInputFile, ReplyKeyboardRemove
-from aiogram.types import Message
+from aiogram.types import BufferedInputFile, ReplyKeyboardRemove, Message
 from loguru import logger  # https://github.com/Delgan/loguru
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -17,7 +14,7 @@ from ai.ai import get_groq_response, search_groups_in_telegram
 from database.database import User, TelegramGroup
 from keyboards.user.keyboards import back_keyboard, search_group_ai, get_categories_keyboard
 from locales.locales import get_text
-from states.states import MyStates
+from states.states import MyStates, ExportStates
 from system.dispatcher import router
 
 
@@ -37,51 +34,6 @@ def clean_group_name(name):
     return cleaned
 
 
-def generate_group_hash(username=None, name=None, link=None):
-    """
-    Генерирует MD5-хеш для уникальной идентификации группы в базе данных.
-
-    Использует один из трёх параметров: username, link или name (в порядке приоритета)
-    для создания хеша, который служит первичным ключом в таблице `TelegramGroup`.
-
-    Приоритет: username > link > name. Используется первый непустой параметр.
-
-    :param username : (str, optional) Юзернейм группы (например, "@python_chat").
-    :param name : (str, optional) Название группы.
-    :param link : (str, optional) Прямая ссылка на группу (например, "https://t.me/python_chat").
-    :return str: 32-символьная hex-строка MD5-хеша.
-    """
-    if username:
-        return hashlib.md5(username.encode()).hexdigest()
-    elif link:
-        return hashlib.md5(link.encode()).hexdigest()
-    else:
-        return hashlib.md5(name.encode()).hexdigest()
-
-
-def determine_group_type(group_data):
-    """
-    Определяет тип Telegram-чата на основе его данных.
-
-    Анализирует словарь с информацией о группе и возвращает строку с типом.
-
-    Используется при сохранении группы в базу данных.
-
-    - 'channel': если есть флаг is_channel.
-    - 'group': если есть username (предполагает, что это группа).
-    - 'link': во всех остальных случаях.
-
-    :param group_data : (dict) Словарь с данными о группе, полученный из поиска.
-    :return str: Тип чата — 'channel', 'group' или 'link'.
-    """
-    if 'is_channel' in group_data and group_data['is_channel']:
-        return 'channel'
-    elif 'username' in group_data and group_data['username']:
-        return 'group'
-    else:
-        return 'link'
-
-
 def save_group_to_db(group_data):
     """
     Сохраняет или обновляет информацию о группе в централизованной базе данных.
@@ -97,42 +49,52 @@ def save_group_to_db(group_data):
     :raise Exception: Логируется при ошибках работы с БД (например, нарушение ограничений).
     """
     try:
-        group_hash = generate_group_hash(
-            username=group_data.get('username'),
-            name=group_data.get('name'),
-            link=group_data.get('link')
-        )
-
-        group_type = determine_group_type(group_data)
-
+        telegram_id = group_data.get('telegram_id')
+        group_hash = group_data.get('group_hash')
+        name = group_data.get('name')
+        username = group_data.get('username')
+        description = group_data.get('description')
+        participants = group_data.get('participants')
+        category = group_data.get('category')
+        group_type = group_data.get('group_type')
+        language = group_data.get('language')
+        link = group_data.get('link')
+        date_added = datetime.now()
         # Проверяем, существует ли уже такая группа
         existing = TelegramGroup.get_or_none(TelegramGroup.group_hash == group_hash)
 
         if existing:
             # Обновляем данные
-            existing.participants = group_data.get('participants', 0)
-            existing.description = group_data.get('description')
+            existing.telegram_id = telegram_id
+            existing.name = name
+            existing.username = username
+            existing.description = description
+            existing.participants = participants
+            existing.link = link
+            existing.date_added = date_added
             existing.save()
             logger.info(f"Обновлена группа: {group_data['name']}")
             return existing
         else:
             # Создаём новую запись
             new_group = TelegramGroup.create(
+                telegram_id=telegram_id,
                 group_hash=group_hash,
-                name=group_data.get('name', 'Без названия'),
-                username=group_data.get('username'),
-                description=group_data.get('description'),
-                participants=group_data.get('participants', 0),
-                category="",
+                name=name,
+                username=username,
+                description=description,
+                participants=participants,
+                category=category,
                 group_type=group_type,
-                link=group_data.get('link', ''),
-                date_added=datetime.now()
+                language=language,
+                link=link,
+                date_added=date_added
             )
             logger.info(f"Добавлена новая группа: {group_data['name']}")
             return new_group
 
     except Exception as e:
-        logger.error(f"Ошибка при сохранении группы: {e}")
+        logger.exception(f"Ошибка при сохранении группы: {e}")
         return None
 
 
@@ -178,6 +140,7 @@ def create_excel_file(groups):
         'Участников',
         'Категория',
         'Тип',
+        'Язык',
         'Ссылка',
         'Дата добавления'
     ]
@@ -201,6 +164,7 @@ def create_excel_file(groups):
             group.participants,
             group.category or '',
             group.group_type,
+            group.language,
             group.link,
             group.date_added.strftime('%Y-%m-%d %H:%M:%S')
         ])
@@ -325,10 +289,6 @@ async def handle_enter_keyword_menu(message: Message, state: FSMContext):
         reply_markup=search_group_ai(),
         parse_mode="HTML"
     )
-
-
-class ExportStates(StatesGroup):
-    waiting_for_category = State()
 
 
 @router.message(F.text == "Выбрать категорию")

@@ -22,7 +22,7 @@ async def unsubscribe(client, username_to_search, message):
     try:
         entity = await client.get_entity(f"@{username_to_search}")
         chat_title = getattr(entity, 'title', getattr(entity, 'first_name', 'Без названия'))
-        chat_id = entity.id
+        chat_id = entity.telegram_id
         chat_type = "канал" if isinstance(entity, Channel) else "группа" if isinstance(entity, Chat) else "чат"
 
         logger.info(f"Найден {chat_type} '{chat_title}' (ID: {chat_id}) для @{username_to_search}")

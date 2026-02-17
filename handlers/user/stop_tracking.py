@@ -33,7 +33,7 @@ async def handle_stop_tracking(message: Message, state: FSMContext):
     logger.info(
         f"Пользователь {message.from_user.id} {message.from_user.username} {message.from_user.first_name} {message.from_user.last_name} нажал кнопку остановки отслеживания")
 
-    await stop_tracking(user_id=message.from_user.id, message=message, user=user)
+    await stop_tracking(user_id=message.from_user.id, message=message)
 
     await message.answer(
         text="Отслеживание отменено",

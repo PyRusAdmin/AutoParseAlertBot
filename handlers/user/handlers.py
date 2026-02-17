@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 from aiogram import F
+from aiogram.exceptions import TelegramForbiddenError
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from loguru import logger  # https://github.com/Delgan/loguru
@@ -70,6 +71,9 @@ async def handle_start_command(message, state: FSMContext) -> None:
 
             await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
 
+    except TelegramForbiddenError:
+        logger.error(f"Пользователь {message.from_user.telegram_id, message.from_user.username} заблокировал бота")
+
     except Exception as e:
         logger.exception(e)
 
@@ -92,27 +96,25 @@ async def handle_back_to_main_menu(message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, сбрасывается перед возвратом.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояний
-
-    user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
-
-    # Проверяем, является ли пользователь администратором
-    is_admin = message.from_user.id in ADMIN_USER_ID
-
-    # Если язык ещё не выбран — просим выбрать
-    if user.language == "unset":
-        await message.answer(
-            "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
-            reply_markup=get_lang_keyboard()
-        )
-    else:
-        # Генерируем приветственное сообщение
-        text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
-
-        # Выбираем клавиатуру в зависимости от роли
-        reply_markup = main_admin_keyboard() if is_admin else main_menu_keyboard()
-
-        await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояний
+        user = get_or_create_user(message.from_user)  # Получаем или создаём пользователя
+        # Проверяем, является ли пользователь администратором
+        is_admin = message.from_user.id in ADMIN_USER_ID
+        # Если язык ещё не выбран — просим выбрать
+        if user.language == "unset":
+            await message.answer(
+                "👋 Привет! Пожалуйста, выберите язык / Please choose your language:",
+                reply_markup=get_lang_keyboard()
+            )
+        else:
+            # Генерируем приветственное сообщение
+            text = generate_welcome_message(user_language=user.language, user_tg_id=message.from_user.id)
+            # Выбираем клавиатуру в зависимости от роли
+            reply_markup = main_admin_keyboard() if is_admin else main_menu_keyboard()
+            await message.answer(text=text, reply_markup=reply_markup, parse_mode="HTML")
+    except Exception as e:
+        logger.exception(e)
 
 
 def generate_welcome_message(user_language: str, user_tg_id: int) -> str:
@@ -201,19 +203,22 @@ async def handle_language_selection(message, state: FSMContext):
     :return: None
     :raises Exception: Не ожидается, но возможна ошибка записи в БД.
     """
-    await state.clear()  # Завершаем текущее состояние машины состояния
-    user = User.get(User.user_id == message.from_user.id)
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояния
+        user = User.get(User.user_id == message.from_user.id)
 
-    if message.text == "🇷🇺 Русский":
-        user.language = "ru"
-        confirmation_text = get_text("ru", "lang_selected")
-    elif message.text == "🇬🇧 English":
-        user.language = "en"
-        confirmation_text = get_text("en", "lang_selected")
+        if message.text == "🇷🇺 Русский":
+            user.language = "ru"
+            confirmation_text = get_text("ru", "lang_selected")
+        elif message.text == "🇬🇧 English":
+            user.language = "en"
+            confirmation_text = get_text("en", "lang_selected")
 
-    user.save()
+        user.save()
 
-    await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
+        await message.answer(confirmation_text, reply_markup=main_menu_keyboard())
+    except Exception as e:
+        logger.exception(e)
 
 
 @router.message(F.text == "⚙ Настройки")
@@ -231,14 +236,17 @@ async def handle_settings_menu(message, state: FSMContext):
     :param state: (FSMContext) Контекст машины состояний, не используется напрямую.
     :return: None
     """
-    await state.clear()  # Завершаем текущее состояние машины состояния
+    try:
+        await state.clear()  # Завершаем текущее состояние машины состояния
 
-    user = User.get(User.user_id == message.from_user.id)
+        user = User.get(User.user_id == message.from_user.id)
 
-    await message.answer(
-        get_text(user.language, "settings_message"),
-        reply_markup=settings_keyboard()  # клавиатура выбора языка
-    )
+        await message.answer(
+            get_text(user.language, "settings_message"),
+            reply_markup=settings_keyboard()  # клавиатура выбора языка
+        )
+    except Exception as e:
+        logger.exception(e)
 
 
 @router.message(F.text == "⏯ Запуск отслеживания")

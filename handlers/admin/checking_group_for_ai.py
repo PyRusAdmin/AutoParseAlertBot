@@ -71,7 +71,7 @@ Username: {group.username or 'Неизвестен'}
                 # Обновляем ТОЛЬКО категорию
                 TelegramGroup.update(
                     category=category
-                ).where(TelegramGroup.id == group.id).execute()
+                ).where(TelegramGroup.telegram_id == group.telegram_id).execute()
 
                 updated += 1
                 logger.info(f"[{processed + 1}/{total_count}] Категория для {group.username}: {category}")

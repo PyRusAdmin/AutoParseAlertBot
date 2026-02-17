@@ -5,12 +5,49 @@ from datetime import datetime
 from peewee import SqliteDatabase, Model, IntegerField, CharField, AutoField, TextField, DateTimeField
 
 db = SqliteDatabase('data/bot.db', timeout=30,
-                    pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'})
+                    pragmas={'journal_mode': 'wal', 'cache_size': 4096, 'synchronous': 'NORMAL'},
+                    autocommit=True  # ✅ Важно!
+                    )
 
 
 class BaseModel(Model):
     class Meta:
         database = db
+
+
+def get_user_channel_usernames(user_id: int):
+    """
+    Возвращает множество username каналов/групп пользователя из БД (в нижнем регистре).
+
+    :param user_id: Telegram user_id
+    :return: db_channels, total_count
+    """
+    Groups = create_groups_model(user_id=user_id)
+    total_count = Groups.select().count()
+    db_channels = {
+        group.username.lower()
+        for group in (
+            Groups
+            .select(Groups.username)
+            .where(Groups.username.is_null(False))
+        )
+    }
+    return db_channels, total_count
+
+
+def delete_group_by_username(user_id: int, channel: str):
+    """
+    Удаляет группу или канал пользователя из БД по username.
+
+    Используется для очистки базы данных от невалидных или недоступных
+    Telegram-групп/каналов (например, если канал удалён или бот потерял доступ).
+
+    :param user_id: (int) Telegram user_id, для которого создана таблица групп
+    :param channel: (str) Username группы/канала без '@'
+    :return: (int) Количество удалённых записей
+    """
+    Groups = create_groups_model(user_id)
+    Groups.delete().where(Groups.username == channel).execute()
 
 
 class User(BaseModel):
@@ -148,8 +185,7 @@ class TelegramGroup(BaseModel):
     Meta:
         table_name (str): Имя таблицы в базе данных — 'telegram_groups'.
     """
-    id = IntegerField(null=True)  # Новое поле: Telegram entity ID
-
+    telegram_id = IntegerField(null=True, index=True)  # Новое поле: Telegram entity ID
     group_hash = CharField(unique=True, index=True)  # ID группы или хеш username
     name = CharField()  # Название группы
     username = CharField(null=True)  # @username если есть
@@ -157,6 +193,7 @@ class TelegramGroup(BaseModel):
     participants = IntegerField(default=0)  # Количество участников
     category = CharField(null=True)  # Категория (определяется AI)
     group_type = CharField()  # 'group', 'channel', 'link'
+    language = CharField(null=True, default='')  # ru/en язык группы / канала
     link = CharField()  # Ссылка на группу
     date_added = DateTimeField(default=datetime.now)  # Дата добавления
 

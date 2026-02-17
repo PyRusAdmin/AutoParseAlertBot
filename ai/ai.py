@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 
 import groq
 from groq import AsyncGroq
-from loguru import logger  # https://github.com/Delgan/loguru
+from loguru import logger
+from openai import OpenAI
 from telethon.errors import FloodWaitError, UsernameNotOccupiedError
 from telethon.sync import TelegramClient, functions
 from telethon.tl.types import Channel
 
+from account_manager.parser import determine_telegram_chat_type
 from core.config import GROQ_API_KEY
 from core.proxy_config import setup_proxy
 from system.dispatcher import api_id, api_hash
@@ -116,7 +119,7 @@ async def search_groups_in_telegram(group_names):
             - 'username' (str): Юзернейм группы (с @) или "нет юзернейма".
             - 'link' (str): Ссылка на группу или "недоступна".
             - 'participants' (int or str): Количество участников или "неизвестно".
-            - 'id' (int): Уникальный идентификатор чата в Telegram.
+            - 'telegram_id' (int): Уникальный идентификатор чата в Telegram.
 
     Notes:
         - Требует предварительной авторизации клиента Telegram.
@@ -124,7 +127,7 @@ async def search_groups_in_telegram(group_names):
         - Пропускает пустые строки в списке запросов.
         - Использует Telethon для низкоуровневого взаимодействия с Telegram API.
     """
-    client = TelegramClient('accounts/ai/998339414118', api_id, api_hash,
+    client = TelegramClient('accounts/ai/215617551_telethon', api_id, api_hash,
                             system_version="4.16.30-vxCUSTOM")
     await client.connect()
 
@@ -145,19 +148,47 @@ async def search_groups_in_telegram(group_names):
 
         try:
             # ✅ Используем SearchRequest для поиска по названию
-            search_results = await client(functions.contacts.SearchRequest(q=name, limit=10))
+            search_results = await client(functions.contacts.SearchRequest(q=name, limit=15))
 
             # Обрабатываем результаты
             for chat in search_results.chats:
-                if isinstance(chat, Channel) and chat.title:
-                    found_groups.append({
-                        'name': chat.title,
-                        'username': f"@{chat.username}" if chat.username else "нет юзернейма",
-                        'link': f"https://t.me/{chat.username}" if chat.username else "недоступна",
-                        'participants': chat.participants_count if hasattr(chat,
-                                                                           'participants_count') else 'неизвестно',
-                        'id': chat.id
-                    })
+                logger.info(chat)
+                telegram_id = chat.id
+                group_hash = chat.access_hash
+                name = chat.title or ''
+                username = f"@{chat.username}"
+                description = ''
+                participants = chat.participants_count
+                category = ''
+                group_type = determine_telegram_chat_type(entity=chat)
+                language = ''
+                link = f"https://t.me/{chat.username}"
+
+                found_groups.append(
+                    {
+                        'telegram_id': telegram_id,
+                        'group_hash': group_hash,
+                        'name': name,
+                        'username': username,
+                        'description': description,
+                        'participants': participants,
+                        'category': category,
+                        'group_type': group_type,
+                        'language': language,
+                        'link': link
+                    }
+                )
+                # logger.info(
+                #     f'{telegram_id}, {group_hash}, {name}, {username}, {description}, {participants}, {category}, {group_type}, {language}, {link}')
+                # if isinstance(chat, Channel) and chat.title:
+                #     found_groups.append({
+                #         'name': chat.title,
+                #         'username': f"@{chat.username}" if chat.username else "нет юзернейма",
+                #         'link': f"https://t.me/{chat.username}" if chat.username else "недоступна",
+                #         'participants': chat.participants_count if hasattr(chat,
+                #                                                            'participants_count') else 'неизвестно',
+                #         'telegram_id': chat.telegram_id
+                #     })
 
         except UsernameNotOccupiedError:
             logger.warning(f"Группа '{name}' не найдена.")
